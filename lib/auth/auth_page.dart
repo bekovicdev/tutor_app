@@ -509,6 +509,12 @@ class _AuthPageState extends State<AuthPage> {
         return;
       }
       await widget.onAuthenticated(session);
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context, rootNavigator: true).popUntil((Route<dynamic> route) {
+        return route.isFirst;
+      });
     } on AuthException catch (error) {
       if (!mounted) {
         return;
