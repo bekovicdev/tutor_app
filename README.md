@@ -76,3 +76,7 @@ veya:
 - Lesson olusturulurken yalnizca bir tane baglanti verilir: ya `student_id` ya da `group_id` (ikisi birden veya hicbiri olamaz).
 - Student notes sadece group lesson'lar icin kullanilabilir.
 - Tutor/admin API'lerinde student/group/user silme islemleri hard delete degil, deactivation (`status = 0`) olarak uygulanir.
+
+## API Docs
+
+- Auth API: `docs/login-auth-api.md`
