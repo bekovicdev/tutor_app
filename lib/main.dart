@@ -250,7 +250,7 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<Widget> pages = <Widget>[
-      const StudentsPage(),
+      StudentsPage(token: session.token),
       const SchedulePage(),
       const JournalPage(),
       const PaymentPage(),
