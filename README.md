@@ -80,3 +80,4 @@ veya:
 ## API Docs
 
 - Auth API: `docs/login-auth-api.md`
+- Groups API: `docs/groups-api.md`

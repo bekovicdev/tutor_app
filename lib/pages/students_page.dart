@@ -1,7 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show Material, MaterialType;
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:tutor_app/groups/group_service.dart';
+import 'package:tutor_app/pages/group_detail_page.dart';
 import 'package:tutor_app/students/student_service.dart';
+
+enum _StudentsViewMode { students, groups }
 
 class StudentsPage extends StatefulWidget {
   const StudentsPage({
@@ -17,9 +21,12 @@ class StudentsPage extends StatefulWidget {
 
 class _StudentsPageState extends State<StudentsPage> {
   late final StudentService _studentService;
+  late final GroupService _groupService;
   final TextEditingController _searchController = TextEditingController();
 
+  _StudentsViewMode _viewMode = _StudentsViewMode.students;
   List<Student> _students = <Student>[];
+  List<TutorGroup> _groups = <TutorGroup>[];
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -27,6 +34,7 @@ class _StudentsPageState extends State<StudentsPage> {
   void initState() {
     super.initState();
     _studentService = StudentService(token: widget.token);
+    _groupService = GroupService(token: widget.token);
     _loadStudents();
   }
 
@@ -36,11 +44,13 @@ class _StudentsPageState extends State<StudentsPage> {
     super.dispose();
   }
 
+  bool get _isGroupMode => _viewMode == _StudentsViewMode.groups;
+
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text('Students'),
+      navigationBar: CupertinoNavigationBar(
+        middle: Text(_isGroupMode ? 'Groups' : 'Students'),
       ),
       child: SafeArea(
         child: Stack(
@@ -51,19 +61,26 @@ class _StudentsPageState extends State<StudentsPage> {
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
                   child: CupertinoSearchTextField(
                     controller: _searchController,
-                    onChanged: (_) => _loadStudents(),
-                    onSubmitted: (_) => _loadStudents(),
+                    onChanged: (_) => _reloadCurrentMode(),
+                    onSubmitted: (_) => _reloadCurrentMode(),
                   ),
                 ),
                 Expanded(child: _buildBody()),
               ],
             ),
             Positioned(
+              left: 16,
+              bottom: 12,
+              child: _buildModeSwitch(),
+            ),
+            Positioned(
               right: 16,
               bottom: 12,
               child: CupertinoButton(
                 padding: EdgeInsets.zero,
-                onPressed: _showCreateStudentSheet,
+                onPressed: _isGroupMode
+                    ? _showCreateGroupSheet
+                    : _showCreateStudentSheet,
                 child: Container(
                   width: 54,
                   height: 54,
@@ -85,6 +102,85 @@ class _StudentsPageState extends State<StudentsPage> {
     );
   }
 
+  Widget _buildModeSwitch() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: CupertinoColors.secondarySystemGroupedBackground
+            .resolveFrom(context),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: const <BoxShadow>[
+          BoxShadow(
+            color: Color(0x1A000000),
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          _modeChip(
+            label: 'Students',
+            icon: CupertinoIcons.person_2,
+            selected: !_isGroupMode,
+            onTap: () => _setViewMode(_StudentsViewMode.students),
+          ),
+          _modeChip(
+            label: 'Groups',
+            icon: CupertinoIcons.person_3,
+            selected: _isGroupMode,
+            onTap: () => _setViewMode(_StudentsViewMode.groups),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _modeChip({
+    required String label,
+    required IconData icon,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected
+              ? CupertinoColors.activeBlue
+              : CupertinoColors.transparent,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(
+              icon,
+              size: 16,
+              color: selected
+                  ? CupertinoColors.white
+                  : CupertinoColors.secondaryLabel.resolveFrom(context),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: selected
+                    ? CupertinoColors.white
+                    : CupertinoColors.secondaryLabel.resolveFrom(context),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildBody() {
     if (_isLoading) {
       return const Center(child: CupertinoActivityIndicator());
@@ -92,6 +188,27 @@ class _StudentsPageState extends State<StudentsPage> {
     if (_errorMessage != null) {
       return Center(child: Text(_errorMessage!));
     }
+
+    if (_isGroupMode) {
+      if (_groups.isEmpty) {
+        return const Center(
+          child: Text(
+            'No groups found.',
+            style: TextStyle(color: CupertinoColors.systemGrey),
+          ),
+        );
+      }
+      return ListView.separated(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 90),
+        itemCount: _groups.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        itemBuilder: (BuildContext context, int index) {
+          final TutorGroup group = _groups[index];
+          return _groupTile(group);
+        },
+      );
+    }
+
     if (_students.isEmpty) {
       return const Center(
         child: Text(
@@ -107,90 +224,193 @@ class _StudentsPageState extends State<StudentsPage> {
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (BuildContext context, int index) {
         final Student student = _students[index];
-        return Dismissible(
-          key: ValueKey<int>(student.id),
-          direction: DismissDirection.endToStart,
-          background: Container(
-            decoration: BoxDecoration(
-              color: CupertinoColors.systemRed.resolveFrom(context),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            alignment: Alignment.centerRight,
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            child: const Icon(CupertinoIcons.delete, color: CupertinoColors.white),
-          ),
-          confirmDismiss: (_) => _confirmDelete(student),
-          onDismissed: (_) {
+        return _studentTile(
+          student: student,
+          confirmDismiss: () => _confirmDelete(student),
+          onDismissed: () {
             setState(() {
-              _students = _students.where((Student s) => s.id != student.id).toList();
+              _students =
+                  _students.where((Student s) => s.id != student.id).toList();
             });
           },
-          child: GestureDetector(
-            onTap: () => _openStudentDetailPage(student.id),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: CupertinoColors.secondarySystemGroupedBackground
-                    .resolveFrom(context),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: <Widget>[
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: _parseHexColor(student.color).withOpacity(0.18),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: _parseHexColor(student.color),
-                        width: 1.4,
-                      ),
-                    ),
-                    child: Center(
-                      child: Icon(
-                        CupertinoIcons.person_fill,
-                        size: 18,
-                        color: _parseHexColor(student.color),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          student.name,
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        if (student.phone != null && student.phone!.isNotEmpty) ...<Widget>[
-                          const SizedBox(height: 4),
-                          Text(
-                            student.phone!,
-                            style: const TextStyle(
-                              color: CupertinoColors.systemGrey,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const Icon(
-                    CupertinoIcons.chevron_forward,
-                    size: 18,
-                    color: CupertinoColors.systemGrey2,
-                  ),
-                ],
-              ),
-            ),
-          ),
         );
       },
     );
+  }
+
+  Widget _groupTile(TutorGroup group) {
+    final Color accent = _parseHexColor(group.color);
+    return Dismissible(
+      key: ValueKey<String>('group-${group.id}'),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        decoration: BoxDecoration(
+          color: CupertinoColors.systemRed.resolveFrom(context),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        child: const Icon(CupertinoIcons.delete, color: CupertinoColors.white),
+      ),
+      confirmDismiss: (_) => _confirmDeleteGroup(group),
+      onDismissed: (_) {
+        setState(() {
+          _groups = _groups.where((TutorGroup g) => g.id != group.id).toList();
+        });
+      },
+      child: GestureDetector(
+        onTap: () => _openGroupDetailPage(group),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: CupertinoColors.secondarySystemGroupedBackground
+                .resolveFrom(context),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: <Widget>[
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: accent.withOpacity(0.18),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: accent, width: 1.4),
+                ),
+                child: Center(
+                  child: Icon(
+                    CupertinoIcons.person_3_fill,
+                    size: 18,
+                    color: accent,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  group.name,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const Icon(
+                CupertinoIcons.chevron_forward,
+                size: 18,
+                color: CupertinoColors.systemGrey2,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _studentTile({
+    required Student student,
+    required Future<bool> Function() confirmDismiss,
+    required VoidCallback onDismissed,
+  }) {
+    return Dismissible(
+      key: ValueKey<String>('student-${student.id}'),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        decoration: BoxDecoration(
+          color: CupertinoColors.systemRed.resolveFrom(context),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        child: const Icon(CupertinoIcons.delete, color: CupertinoColors.white),
+      ),
+      confirmDismiss: (_) => confirmDismiss(),
+      onDismissed: (_) => onDismissed(),
+      child: GestureDetector(
+        onTap: () => _openStudentDetailPage(student.id),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: CupertinoColors.secondarySystemGroupedBackground
+                .resolveFrom(context),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: <Widget>[
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: _parseHexColor(student.color).withOpacity(0.18),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: _parseHexColor(student.color),
+                    width: 1.4,
+                  ),
+                ),
+                child: Center(
+                  child: Icon(
+                    CupertinoIcons.person_fill,
+                    size: 18,
+                    color: _parseHexColor(student.color),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      student.name,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (student.phone != null &&
+                        student.phone!.isNotEmpty) ...<Widget>[
+                      const SizedBox(height: 4),
+                      Text(
+                        student.phone!,
+                        style: const TextStyle(
+                          color: CupertinoColors.systemGrey,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const Icon(
+                CupertinoIcons.chevron_forward,
+                size: 18,
+                color: CupertinoColors.systemGrey2,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _setViewMode(_StudentsViewMode mode) async {
+    if (_viewMode == mode) {
+      return;
+    }
+    setState(() {
+      _viewMode = mode;
+      _errorMessage = null;
+      _searchController.clear();
+    });
+    await _reloadCurrentMode();
+  }
+
+  Future<void> _reloadCurrentMode() async {
+    if (_isGroupMode) {
+      await _loadGroups();
+    } else {
+      await _loadStudents();
+    }
   }
 
   Future<void> _loadStudents() async {
@@ -224,6 +444,37 @@ class _StudentsPageState extends State<StudentsPage> {
     }
   }
 
+  Future<void> _loadGroups() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final List<TutorGroup> groups = await _groupService.listGroups(
+        search: _searchController.text,
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _groups = groups;
+      });
+    } on GroupServiceException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _errorMessage = error.message;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   Future<void> _showCreateStudentSheet() async {
     final bool? created = await Navigator.of(context).push<bool>(
       CupertinoPageRoute<bool>(
@@ -233,6 +484,33 @@ class _StudentsPageState extends State<StudentsPage> {
     );
     if (created == true) {
       await _loadStudents();
+    }
+  }
+
+  Future<void> _showCreateGroupSheet() async {
+    final bool? created = await Navigator.of(context).push<bool>(
+      CupertinoPageRoute<bool>(
+        builder: (BuildContext context) =>
+            CreateGroupPage(groupService: _groupService),
+      ),
+    );
+    if (created == true) {
+      await _loadGroups();
+    }
+  }
+
+  Future<void> _openGroupDetailPage(TutorGroup group) async {
+    final bool? changed = await Navigator.of(context).push<bool>(
+      CupertinoPageRoute<bool>(
+        builder: (BuildContext context) => GroupDetailPage(
+          group: group,
+          groupService: _groupService,
+          studentService: _studentService,
+        ),
+      ),
+    );
+    if (changed == true) {
+      await _loadGroups();
     }
   }
 
@@ -246,7 +524,7 @@ class _StudentsPageState extends State<StudentsPage> {
       ),
     );
     if (changed == true) {
-      await _loadStudents();
+      await _reloadCurrentMode();
     }
   }
 
@@ -257,7 +535,9 @@ class _StudentsPageState extends State<StudentsPage> {
       builder: (BuildContext context) {
         return CupertinoAlertDialog(
           title: const Text('Delete Student'),
-          content: Text('Delete ${student.name}? This will set status to inactive.'),
+          content: Text(
+            'Delete ${student.name}? This will set status to inactive.',
+          ),
           actions: <Widget>[
             CupertinoDialogAction(
               onPressed: () {
@@ -273,6 +553,49 @@ class _StudentsPageState extends State<StudentsPage> {
                   await _studentService.deleteStudent(student.id);
                   shouldDelete = true;
                 } on StudentServiceException catch (error) {
+                  shouldDelete = false;
+                  if (mounted) {
+                    await _showErrorDialog(error.message);
+                  }
+                }
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                }
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+    return shouldDelete == true;
+  }
+
+  Future<bool> _confirmDeleteGroup(TutorGroup group) async {
+    bool? shouldDelete;
+    await showCupertinoDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoAlertDialog(
+          title: const Text('Delete Group'),
+          content: Text(
+            'Delete ${group.name}? This will set status to inactive.',
+          ),
+          actions: <Widget>[
+            CupertinoDialogAction(
+              onPressed: () {
+                shouldDelete = false;
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () async {
+                try {
+                  await _groupService.deleteGroup(group.id);
+                  shouldDelete = true;
+                } on GroupServiceException catch (error) {
                   shouldDelete = false;
                   if (mounted) {
                     await _showErrorDialog(error.message);
@@ -540,12 +863,16 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                     const SizedBox(height: 12),
                   ],
                   const SizedBox(height: 10),
-                  SizedBox(
-                    height: 46,
-                    child: CupertinoButton(
-                      color: CupertinoColors.systemRed.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(12),
-                      onPressed: _isDeleting ? null : _deleteStudent,
+                  CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    onPressed: _isDeleting ? null : _deleteStudent,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: CupertinoColors.systemRed.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: <Widget>[
