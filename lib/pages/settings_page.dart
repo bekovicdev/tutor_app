@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:tutor_app/auth/auth_service.dart';
 import 'package:tutor_app/l10n/l10n_ext.dart';
+import 'package:tutor_app/notifications/fcm_service.dart';
 import 'package:tutor_app/settings/app_settings.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
@@ -54,11 +55,16 @@ class _SettingsPageState extends State<SettingsPage> {
     final bool notifications = await AppSettings.notificationsEnabled();
     String individual = widget.user.individualLessonCost ?? '';
     String group = widget.user.groupLessonCost ?? '';
+    bool notificationsFromApi = notifications;
 
     try {
       final AuthUser fresh = await _authService.me(widget.token);
       individual = fresh.individualLessonCost ?? individual;
       group = fresh.groupLessonCost ?? group;
+      if (fresh.notificationsEnabled != null) {
+        notificationsFromApi = fresh.notificationsEnabled!;
+        await AppSettings.setNotificationsEnabled(notificationsFromApi);
+      }
       await AppSettings.setIndividualLessonCost(individual);
       await AppSettings.setGroupLessonCost(group);
       widget.onUserUpdated?.call(fresh);
@@ -77,7 +83,7 @@ class _SettingsPageState extends State<SettingsPage> {
       return;
     }
     setState(() {
-      _notificationsEnabled = notifications;
+      _notificationsEnabled = notificationsFromApi;
       _individualCostController.text = individual;
       _groupCostController.text = group;
       _loadingPrefs = false;
@@ -88,7 +94,24 @@ class _SettingsPageState extends State<SettingsPage> {
     setState(() {
       _notificationsEnabled = value;
     });
-    await AppSettings.setNotificationsEnabled(value);
+    try {
+      await FcmService.instance.setNotificationsEnabled(
+        authToken: widget.token,
+        enabled: value,
+      );
+      final AuthUser updated = widget.user.copyWith(
+        notificationsEnabled: value,
+      );
+      widget.onUserUpdated?.call(updated);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _notificationsEnabled = !value;
+      });
+      await AppSettings.setNotificationsEnabled(!value);
+    }
   }
 
   Future<void> _saveCosts() async {

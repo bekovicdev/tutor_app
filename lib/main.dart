@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -10,6 +11,7 @@ import 'package:tutor_app/auth/auth_page.dart';
 import 'package:tutor_app/auth/auth_service.dart';
 import 'package:tutor_app/auth/auth_storage.dart';
 import 'package:tutor_app/l10n/l10n_ext.dart';
+import 'package:tutor_app/notifications/fcm_service.dart';
 import 'package:tutor_app/pages/journal_page.dart';
 import 'package:tutor_app/pages/payment_page.dart';
 import 'package:tutor_app/pages/schedule_page.dart';
@@ -23,6 +25,8 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    await FcmService.instance.initialize();
   } catch (_) {
     // App can still run without Firebase; FCM token will be skipped.
   }
@@ -254,6 +258,7 @@ class _AppRootState extends State<AppRoot> {
 
   Future<void> _onAuthenticated(AuthSession session) async {
     await _authStorage.saveToken(session.token);
+    await FcmService.instance.syncTokenForSession(token: session.token);
     if (!mounted) {
       return;
     }
@@ -267,6 +272,10 @@ class _AppRootState extends State<AppRoot> {
     await _authStorage.saveToken(token);
     await AppSettings.setIndividualLessonCost(user.individualLessonCost);
     await AppSettings.setGroupLessonCost(user.groupLessonCost);
+    if (user.notificationsEnabled != null) {
+      await AppSettings.setNotificationsEnabled(user.notificationsEnabled!);
+    }
+    await FcmService.instance.syncTokenForSession(token: token);
     if (!mounted) {
       return;
     }

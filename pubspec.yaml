@@ -46,6 +46,7 @@ dependencies:
   flutter_colorpicker: ^1.1.0
   cupertino_native_better: ^1.5.2
   image_picker: ^1.2.2
+  flutter_local_notifications: ^20.1.0
 
 dev_dependencies:
   flutter_test:

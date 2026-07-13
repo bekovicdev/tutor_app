@@ -42,6 +42,10 @@ Required fields:
 - `email` (valid email)
 - `password` (string)
 
+Optional fields:
+
+- `fcm_token` (string) — stored when the user has notifications enabled
+
 ### OAuth Redirect URL (Google / Apple)
 
 Returns the provider authorization URL for mobile/web frontend.
@@ -90,9 +94,11 @@ Includes `individual_lesson_cost` and `group_lesson_cost` when set.
 
 **Endpoint:** `PUT /api/user`
 
-Optional fields: `name`, `email`, `phone`, `individual_lesson_cost`, `group_lesson_cost`, `fcm_token`, `status`.
+Optional fields: `name`, `email`, `phone`, `individual_lesson_cost`, `group_lesson_cost`, `fcm_token`, `notifications_enabled`, `status`.
 
 Settings default lesson fees are saved here (not only on device).
+
+Setting `notifications_enabled` to `false` clears `fcm_token`. See [notifications-api.md](notifications-api.md).
 
 ### Logout
 

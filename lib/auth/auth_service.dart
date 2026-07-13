@@ -24,6 +24,7 @@ class AuthUser {
     this.socialId,
     this.individualLessonCost,
     this.groupLessonCost,
+    this.notificationsEnabled,
   });
 
   final int id;
@@ -35,6 +36,7 @@ class AuthUser {
   final String? socialId;
   final String? individualLessonCost;
   final String? groupLessonCost;
+  final bool? notificationsEnabled;
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
     return AuthUser(
@@ -47,6 +49,7 @@ class AuthUser {
       socialId: json['social_id'] as String?,
       individualLessonCost: json['individual_lesson_cost']?.toString(),
       groupLessonCost: json['group_lesson_cost']?.toString(),
+      notificationsEnabled: json['notifications_enabled'] as bool?,
     );
   }
 
@@ -55,6 +58,7 @@ class AuthUser {
     String? email,
     String? individualLessonCost,
     String? groupLessonCost,
+    bool? notificationsEnabled,
   }) {
     return AuthUser(
       id: id,
@@ -66,6 +70,8 @@ class AuthUser {
       socialId: socialId,
       individualLessonCost: individualLessonCost ?? this.individualLessonCost,
       groupLessonCost: groupLessonCost ?? this.groupLessonCost,
+      notificationsEnabled:
+          notificationsEnabled ?? this.notificationsEnabled,
     );
   }
 }
@@ -129,13 +135,18 @@ class AuthService {
   Future<AuthSession> login({
     required String email,
     required String password,
+    String? fcmToken,
   }) {
+    final Map<String, dynamic> body = <String, dynamic>{
+      'email': email,
+      'password': password,
+    };
+    if (fcmToken != null && fcmToken.isNotEmpty) {
+      body['fcm_token'] = fcmToken;
+    }
     return _post(
       endpoint: '/login',
-      body: <String, dynamic>{
-        'email': email,
-        'password': password,
-      },
+      body: body,
     );
   }
 
@@ -168,6 +179,9 @@ class AuthService {
     num? groupLessonCost,
     bool clearIndividualLessonCost = false,
     bool clearGroupLessonCost = false,
+    String? fcmToken,
+    bool clearFcmToken = false,
+    bool? notificationsEnabled,
   }) async {
     final Map<String, dynamic> body = <String, dynamic>{};
     if (name != null) {
@@ -188,6 +202,14 @@ class AuthService {
       body['group_lesson_cost'] = null;
     } else if (groupLessonCost != null) {
       body['group_lesson_cost'] = groupLessonCost;
+    }
+    if (clearFcmToken) {
+      body['fcm_token'] = null;
+    } else if (fcmToken != null) {
+      body['fcm_token'] = fcmToken;
+    }
+    if (notificationsEnabled != null) {
+      body['notifications_enabled'] = notificationsEnabled;
     }
     final Map<String, dynamic> json = await _request(
       method: 'PUT',

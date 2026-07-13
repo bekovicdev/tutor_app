@@ -496,13 +496,14 @@ class _AuthPageState extends State<AuthPage> {
 
     try {
       late final AuthSession session;
+      final String? fcmToken = await _fcmService.getDeviceToken();
       if (_mode == AuthMode.login) {
         session = await widget.authService.login(
           email: email,
           password: password,
+          fcmToken: fcmToken,
         );
       } else {
-        final String? fcmToken = await _fcmService.getDeviceToken();
         session = await widget.authService.register(
           RegisterRequest(
             name: _nameController.text.trim(),

@@ -82,6 +82,7 @@ or:
 ## API Docs
 
 - Auth API: `docs/login-auth-api.md`
+- Notifications API: `docs/notifications-api.md`
 - Students API: `docs/students-api.md`
 - Groups API: `docs/groups-api.md`
 - Lessons API: `docs/lessons-api.md`
