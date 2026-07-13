@@ -6,19 +6,19 @@ Bu proje, ozel ogretmenler icin planlama ve takip uygulamasidir.
 
 ### Base URL
 
-`/api` varsayilan API prefix'idir.  
-Versionlanmis route'lar ayni endpoint yapisiyla `/api/v1` altinda da kullanilabilir.
+`/api` is the default API prefix.  
+Versioned routes are also available under `/api/v1` with the same endpoint structure.
 
 ### Authentication
 
-Public endpoint'ler (token gerekmez):
+Public endpoints (no token required):
 
 - `POST /api/register`
 - `POST /api/login`
 - `GET /api/auth/{provider}/redirect`
 - `GET /api/auth/{provider}/callback`
 
-Protected endpoint'ler Sanctum bearer token gerektirir:
+Protected endpoints require Sanctum bearer token:
 
 ```text
 Authorization: Bearer {token}
@@ -26,7 +26,7 @@ Authorization: Bearer {token}
 
 ### Response Patterns
 
-Basarili response'lar her zaman su alani icerir:
+Success responses always include:
 
 ```json
 {
@@ -34,9 +34,9 @@ Basarili response'lar her zaman su alani icerir:
 }
 ```
 
-Bir cok response `message` ve/veya `data` da icerir.
+Many responses also include `message` and/or `data`.
 
-Validation/business error response'lari genellikle:
+Validation/business errors commonly return:
 
 ```json
 {
@@ -47,7 +47,7 @@ Validation/business error response'lari genellikle:
 }
 ```
 
-veya:
+or:
 
 ```json
 {
@@ -58,26 +58,31 @@ veya:
 
 ### Common Status Codes
 
-- `200 OK`: Basarili
-- `201 Created`: Kayit olusturuldu
-- `401 Unauthorized`: Gecersiz giris bilgileri / eksik auth
-- `403 Forbidden`: Kullanici dogrulanmis ama yetkisi yok (ornek: pasif hesap)
-- `404 Not Found`: Kaynak mevcut scope icinde bulunamadi
-- `422 Unprocessable Entity`: Validation veya business rule hatasi
-- `503 Service Unavailable`: OAuth provider config eksik
+- `200 OK`: Success
+- `201 Created`: Resource created
+- `401 Unauthorized`: Invalid credentials / missing auth
+- `403 Forbidden`: Authenticated but not allowed (example: inactive account)
+- `404 Not Found`: Resource does not exist for current scope
+- `422 Unprocessable Entity`: Validation or business rule error
+- `503 Service Unavailable`: Missing OAuth provider config
 
-### Ownership and Access Rules
+### Ownership & Access Rules
 
-- Tutor scope'undaki kaynaklar (`students`, `groups`, `lessons`, `student-notes`) sadece authenticated tutor tarafindan erisilebilir.
-- Admin API endpoint'leri hem `auth:sanctum` hem de `admin` middleware'i ile korunur.
+- Tutor-scoped resources (`students`, `groups`, `lessons`, `payments`, `student-notes`) are restricted to the authenticated tutor.
+- Admin API endpoints are protected by both `auth:sanctum` and `admin` middleware.
 
 ### Domain Rules
 
-- Lesson olusturulurken yalnizca bir tane baglanti verilir: ya `student_id` ya da `group_id` (ikisi birden veya hicbiri olamaz).
-- Student notes sadece group lesson'lar icin kullanilabilir.
-- Tutor/admin API'lerinde student/group/user silme islemleri hard delete degil, deactivation (`status = 0`) olarak uygulanir.
+- A lesson must belong to either one `student_id` or one `group_id` at creation time (not both, not neither).
+- Student notes are only available for group lessons.
+- Deleting students/groups/users in tutor/admin APIs is implemented as deactivation (`status = 0`) rather than hard delete.
+- Lesson `payment_status` is one of `unpaid`, `paid`, `prepaid`. Settled statuses (`paid`, `prepaid`) keep `is_paid_for=true` for backward compatibility.
+- Financial analytics exclude cancelled and free lessons from billable totals.
 
 ## API Docs
 
 - Auth API: `docs/login-auth-api.md`
+- Students API: `docs/students-api.md`
 - Groups API: `docs/groups-api.md`
+- Lessons API: `docs/lessons-api.md`
+- Payments API: `docs/payments-api.md`

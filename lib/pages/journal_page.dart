@@ -1,19 +1,644 @@
 import 'package:flutter/cupertino.dart';
+import 'package:tutor_app/lessons/lesson_service.dart';
+import 'package:tutor_app/pages/create_lesson_page.dart';
 
-class JournalPage extends StatelessWidget {
-  const JournalPage({super.key});
+class JournalPage extends StatefulWidget {
+  const JournalPage({
+    required this.token,
+    super.key,
+  });
+
+  final String token;
+
+  @override
+  State<JournalPage> createState() => _JournalPageState();
+}
+
+class _JournalPageState extends State<JournalPage> {
+  static const double _hourHeight = 72;
+  static const int _startHour = 7;
+  static const int _endHour = 22;
+
+  late final LessonService _lessonService;
+
+  DateTime _weekStart = _mondayOf(DateTime.now());
+  DateTime _selectedDay = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+    DateTime.now().day,
+  );
+  List<Lesson> _weekLessons = <Lesson>[];
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _lessonService = LessonService(token: widget.token);
+    _loadWeek();
+  }
+
+  static DateTime _mondayOf(DateTime date) {
+    final DateTime day = DateTime(date.year, date.month, date.day);
+    return day.subtract(Duration(days: day.weekday - DateTime.monday));
+  }
+
+  String _formatDate(DateTime date) {
+    final String y = date.year.toString().padLeft(4, '0');
+    final String m = date.month.toString().padLeft(2, '0');
+    final String d = date.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  List<DateTime> get _weekDays => List<DateTime>.generate(
+        7,
+        (int i) => _weekStart.add(Duration(days: i)),
+      );
+
+  List<Lesson> get _selectedDayLessons {
+    final String key = _formatDate(_selectedDay);
+    final List<Lesson> lessons = _weekLessons
+        .where((Lesson lesson) => lesson.date.startsWith(key))
+        .toList()
+      ..sort((Lesson a, Lesson b) => a.startMinutes.compareTo(b.startMinutes));
+    return lessons;
+  }
+
+  Future<void> _loadWeek() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final DateTime weekEnd = _weekStart.add(const Duration(days: 6));
+      final List<Lesson> lessons = await _lessonService.calendar(
+        startDate: _formatDate(_weekStart),
+        endDate: _formatDate(weekEnd),
+        source: LessonSource.journal,
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _weekLessons = lessons;
+      });
+    } on LessonServiceException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _errorMessage = error.message;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _shiftWeek(int deltaWeeks) {
+    setState(() {
+      _weekStart = _weekStart.add(Duration(days: 7 * deltaWeeks));
+      _selectedDay = _selectedDay.add(Duration(days: 7 * deltaWeeks));
+    });
+    _loadWeek();
+  }
+
+  void _goToToday() {
+    final DateTime today = DateTime.now();
+    setState(() {
+      _weekStart = _mondayOf(today);
+      _selectedDay = DateTime(today.year, today.month, today.day);
+    });
+    _loadWeek();
+  }
+
+  Future<void> _openCreateLesson() async {
+    final bool? created = await Navigator.of(context).push<bool>(
+      CupertinoPageRoute<bool>(
+        builder: (BuildContext context) => CreateLessonPage(
+          token: widget.token,
+          source: LessonSource.journal,
+          initialDate: _selectedDay,
+        ),
+      ),
+    );
+    if (created == true) {
+      await _loadWeek();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return const CupertinoPageScaffold(
+    return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: Text('Journal'),
-      ),
-      child: SafeArea(
-        child: Center(
-          child: Text('Journal page'),
+        middle: const Text('Journal'),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: _openCreateLesson,
+              child: const Icon(CupertinoIcons.add),
+            ),
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: _goToToday,
+              child: const Text('Today'),
+            ),
+          ],
         ),
       ),
+      child: SafeArea(
+        child: Column(
+          children: <Widget>[
+            _buildWeekHeader(),
+            _buildWeekRow(),
+            Expanded(child: _buildDayTimeline()),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWeekHeader() {
+    final DateTime weekEnd = _weekStart.add(const Duration(days: 6));
+    final String label =
+        '${_shortMonthDay(_weekStart)} – ${_shortMonthDay(weekEnd)}';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+      child: Row(
+        children: <Widget>[
+          CupertinoButton(
+            padding: const EdgeInsets.all(8),
+            onPressed: () => _shiftWeek(-1),
+            child: const Icon(CupertinoIcons.chevron_left),
+          ),
+          Expanded(
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          CupertinoButton(
+            padding: const EdgeInsets.all(8),
+            onPressed: () => _shiftWeek(1),
+            child: const Icon(CupertinoIcons.chevron_right),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _shortMonthDay(DateTime date) {
+    const List<String> months = <String>[
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[date.month - 1]} ${date.day}';
+  }
+
+  Widget _buildWeekRow() {
+    const List<String> labels = <String>[
+      'Mon',
+      'Tue',
+      'Wed',
+      'Thu',
+      'Fri',
+      'Sat',
+      'Sun',
+    ];
+    final DateTime today = DateTime.now();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 10),
+      child: Row(
+        children: List<Widget>.generate(7, (int index) {
+          final DateTime day = _weekDays[index];
+          final bool selected = _isSameDay(day, _selectedDay);
+          final bool isToday = _isSameDay(day, today);
+          final int lessonCount = _weekLessons
+              .where((Lesson l) => l.date.startsWith(_formatDate(day)))
+              .length;
+
+          return Expanded(
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedDay = day;
+                });
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 160),
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? CupertinoColors.activeBlue
+                      : CupertinoColors.secondarySystemGroupedBackground
+                          .resolveFrom(context),
+                  borderRadius: BorderRadius.circular(12),
+                  border: isToday && !selected
+                      ? Border.all(
+                          color: CupertinoColors.activeBlue,
+                          width: 1.2,
+                        )
+                      : null,
+                ),
+                child: Column(
+                  children: <Widget>[
+                    Text(
+                      labels[index],
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: selected
+                            ? CupertinoColors.white
+                            : CupertinoColors.secondaryLabel
+                                .resolveFrom(context),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${day.day}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: selected
+                            ? CupertinoColors.white
+                            : CupertinoColors.label.resolveFrom(context),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: lessonCount > 0
+                            ? (selected
+                                ? CupertinoColors.white
+                                : CupertinoColors.activeBlue)
+                            : CupertinoColors.transparent,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildDayTimeline() {
+    if (_isLoading) {
+      return const Center(child: CupertinoActivityIndicator());
+    }
+    if (_errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: CupertinoColors.systemGrey),
+              ),
+              const SizedBox(height: 12),
+              CupertinoButton(
+                onPressed: _loadWeek,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final int totalHours = _endHour - _startHour;
+    final double timelineHeight = totalHours * _hourHeight;
+    final List<Lesson> lessons = _selectedDayLessons;
+    final int gridStartMinutes = _startHour * 60;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(0, 0, 12, 24),
+      child: SizedBox(
+        height: timelineHeight,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            SizedBox(
+              width: 52,
+              child: Column(
+                children: List<Widget>.generate(totalHours, (int index) {
+                  final int hour = _startHour + index;
+                  return SizedBox(
+                    height: _hourHeight,
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 0),
+                        child: Text(
+                          _formatHour(hour),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: CupertinoColors.secondaryLabel
+                                .resolveFrom(context),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
+            Expanded(
+              child: Stack(
+                children: <Widget>[
+                  Column(
+                    children: List<Widget>.generate(totalHours, (int index) {
+                      return Container(
+                        height: _hourHeight,
+                        decoration: BoxDecoration(
+                          border: Border(
+                            top: BorderSide(
+                              color: CupertinoColors.separator
+                                  .resolveFrom(context),
+                              width: 0.5,
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                  ...lessons.map((Lesson lesson) {
+                    return _buildLessonBlock(
+                      lesson,
+                      gridStartMinutes: gridStartMinutes,
+                      timelineHeight: timelineHeight,
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLessonBlock(
+    Lesson lesson, {
+    required int gridStartMinutes,
+    required double timelineHeight,
+  }) {
+    final int start = lesson.startMinutes - gridStartMinutes;
+    final int end = lesson.endMinutes - gridStartMinutes;
+    final int clippedStart = start.clamp(0, (_endHour - _startHour) * 60);
+    final int clippedEnd = end.clamp(0, (_endHour - _startHour) * 60);
+    if (clippedEnd <= clippedStart) {
+      return const SizedBox.shrink();
+    }
+
+    final double top = clippedStart / 60 * _hourHeight;
+    final double height =
+        ((clippedEnd - clippedStart) / 60 * _hourHeight).clamp(28.0, timelineHeight);
+
+    final Color accent = _parseHexColor(lesson.accentColor);
+    final Color bg = accent.withOpacity(0.18);
+    final bool cancelled = lesson.status == 'cancelled';
+    final bool completed = lesson.status == 'completed';
+
+    return Positioned(
+      top: top,
+      left: 4,
+      right: 4,
+      height: height,
+      child: GestureDetector(
+        onTap: () => _showLessonDetails(lesson),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: cancelled ? CupertinoColors.systemGrey5 : bg,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: cancelled ? CupertinoColors.systemGrey3 : accent,
+              width: 1.2,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                lesson.displayTitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: cancelled
+                      ? CupertinoColors.systemGrey
+                      : CupertinoColors.label.resolveFrom(context),
+                  decoration:
+                      cancelled ? TextDecoration.lineThrough : null,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${lesson.startAt} · ${lesson.durationMinutes}m'
+                '${completed ? ' · done' : ''}'
+                '${lesson.isGroup ? ' · group' : ''}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: cancelled
+                      ? CupertinoColors.systemGrey2
+                      : accent.withOpacity(0.95),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              if (height > 52 &&
+                  lesson.displaySubtitle != lesson.displayTitle) ...<Widget>[
+                const SizedBox(height: 2),
+                Text(
+                  lesson.displaySubtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: CupertinoColors.systemGrey,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatHour(int hour) {
+    final int h12 = hour % 12 == 0 ? 12 : hour % 12;
+    final String suffix = hour < 12 ? 'AM' : 'PM';
+    return '$h12 $suffix';
+  }
+
+  Color _parseHexColor(String? hex) {
+    if (hex == null || hex.isEmpty) {
+      return CupertinoColors.activeBlue;
+    }
+    final String value = hex.replaceAll('#', '').trim();
+    if (value.length != 6) {
+      return CupertinoColors.activeBlue;
+    }
+    final int? rgb = int.tryParse(value, radix: 16);
+    if (rgb == null) {
+      return CupertinoColors.activeBlue;
+    }
+    return Color.fromARGB(
+      255,
+      (rgb >> 16) & 0xFF,
+      (rgb >> 8) & 0xFF,
+      rgb & 0xFF,
+    );
+  }
+
+  Future<void> _showLessonDetails(Lesson lesson) async {
+    await showCupertinoModalPopup<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoActionSheet(
+          title: Text(lesson.displayTitle),
+          message: Text(
+            '${lesson.date} · ${lesson.startAt} · ${lesson.durationMinutes} min\n'
+            '${lesson.displaySubtitle}\n'
+            'Status: ${lesson.status}'
+            '${lesson.notes != null && lesson.notes!.isNotEmpty ? '\n${lesson.notes}' : ''}',
+          ),
+          actions: <Widget>[
+            if (lesson.status == 'scheduled')
+              CupertinoActionSheetAction(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  await _updateStatus(lesson, 'completed');
+                },
+                child: const Text('Mark Completed'),
+              ),
+            if (lesson.status != 'cancelled')
+              CupertinoActionSheetAction(
+                isDestructiveAction: true,
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  await _updateStatus(lesson, 'cancelled');
+                },
+                child: const Text('Cancel Lesson'),
+              ),
+            CupertinoActionSheetAction(
+              isDestructiveAction: true,
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _confirmDelete(lesson);
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+          cancelButton: CupertinoActionSheetAction(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _updateStatus(Lesson lesson, String status) async {
+    try {
+      await _lessonService.updateLesson(
+        id: lesson.id,
+        body: <String, dynamic>{'status': status},
+      );
+      await _loadWeek();
+    } on LessonServiceException catch (error) {
+      await _showError(error.message);
+    }
+  }
+
+  Future<void> _confirmDelete(Lesson lesson) async {
+    bool confirmed = false;
+    await showCupertinoDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoAlertDialog(
+          title: const Text('Delete Lesson'),
+          content: Text('Delete "${lesson.displayTitle}" permanently?'),
+          actions: <Widget>[
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () {
+                confirmed = true;
+                Navigator.of(context).pop();
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+    if (!confirmed) {
+      return;
+    }
+    try {
+      await _lessonService.deleteLesson(lesson.id);
+      await _loadWeek();
+    } on LessonServiceException catch (error) {
+      await _showError(error.message);
+    }
+  }
+
+  Future<void> _showError(String message) {
+    return showCupertinoDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoAlertDialog(
+          title: const Text('Journal'),
+          content: Text(message),
+          actions: <Widget>[
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

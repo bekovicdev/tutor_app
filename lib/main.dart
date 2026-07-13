@@ -251,9 +251,9 @@ class AppShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final List<Widget> pages = <Widget>[
       StudentsPage(token: session.token),
-      const SchedulePage(),
-      const JournalPage(),
-      const PaymentPage(),
+      SchedulePage(token: session.token),
+      JournalPage(token: session.token),
+      PaymentPage(token: session.token),
       SettingsPage(
         userName: session.user.name,
         onLogout: onLogout,

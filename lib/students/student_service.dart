@@ -92,13 +92,19 @@ class StudentService {
   final String token;
   final String _baseUrl;
 
-  Future<List<Student>> listStudents({String? search, int status = 1}) async {
+  Future<List<Student>> listStudents({
+    String? search,
+    int status = 1,
+    String sortBy = 'created_at',
+    String sortDirection = 'desc',
+    int perPage = 100,
+  }) async {
     final Uri uri = Uri.parse('$_baseUrl/students').replace(
       queryParameters: <String, String>{
         'status': '$status',
-        'sort_by': 'created_at',
-        'sort_direction': 'desc',
-        'per_page': '100',
+        'sort_by': sortBy,
+        'sort_direction': sortDirection,
+        'per_page': '$perPage',
         if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
       },
     );
@@ -155,6 +161,16 @@ class StudentService {
   Future<void> deleteStudent(int id) async {
     final Uri uri = Uri.parse('$_baseUrl/students/$id');
     await _request(method: 'DELETE', uri: uri);
+  }
+
+  Future<StudentBalance> getStudentBalance(int id) async {
+    final Uri uri = Uri.parse('$_baseUrl/students/$id/balance');
+    final Map<String, dynamic> json = await _request(method: 'GET', uri: uri);
+    final Map<String, dynamic>? data = json['data'] as Map<String, dynamic>?;
+    if (data == null) {
+      throw const StudentServiceException('Student balance is missing.');
+    }
+    return StudentBalance.fromJson(data);
   }
 
   Future<Map<String, dynamic>> _request({
@@ -243,6 +259,50 @@ class StudentSummary {
       lessonsCompleted: (json['lessons_completed'] as num?)?.toInt() ?? 0,
       lessonsCancelled: (json['lessons_cancelled'] as num?)?.toInt() ?? 0,
       lastLessonDate: json['last_lesson_date'] as String?,
+    );
+  }
+}
+
+class StudentBalance {
+  const StudentBalance({
+    required this.studentId,
+    required this.studentName,
+    required this.currency,
+    required this.totalAmount,
+    required this.paidAmount,
+    required this.prepaidAmount,
+    required this.unpaidAmount,
+    required this.settledAmount,
+    required this.cashCollected,
+    required this.cashRefunded,
+    required this.cashNet,
+  });
+
+  final int studentId;
+  final String studentName;
+  final String currency;
+  final num totalAmount;
+  final num paidAmount;
+  final num prepaidAmount;
+  final num unpaidAmount;
+  final num settledAmount;
+  final num cashCollected;
+  final num cashRefunded;
+  final num cashNet;
+
+  factory StudentBalance.fromJson(Map<String, dynamic> json) {
+    return StudentBalance(
+      studentId: (json['student_id'] as num?)?.toInt() ?? 0,
+      studentName: (json['student_name'] as String?) ?? '',
+      currency: (json['currency'] as String?) ?? '',
+      totalAmount: (json['total_amount'] as num?) ?? 0,
+      paidAmount: (json['paid_amount'] as num?) ?? 0,
+      prepaidAmount: (json['prepaid_amount'] as num?) ?? 0,
+      unpaidAmount: (json['unpaid_amount'] as num?) ?? 0,
+      settledAmount: (json['settled_amount'] as num?) ?? 0,
+      cashCollected: (json['cash_collected'] as num?) ?? 0,
+      cashRefunded: (json['cash_refunded'] as num?) ?? 0,
+      cashNet: (json['cash_net'] as num?) ?? 0,
     );
   }
 }
