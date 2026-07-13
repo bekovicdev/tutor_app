@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/create_lesson_page.dart';
+import 'package:tutor_app/theme/ios26_theme.dart';
 
 class SchedulePage extends StatefulWidget {
   const SchedulePage({
@@ -128,6 +129,7 @@ class _SchedulePageState extends State<SchedulePage> {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: const Text('Schedule'),
+        border: appNavigationBarBorder,
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[

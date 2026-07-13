@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:tutor_app/theme/ios26_theme.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({
@@ -13,8 +14,9 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text('Settings'),
+      navigationBar: CupertinoNavigationBar(
+        middle: const Text('Settings'),
+        border: appNavigationBarBorder,
       ),
       child: SafeArea(
         child: Padding(

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
+import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
@@ -12,6 +13,7 @@ import 'package:tutor_app/pages/payment_page.dart';
 import 'package:tutor_app/pages/schedule_page.dart';
 import 'package:tutor_app/pages/settings_page.dart';
 import 'package:tutor_app/pages/students_page.dart';
+import 'package:tutor_app/theme/ios26_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,9 +30,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const CupertinoApp(
+    return CupertinoApp(
       title: 'Tutor App',
-      home: AppRoot(),
+      navigatorObservers: supportsLiquidGlass
+          ? <NavigatorObserver>[CNTabBarRouteObserver()]
+          : const <NavigatorObserver>[],
+      theme: buildAppCupertinoTheme(Brightness.light),
+      home: const AppRoot(),
     );
   }
 }
@@ -70,7 +76,6 @@ class _AppRootState extends State<AppRoot> {
         await _handleDeepLink(initialUri);
       }
     } on MissingPluginException {
-      // Plugin may be unavailable in hot-reload lifecycle.
       return;
     } catch (_) {
       // Ignore malformed initial links.
@@ -81,9 +86,7 @@ class _AppRootState extends State<AppRoot> {
         (Uri uri) {
           _handleDeepLink(uri);
         },
-        onError: (_) {
-          // Keep app running if plugin stream fails.
-        },
+        onError: (_) {},
       );
     } on MissingPluginException {
       // Plugin may be unavailable on current run.
@@ -214,30 +217,35 @@ class _AppRootState extends State<AppRoot> {
 
   @override
   Widget build(BuildContext context) {
+    final Brightness brightness = MediaQuery.platformBrightnessOf(context);
+    final CupertinoThemeData theme = buildAppCupertinoTheme(brightness);
+
+    Widget child;
     if (_isCheckingSession) {
-      return const CupertinoPageScaffold(
+      child = const CupertinoPageScaffold(
         child: SafeArea(
           child: Center(
             child: CupertinoActivityIndicator(),
           ),
         ),
       );
-    }
-
-    if (_session == null) {
-      return AuthPage(
+    } else if (_session == null) {
+      child = AuthPage(
         authService: _authService,
         onAuthenticated: _onAuthenticated,
       );
+    } else {
+      child = AppShell(
+        session: _session!,
+        onLogout: _logout,
+      );
     }
-    return AppShell(
-      session: _session!,
-      onLogout: _logout,
-    );
+
+    return CupertinoTheme(data: theme, child: child);
   }
 }
 
-class AppShell extends StatelessWidget {
+class AppShell extends StatefulWidget {
   const AppShell({
     required this.session,
     required this.onLogout,
@@ -248,44 +256,131 @@ class AppShell extends StatelessWidget {
   final Future<void> Function() onLogout;
 
   @override
-  Widget build(BuildContext context) {
-    final List<Widget> pages = <Widget>[
-      StudentsPage(token: session.token),
-      SchedulePage(token: session.token),
-      JournalPage(token: session.token),
-      PaymentPage(token: session.token),
-      SettingsPage(
-        userName: session.user.name,
-        onLogout: onLogout,
-      ),
-    ];
+  State<AppShell> createState() => _AppShellState();
+}
 
+class _AppShellState extends State<AppShell> {
+  int _index = 0;
+
+  List<Widget> _pages() => <Widget>[
+        StudentsPage(token: widget.session.token),
+        SchedulePage(token: widget.session.token),
+        JournalPage(token: widget.session.token),
+        PaymentPage(token: widget.session.token),
+        SettingsPage(
+          userName: widget.session.user.name,
+          onLogout: widget.onLogout,
+        ),
+      ];
+
+  static const List<BottomNavigationBarItem> _classicTabItems =
+      <BottomNavigationBarItem>[
+    BottomNavigationBarItem(
+      icon: Icon(CupertinoIcons.person_2),
+      label: 'Students',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(CupertinoIcons.calendar),
+      label: 'Schedule',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(CupertinoIcons.book),
+      label: 'Journal',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(CupertinoIcons.money_dollar),
+      label: 'Payment',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(CupertinoIcons.settings),
+      label: 'Settings',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    if (supportsLiquidGlass) {
+      return _buildLiquidGlassShell();
+    }
+    return _buildClassicShell();
+  }
+
+  Widget _buildClassicShell() {
+    final List<Widget> pages = _pages();
     return CupertinoTabScaffold(
-      tabBar: CupertinoTabBar(
-        items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.person_2),
-            label: 'Students',
+      tabBar: CupertinoTabBar(items: _classicTabItems),
+      tabBuilder: (BuildContext context, int index) => pages[index],
+    );
+  }
+
+  Widget _buildLiquidGlassShell() {
+    final List<Widget> pages = _pages();
+    return CupertinoPageScaffold(
+      backgroundColor: CupertinoTheme.of(context).scaffoldBackgroundColor,
+      child: Column(
+        children: <Widget>[
+          Expanded(
+            child: MediaQuery.removePadding(
+              context: context,
+              removeBottom: true,
+              child: IndexedStack(
+                index: _index,
+                children: pages,
+              ),
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.calendar),
-            label: 'Schedule',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.book),
-            label: 'Journal',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.money_dollar),
-            label: 'Payment',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.settings),
-            label: 'Settings',
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              child: CNTabBar(
+                currentIndex: _index,
+                onTap: (int value) {
+                  setState(() {
+                    _index = value;
+                  });
+                },
+                iconSize: 22,
+                height: 54,
+                items: const <CNTabBarItem>[
+                  CNTabBarItem(
+                    label: 'Students',
+                    icon: CNSymbol('person.2'),
+                    activeIcon: CNSymbol('person.2.fill'),
+                    customIcon: CupertinoIcons.person_2,
+                    activeCustomIcon: CupertinoIcons.person_2_fill,
+                  ),
+                  CNTabBarItem(
+                    label: 'Schedule',
+                    icon: CNSymbol('calendar'),
+                    customIcon: CupertinoIcons.calendar,
+                  ),
+                  CNTabBarItem(
+                    label: 'Journal',
+                    icon: CNSymbol('book'),
+                    activeIcon: CNSymbol('book.fill'),
+                    customIcon: CupertinoIcons.book,
+                    activeCustomIcon: CupertinoIcons.book_fill,
+                  ),
+                  CNTabBarItem(
+                    label: 'Payment',
+                    icon: CNSymbol('dollarsign.circle'),
+                    activeIcon: CNSymbol('dollarsign.circle.fill'),
+                    customIcon: CupertinoIcons.money_dollar_circle,
+                    activeCustomIcon: CupertinoIcons.money_dollar_circle_fill,
+                  ),
+                  CNTabBarItem(
+                    label: 'Settings',
+                    icon: CNSymbol('gearshape'),
+                    activeIcon: CNSymbol('gearshape.fill'),
+                    customIcon: CupertinoIcons.settings,
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
-      tabBuilder: (BuildContext context, int index) => pages[index],
     );
   }
 }

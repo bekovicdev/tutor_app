@@ -5,6 +5,7 @@ import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/create_payment_page.dart';
 import 'package:tutor_app/payments/payment_service.dart';
 import 'package:tutor_app/students/student_service.dart';
+import 'package:tutor_app/theme/ios26_theme.dart';
 
 enum _PaymentTab { overview, monthly, receivables, prepaid, payments }
 
@@ -379,6 +380,7 @@ class _PaymentPageState extends State<PaymentPage> {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: const Text('Payment'),
+        border: appNavigationBarBorder,
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
@@ -1154,15 +1156,10 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Widget _card({required Widget child}) {
-    return Container(
-      width: double.infinity,
+    return AppGlassCard(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: CupertinoColors.secondarySystemGroupedBackground
-            .resolveFrom(context),
-        borderRadius: BorderRadius.circular(12),
-      ),
+      borderRadius: AppGlassTokens.radiusSmall,
       child: child,
     );
   }
@@ -1173,20 +1170,34 @@ class _PaymentPageState extends State<PaymentPage> {
     required String subtitle,
     required Color color,
   }) {
-    return Container(
+    return AppGlassCard(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(12),
-      ),
+      borderRadius: AppGlassTokens.radiusSmall,
+      tint: color.withValues(alpha: 0.14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
           const SizedBox(height: 6),
-          Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 2),
-          Text(subtitle, style: const TextStyle(fontSize: 11, color: CupertinoColors.systemGrey)),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              fontSize: 11,
+              color: CupertinoColors.systemGrey,
+            ),
+          ),
         ],
       ),
     );

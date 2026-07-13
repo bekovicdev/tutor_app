@@ -5,6 +5,7 @@ import 'package:tutor_app/groups/group_service.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/group_detail_page.dart';
 import 'package:tutor_app/students/student_service.dart';
+import 'package:tutor_app/theme/ios26_theme.dart';
 
 enum _StudentsViewMode { students, groups }
 
@@ -54,6 +55,7 @@ class _StudentsPageState extends State<StudentsPage> {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: Text(_isGroupMode ? 'Groups' : 'Students'),
+        border: appNavigationBarBorder,
       ),
       child: SafeArea(
         child: Stack(
@@ -714,6 +716,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
       child: CupertinoPageScaffold(
         navigationBar: CupertinoNavigationBar(
           middle: const Text('Student Detail'),
+          border: appNavigationBarBorder,
           leading: CupertinoButton(
             padding: EdgeInsets.zero,
             onPressed: () async {
@@ -1132,13 +1135,10 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
     required String value,
     required Color color,
   }) {
-    return Container(
-      width: double.infinity,
+    return AppGlassCard(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(12),
-      ),
+      borderRadius: AppGlassTokens.radiusSmall,
+      tint: color.withValues(alpha: 0.14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -1187,19 +1187,15 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
   }
 
   Widget _profileHeader(Color accentColor) {
-    return Container(
+    return AppGlassCard(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: CupertinoColors.secondarySystemBackground,
-        borderRadius: BorderRadius.circular(14),
-      ),
       child: Row(
         children: <Widget>[
           Container(
             width: 54,
             height: 54,
             decoration: BoxDecoration(
-              color: accentColor.withOpacity(0.2),
+              color: accentColor.withValues(alpha: 0.2),
               shape: BoxShape.circle,
               border: Border.all(color: accentColor, width: 1.5),
             ),
@@ -1245,12 +1241,9 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
     required String title,
     required Widget child,
   }) {
-    return Container(
+    return AppGlassCard(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: CupertinoColors.secondarySystemBackground.resolveFrom(context),
-        borderRadius: BorderRadius.circular(12),
-      ),
+      borderRadius: AppGlassTokens.radius,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
