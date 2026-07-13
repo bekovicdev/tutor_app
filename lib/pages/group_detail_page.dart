@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:tutor_app/groups/group_service.dart';
 import 'package:tutor_app/students/student_service.dart';
+import 'package:tutor_app/theme/app_dialogs.dart';
 
 class GroupDetailPage extends StatefulWidget {
   const GroupDetailPage({
@@ -247,27 +248,21 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       return;
     }
 
-    await showCupertinoModalPopup<void>(
+    await showAppActionSheet<void>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoActionSheet(
-          title: Text('Add to ${_group.name}'),
-          message: const Text('Choose a student to add to this group.'),
-          actions: candidates.map((Student student) {
-            return CupertinoActionSheetAction(
-              onPressed: () async {
-                Navigator.of(context).pop();
+      title: 'Add to ${_group.name}',
+      message: 'Choose a student to add to this group.',
+      actions: candidates
+          .map(
+            (Student student) => AppSheetAction(
+              label: student.name,
+              onPressed: (BuildContext ctx) async {
+                Navigator.of(ctx).pop();
                 await _addStudent(student);
               },
-              child: Text(student.name),
-            );
-          }).toList(),
-          cancelButton: CupertinoActionSheetAction(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-        );
-      },
+            ),
+          )
+          .toList(),
     );
   }
 
@@ -285,78 +280,64 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   Future<bool> _confirmRemove(Student student) async {
-    bool? shouldRemove;
-    await showCupertinoDialog<void>(
+    final bool? shouldRemove = await showAppAlert<bool>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: const Text('Remove from Group'),
-          content: Text('Remove ${student.name} from ${_group.name}?'),
-          actions: <Widget>[
-            CupertinoDialogAction(
-              onPressed: () {
-                shouldRemove = false;
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            CupertinoDialogAction(
-              isDestructiveAction: true,
-              onPressed: () async {
-                try {
-                  await widget.groupService.removeStudentFromGroup(
-                    groupId: _group.id,
-                    studentId: student.id,
-                  );
-                  shouldRemove = true;
-                } on GroupServiceException catch (error) {
-                  shouldRemove = false;
-                  if (mounted) {
-                    await _showMessage(error.message);
-                  }
-                }
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                }
-              },
-              child: const Text('Remove'),
-            ),
-          ],
-        );
-      },
+      title: 'Remove from Group',
+      message: 'Remove ${student.name} from ${_group.name}?',
+      actions: <AppAlertAction>[
+        AppAlertAction(
+          label: 'Cancel',
+          style: AppAlertStyle.cancel,
+          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(false),
+        ),
+        AppAlertAction(
+          label: 'Remove',
+          style: AppAlertStyle.destructive,
+          onPressed: (BuildContext ctx) async {
+            try {
+              await widget.groupService.removeStudentFromGroup(
+                groupId: _group.id,
+                studentId: student.id,
+              );
+              if (ctx.mounted) {
+                Navigator.of(ctx).pop(true);
+              }
+            } on GroupServiceException catch (error) {
+              if (mounted) {
+                await _showMessage(error.message);
+              }
+              if (ctx.mounted) {
+                Navigator.of(ctx).pop(false);
+              }
+            }
+          },
+        ),
+      ],
     );
     return shouldRemove == true;
   }
 
   Future<void> _showGroupActions() async {
-    await showCupertinoModalPopup<void>(
+    await showAppActionSheet<void>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoActionSheet(
-          title: Text(_group.name),
-          actions: <Widget>[
-            CupertinoActionSheetAction(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _showEditGroupSheet();
-              },
-              child: const Text('Edit Group'),
-            ),
-            CupertinoActionSheetAction(
-              isDestructiveAction: true,
-              onPressed: () {
-                Navigator.of(context).pop();
-                _confirmDeleteGroup();
-              },
-              child: const Text('Delete Group'),
-            ),
-          ],
-          cancelButton: CupertinoActionSheetAction(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-        );
-      },
+      title: _group.name,
+      actions: <AppSheetAction>[
+        AppSheetAction(
+          label: 'Edit Group',
+          onPressed: (BuildContext ctx) {
+            Navigator.of(ctx).pop();
+            _showEditGroupSheet();
+          },
+        ),
+        AppSheetAction(
+          label: 'Delete Group',
+          isDestructive: true,
+          onPressed: (BuildContext ctx) {
+            Navigator.of(ctx).pop();
+            _confirmDeleteGroup();
+          },
+        ),
+      ],
     );
   }
 
@@ -366,41 +347,36 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     final TextEditingController colorController =
         TextEditingController(text: _group.color ?? '');
 
-    final bool? saved = await showCupertinoDialog<bool>(
+    final bool? saved = await showAppAlert<bool>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: const Text('Edit Group'),
-          content: Column(
-            children: <Widget>[
-              const SizedBox(height: 12),
-              CupertinoTextField(
-                controller: nameController,
-                placeholder: 'Group name',
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              ),
-              const SizedBox(height: 8),
-              CupertinoTextField(
-                controller: colorController,
-                placeholder: 'Color (#33FF57)',
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              ),
-            ],
+      title: 'Edit Group',
+      content: Column(
+        children: <Widget>[
+          CupertinoTextField(
+            controller: nameController,
+            placeholder: 'Group name',
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           ),
-          actions: <Widget>[
-            CupertinoDialogAction(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            CupertinoDialogAction(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
+          const SizedBox(height: 8),
+          CupertinoTextField(
+            controller: colorController,
+            placeholder: 'Color (#33FF57)',
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          ),
+        ],
+      ),
+      actions: <AppAlertAction>[
+        AppAlertAction(
+          label: 'Cancel',
+          style: AppAlertStyle.cancel,
+          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(false),
+        ),
+        AppAlertAction(
+          label: 'Save',
+          style: AppAlertStyle.primary,
+          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(true),
+        ),
+      ],
     );
 
     if (saved != true) {
@@ -445,33 +421,24 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   Future<void> _confirmDeleteGroup() async {
-    bool confirmed = false;
-    await showCupertinoDialog<void>(
+    final bool? confirmed = await showAppAlert<bool>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: const Text('Delete Group'),
-          content: Text(
-            'Delete ${_group.name}? This will set status to inactive.',
-          ),
-          actions: <Widget>[
-            CupertinoDialogAction(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            CupertinoDialogAction(
-              isDestructiveAction: true,
-              onPressed: () {
-                confirmed = true;
-                Navigator.of(context).pop();
-              },
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
+      title: 'Delete Group',
+      message: 'Delete ${_group.name}? This will set status to inactive.',
+      actions: <AppAlertAction>[
+        AppAlertAction(
+          label: 'Cancel',
+          style: AppAlertStyle.cancel,
+          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(false),
+        ),
+        AppAlertAction(
+          label: 'Delete',
+          style: AppAlertStyle.destructive,
+          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(true),
+        ),
+      ],
     );
-    if (!confirmed) {
+    if (confirmed != true) {
       return;
     }
     try {
@@ -506,20 +473,13 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   Future<void> _showMessage(String message) {
-    return showCupertinoDialog<void>(
+    return showAppAlert<void>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: const Text('Group'),
-          content: Text(message),
-          actions: <Widget>[
-            CupertinoDialogAction(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
+      title: 'Group',
+      message: message,
+      actions: const <AppAlertAction>[
+        AppAlertAction(label: 'OK', style: AppAlertStyle.primary),
+      ],
     );
   }
 }
@@ -689,20 +649,13 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   }
 
   Future<void> _showMessage(String message) {
-    return showCupertinoDialog<void>(
+    return showAppAlert<void>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: const Text('Group'),
-          content: Text(message),
-          actions: <Widget>[
-            CupertinoDialogAction(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
+      title: 'Group',
+      message: message,
+      actions: const <AppAlertAction>[
+        AppAlertAction(label: 'OK', style: AppAlertStyle.primary),
+      ],
     );
   }
 }

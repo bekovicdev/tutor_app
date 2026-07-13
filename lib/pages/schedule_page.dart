@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/create_lesson_page.dart';
+import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
 
 class SchedulePage extends StatefulWidget {
@@ -364,22 +365,15 @@ class _SchedulePageState extends State<SchedulePage> {
   }
 
   Future<void> _showLessonDetails(Lesson lesson) async {
-    await showCupertinoModalPopup<void>(
+    await showAppActionSheet<void>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoActionSheet(
-          title: Text(lesson.displayTitle),
-          message: Text(
-            '${lesson.date} · ${lesson.startAt} · ${lesson.durationMinutes} min\n'
-            '${lesson.displaySubtitle}\n'
-            'Status: ${lesson.status}',
-          ),
-          cancelButton: CupertinoActionSheetAction(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        );
-      },
+      title: lesson.displayTitle,
+      message:
+          '${lesson.date} · ${lesson.startAt} · ${lesson.durationMinutes} min\n'
+          '${lesson.displaySubtitle}\n'
+          'Status: ${lesson.status}',
+      cancelLabel: 'Close',
+      actions: const <AppSheetAction>[],
     );
   }
 }

@@ -13,6 +13,7 @@ import 'package:tutor_app/pages/payment_page.dart';
 import 'package:tutor_app/pages/schedule_page.dart';
 import 'package:tutor_app/pages/settings_page.dart';
 import 'package:tutor_app/pages/students_page.dart';
+import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
 
 Future<void> main() async {
@@ -197,20 +198,13 @@ class _AppRootState extends State<AppRoot> {
       if (!mounted) {
         return;
       }
-      await showCupertinoDialog<void>(
+      await showAppAlert<void>(
         context: context,
-        builder: (BuildContext context) {
-          return CupertinoAlertDialog(
-            title: const Text('OAuth Error'),
-            content: Text(message),
-            actions: <Widget>[
-              CupertinoDialogAction(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
-              ),
-            ],
-          );
-        },
+        title: 'OAuth Error',
+        message: message,
+        actions: const <AppAlertAction>[
+          AppAlertAction(label: 'OK', style: AppAlertStyle.primary),
+        ],
       );
     });
   }

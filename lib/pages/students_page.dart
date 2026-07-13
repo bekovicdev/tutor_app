@@ -1,11 +1,17 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Material, MaterialType;
+import 'package:flutter/material.dart' show Icons, Material, MaterialType;
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:tutor_app/groups/group_service.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
+import 'package:tutor_app/pages/create_payment_page.dart';
 import 'package:tutor_app/pages/group_detail_page.dart';
+import 'package:tutor_app/payments/payment_service.dart';
 import 'package:tutor_app/students/student_service.dart';
+import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
+import 'package:tutor_app/widgets/birthday_calendar_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 enum _StudentsViewMode { students, groups }
 
@@ -52,9 +58,29 @@ class _StudentsPageState extends State<StudentsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final int itemCount = _isGroupMode ? _groups.length : _students.length;
+    final String subtitle = _isLoading
+        ? 'Loading…'
+        : _isGroupMode
+            ? '$itemCount group${itemCount == 1 ? '' : 's'}'
+            : '$itemCount student${itemCount == 1 ? '' : 's'}';
+
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: Text(_isGroupMode ? 'Groups' : 'Students'),
+        middle: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(_isGroupMode ? 'Groups' : 'Students'),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: CupertinoColors.secondaryLabel.resolveFrom(context),
+              ),
+            ),
+          ],
+        ),
         border: appNavigationBarBorder,
       ),
       child: SafeArea(
@@ -63,11 +89,26 @@ class _StudentsPageState extends State<StudentsPage> {
             Column(
               children: <Widget>[
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
-                  child: CupertinoSearchTextField(
-                    controller: _searchController,
-                    onChanged: (_) => _reloadCurrentMode(),
-                    onSubmitted: (_) => _reloadCurrentMode(),
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.secondarySystemGroupedBackground
+                          .resolveFrom(context),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: CupertinoColors.systemGrey5.resolveFrom(context),
+                      ),
+                    ),
+                    child: CupertinoSearchTextField(
+                      controller: _searchController,
+                      placeholder: _isGroupMode
+                          ? 'Search groups'
+                          : 'Search by name or phone',
+                      backgroundColor: const Color(0x00000000),
+                      borderRadius: BorderRadius.circular(14),
+                      onChanged: (_) => _reloadCurrentMode(),
+                      onSubmitted: (_) => _reloadCurrentMode(),
+                    ),
                   ),
                 ),
                 Expanded(child: _buildBody()),
@@ -75,33 +116,48 @@ class _StudentsPageState extends State<StudentsPage> {
             ),
             Positioned(
               left: 16,
-              bottom: 12,
+              bottom: 14,
               child: _buildModeSwitch(),
             ),
             Positioned(
               right: 16,
-              bottom: 12,
-              child: CupertinoButton(
-                padding: EdgeInsets.zero,
-                onPressed: _isGroupMode
-                    ? _showCreateGroupSheet
-                    : _showCreateStudentSheet,
-                child: Container(
-                  width: 54,
-                  height: 54,
-                  decoration: const BoxDecoration(
-                    color: CupertinoColors.activeBlue,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    CupertinoIcons.add,
-                    color: CupertinoColors.white,
-                    size: 28,
-                  ),
-                ),
-              ),
+              bottom: 14,
+              child: _buildAddButton(),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddButton() {
+    return GestureDetector(
+      onTap: _isGroupMode ? _showCreateGroupSheet : _showCreateStudentSheet,
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: <Color>[
+              Color(0xFF5AC8FA),
+              CupertinoColors.activeBlue,
+            ],
+          ),
+          boxShadow: <BoxShadow>[
+            BoxShadow(
+              color: CupertinoColors.activeBlue.withValues(alpha: 0.35),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: const Icon(
+          CupertinoIcons.add,
+          color: CupertinoColors.white,
+          size: 28,
         ),
       ),
     );
@@ -114,11 +170,14 @@ class _StudentsPageState extends State<StudentsPage> {
         color: CupertinoColors.secondarySystemGroupedBackground
             .resolveFrom(context),
         borderRadius: BorderRadius.circular(28),
-        boxShadow: const <BoxShadow>[
+        border: Border.all(
+          color: CupertinoColors.systemGrey5.resolveFrom(context),
+        ),
+        boxShadow: <BoxShadow>[
           BoxShadow(
-            color: Color(0x1A000000),
-            blurRadius: 10,
-            offset: Offset(0, 3),
+            color: CupertinoColors.black.withValues(alpha: 0.08),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -152,12 +211,22 @@ class _StudentsPageState extends State<StudentsPage> {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: selected
               ? CupertinoColors.activeBlue
               : CupertinoColors.transparent,
           borderRadius: BorderRadius.circular(24),
+          boxShadow: selected
+              ? <BoxShadow>[
+                  BoxShadow(
+                    color: CupertinoColors.activeBlue.withValues(alpha: 0.28),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -191,20 +260,27 @@ class _StudentsPageState extends State<StudentsPage> {
       return const Center(child: CupertinoActivityIndicator());
     }
     if (_errorMessage != null) {
-      return Center(child: Text(_errorMessage!));
+      return _emptyState(
+        icon: CupertinoIcons.exclamationmark_triangle,
+        title: 'Something went wrong',
+        message: _errorMessage!,
+        actionLabel: 'Retry',
+        onAction: _reloadCurrentMode,
+      );
     }
 
     if (_isGroupMode) {
       if (_groups.isEmpty) {
-        return const Center(
-          child: Text(
-            'No groups found.',
-            style: TextStyle(color: CupertinoColors.systemGrey),
-          ),
+        return _emptyState(
+          icon: CupertinoIcons.person_3,
+          title: 'No groups yet',
+          message: 'Create a group to organize students together.',
+          actionLabel: 'Add group',
+          onAction: _showCreateGroupSheet,
         );
       }
       return ListView.separated(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 90),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
         itemCount: _groups.length,
         separatorBuilder: (_, __) => const SizedBox(height: 10),
         itemBuilder: (BuildContext context, int index) {
@@ -215,16 +291,17 @@ class _StudentsPageState extends State<StudentsPage> {
     }
 
     if (_students.isEmpty) {
-      return const Center(
-        child: Text(
-          'No students found.',
-          style: TextStyle(color: CupertinoColors.systemGrey),
-        ),
+      return _emptyState(
+        icon: CupertinoIcons.person_crop_circle_badge_plus,
+        title: 'No students yet',
+        message: 'Add your first student to start tracking lessons.',
+        actionLabel: 'Add student',
+        onAction: _showCreateStudentSheet,
       );
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 90),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
       itemCount: _students.length,
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (BuildContext context, int index) {
@@ -243,6 +320,63 @@ class _StudentsPageState extends State<StudentsPage> {
     );
   }
 
+  Widget _emptyState({
+    required IconData icon,
+    required String title,
+    required String message,
+    required String actionLabel,
+    required VoidCallback onAction,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(32, 0, 32, 72),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: CupertinoColors.activeBlue.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                size: 32,
+                color: CupertinoColors.activeBlue,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                height: 1.35,
+                color: CupertinoColors.secondaryLabel.resolveFrom(context),
+              ),
+            ),
+            const SizedBox(height: 18),
+            CupertinoButton.filled(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              onPressed: onAction,
+              child: Text(actionLabel),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _groupTile(TutorGroup group) {
     final Color accent = _parseHexColor(group.color);
     return Dismissible(
@@ -251,7 +385,7 @@ class _StudentsPageState extends State<StudentsPage> {
       background: Container(
         decoration: BoxDecoration(
           color: CupertinoColors.systemRed.resolveFrom(context),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppGlassTokens.radius),
         ),
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -265,45 +399,43 @@ class _StudentsPageState extends State<StudentsPage> {
       },
       child: GestureDetector(
         onTap: () => _openGroupDetailPage(group),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: CupertinoColors.secondarySystemGroupedBackground
-                .resolveFrom(context),
-            borderRadius: BorderRadius.circular(12),
-          ),
+        child: AppGlassCard(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           child: Row(
             children: <Widget>[
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: accent.withOpacity(0.18),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: accent, width: 1.4),
-                ),
-                child: Center(
-                  child: Icon(
-                    CupertinoIcons.person_3_fill,
-                    size: 18,
-                    color: accent,
-                  ),
-                ),
+              _avatarBubble(
+                accent: accent,
+                label: _initials(group.name),
+                icon: CupertinoIcons.person_3_fill,
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  group.name,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      group.name,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'Group',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const Icon(
+              Icon(
                 CupertinoIcons.chevron_forward,
-                size: 18,
-                color: CupertinoColors.systemGrey2,
+                size: 16,
+                color: CupertinoColors.tertiaryLabel.resolveFrom(context),
               ),
             ],
           ),
@@ -317,13 +449,17 @@ class _StudentsPageState extends State<StudentsPage> {
     required Future<bool> Function() confirmDismiss,
     required VoidCallback onDismissed,
   }) {
+    final Color accent = _parseHexColor(student.color);
+    final String? phone = student.phone;
+    final String? cost = student.lessonCost;
+
     return Dismissible(
       key: ValueKey<String>('student-${student.id}'),
       direction: DismissDirection.endToStart,
       background: Container(
         decoration: BoxDecoration(
           color: CupertinoColors.systemRed.resolveFrom(context),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppGlassTokens.radius),
         ),
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -333,35 +469,15 @@ class _StudentsPageState extends State<StudentsPage> {
       onDismissed: (_) => onDismissed(),
       child: GestureDetector(
         onTap: () => _openStudentDetailPage(student.id),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: CupertinoColors.secondarySystemGroupedBackground
-                .resolveFrom(context),
-            borderRadius: BorderRadius.circular(12),
-          ),
+        child: AppGlassCard(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           child: Row(
             children: <Widget>[
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: _parseHexColor(student.color).withOpacity(0.18),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: _parseHexColor(student.color),
-                    width: 1.4,
-                  ),
-                ),
-                child: Center(
-                  child: Icon(
-                    CupertinoIcons.person_fill,
-                    size: 18,
-                    color: _parseHexColor(student.color),
-                  ),
-                ),
+              _avatarBubble(
+                accent: accent,
+                label: _initials(student.name),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -371,31 +487,89 @@ class _StudentsPageState extends State<StudentsPage> {
                       style: const TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w600,
+                        letterSpacing: -0.2,
                       ),
                     ),
-                    if (student.phone != null &&
-                        student.phone!.isNotEmpty) ...<Widget>[
+                    if ((phone != null && phone.isNotEmpty) ||
+                        (cost != null && cost.isNotEmpty)) ...<Widget>[
                       const SizedBox(height: 4),
                       Text(
-                        student.phone!,
-                        style: const TextStyle(
-                          color: CupertinoColors.systemGrey,
+                        <String>[
+                          if (phone != null && phone.isNotEmpty) phone,
+                          if (cost != null && cost.isNotEmpty) '$cost / lesson',
+                        ].join(' · '),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color:
+                              CupertinoColors.secondaryLabel.resolveFrom(context),
                         ),
                       ),
                     ],
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 CupertinoIcons.chevron_forward,
-                size: 18,
-                color: CupertinoColors.systemGrey2,
+                size: 16,
+                color: CupertinoColors.tertiaryLabel.resolveFrom(context),
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Widget _avatarBubble({
+    required Color accent,
+    required String label,
+    IconData? icon,
+  }) {
+    return Container(
+      width: 46,
+      height: 46,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[
+            accent.withValues(alpha: 0.28),
+            accent.withValues(alpha: 0.12),
+          ],
+        ),
+        border: Border.all(color: accent.withValues(alpha: 0.85), width: 1.5),
+      ),
+      alignment: Alignment.center,
+      child: icon != null
+          ? Icon(icon, size: 20, color: accent)
+          : Text(
+              label,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: accent,
+                letterSpacing: 0.2,
+              ),
+            ),
+    );
+  }
+
+  String _initials(String name) {
+    final List<String> parts = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((String p) => p.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) {
+      return '?';
+    }
+    if (parts.length == 1) {
+      return parts.first.substring(0, 1).toUpperCase();
+    }
+    return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
   }
 
   Future<void> _setViewMode(_StudentsViewMode mode) async {
@@ -534,87 +708,72 @@ class _StudentsPageState extends State<StudentsPage> {
   }
 
   Future<bool> _confirmDelete(Student student) async {
-    bool? shouldDelete;
-    await showCupertinoDialog<void>(
+    final bool? shouldDelete = await showAppAlert<bool>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: const Text('Delete Student'),
-          content: Text(
-            'Delete ${student.name}? This will set status to inactive.',
-          ),
-          actions: <Widget>[
-            CupertinoDialogAction(
-              onPressed: () {
-                shouldDelete = false;
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            CupertinoDialogAction(
-              isDestructiveAction: true,
-              onPressed: () async {
-                try {
-                  await _studentService.deleteStudent(student.id);
-                  shouldDelete = true;
-                } on StudentServiceException catch (error) {
-                  shouldDelete = false;
-                  if (mounted) {
-                    await _showErrorDialog(error.message);
-                  }
-                }
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                }
-              },
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
+      title: 'Delete Student',
+      message:
+          'Delete ${student.name}? This will set status to inactive.',
+      actions: <AppAlertAction>[
+        AppAlertAction(
+          label: 'Cancel',
+          style: AppAlertStyle.cancel,
+          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(false),
+        ),
+        AppAlertAction(
+          label: 'Delete',
+          style: AppAlertStyle.destructive,
+          onPressed: (BuildContext ctx) async {
+            try {
+              await _studentService.deleteStudent(student.id);
+              if (ctx.mounted) {
+                Navigator.of(ctx).pop(true);
+              }
+            } on StudentServiceException catch (error) {
+              if (mounted) {
+                await _showErrorDialog(error.message);
+              }
+              if (ctx.mounted) {
+                Navigator.of(ctx).pop(false);
+              }
+            }
+          },
+        ),
+      ],
     );
     return shouldDelete == true;
   }
 
   Future<bool> _confirmDeleteGroup(TutorGroup group) async {
-    bool? shouldDelete;
-    await showCupertinoDialog<void>(
+    final bool? shouldDelete = await showAppAlert<bool>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: const Text('Delete Group'),
-          content: Text(
-            'Delete ${group.name}? This will set status to inactive.',
-          ),
-          actions: <Widget>[
-            CupertinoDialogAction(
-              onPressed: () {
-                shouldDelete = false;
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            CupertinoDialogAction(
-              isDestructiveAction: true,
-              onPressed: () async {
-                try {
-                  await _groupService.deleteGroup(group.id);
-                  shouldDelete = true;
-                } on GroupServiceException catch (error) {
-                  shouldDelete = false;
-                  if (mounted) {
-                    await _showErrorDialog(error.message);
-                  }
-                }
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                }
-              },
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
+      title: 'Delete Group',
+      message: 'Delete ${group.name}? This will set status to inactive.',
+      actions: <AppAlertAction>[
+        AppAlertAction(
+          label: 'Cancel',
+          style: AppAlertStyle.cancel,
+          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(false),
+        ),
+        AppAlertAction(
+          label: 'Delete',
+          style: AppAlertStyle.destructive,
+          onPressed: (BuildContext ctx) async {
+            try {
+              await _groupService.deleteGroup(group.id);
+              if (ctx.mounted) {
+                Navigator.of(ctx).pop(true);
+              }
+            } on GroupServiceException catch (error) {
+              if (mounted) {
+                await _showErrorDialog(error.message);
+              }
+              if (ctx.mounted) {
+                Navigator.of(ctx).pop(false);
+              }
+            }
+          },
+        ),
+      ],
     );
     return shouldDelete == true;
   }
@@ -635,20 +794,13 @@ class _StudentsPageState extends State<StudentsPage> {
   }
 
   Future<void> _showErrorDialog(String message) {
-    return showCupertinoDialog<void>(
+    return showAppAlert<void>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: const Text('Students'),
-          content: Text(message),
-          actions: <Widget>[
-            CupertinoDialogAction(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
+      title: 'Students',
+      message: message,
+      actions: const <AppAlertAction>[
+        AppAlertAction(label: 'OK', style: AppAlertStyle.primary),
+      ],
     );
   }
 }
@@ -673,12 +825,16 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
   final TextEditingController _notesController = TextEditingController();
   final TextEditingController _colorController = TextEditingController();
 
-  late final LessonService _lessonService;
+  LessonService get _lessonService =>
+      LessonService(token: widget.studentService.token);
+  PaymentService get _paymentService =>
+      PaymentService(token: widget.studentService.token);
 
   _StudentDetailTab _tab = _StudentDetailTab.info;
   bool _isLoading = true;
   bool _isSaving = false;
   bool _isDeleting = false;
+  bool _isEditing = false;
   StudentSummary? _summary;
   StudentBalance? _balance;
   List<Lesson> _completedLessons = <Lesson>[];
@@ -695,7 +851,6 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
   @override
   void initState() {
     super.initState();
-    _lessonService = LessonService(token: widget.studentService.token);
     _loadDetail();
   }
 
@@ -728,6 +883,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
             },
             child: const Text('Back'),
           ),
+          trailing: _buildNavTrailing(),
         ),
         child: SafeArea(
           child: _isLoading
@@ -770,6 +926,71 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
     );
   }
 
+  Widget? _buildNavTrailing() {
+    if (_isLoading) {
+      return null;
+    }
+    if (_tab == _StudentDetailTab.payments) {
+      return CupertinoButton(
+        padding: EdgeInsets.zero,
+        onPressed: _openAddPayment,
+        child: const Text('Add'),
+      );
+    }
+    if (_tab != _StudentDetailTab.info) {
+      return null;
+    }
+    if (_isEditing) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          CupertinoButton(
+            padding: const EdgeInsets.only(right: 8),
+            onPressed: _isSaving ? null : _cancelEditing,
+            child: const Text('Cancel'),
+          ),
+          CupertinoButton(
+            padding: EdgeInsets.zero,
+            onPressed: _isSaving
+                ? null
+                : () async {
+                    final bool saved = await _saveChanges();
+                    if (saved && mounted) {
+                      setState(() {
+                        _isEditing = false;
+                      });
+                    }
+                  },
+            child: _isSaving
+                ? const CupertinoActivityIndicator()
+                : const Text('Save'),
+          ),
+        ],
+      );
+    }
+    return CupertinoButton(
+      padding: EdgeInsets.zero,
+      onPressed: () {
+        setState(() {
+          _isEditing = true;
+        });
+      },
+      child: const Text('Edit'),
+    );
+  }
+
+  void _cancelEditing() {
+    setState(() {
+      _nameController.text = _initialName;
+      _phoneController.text = _initialPhone;
+      _lessonCostController.text = _initialLessonCost;
+      _notesController.text = _initialNotes;
+      _colorController.text = _initialColor;
+      _selectedBirthday = _parseDate(_initialBirthday);
+      _isEditing = false;
+    });
+  }
+
   Widget _buildTabBody() {
     switch (_tab) {
       case _StudentDetailTab.info:
@@ -783,6 +1004,344 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
 
   Widget _buildInfoTab() {
     final Color accentColor = _parseHexColor(_colorController.text);
+    if (!_isEditing) {
+      return _buildInfoView(accentColor);
+    }
+    return _buildInfoEdit(accentColor);
+  }
+
+  Widget _buildInfoView(Color accentColor) {
+    final String name = _nameController.text.trim().isEmpty
+        ? 'Öğrenci'
+        : _nameController.text.trim();
+    final String phone = _phoneController.text.trim();
+    final String cost = _lessonCostController.text.trim();
+    final String notes = _notesController.text.trim();
+    final String birthday = _formatBirthdayDisplay(_selectedBirthday);
+    final bool hasPhone = phone.isNotEmpty;
+    final String initials = _studentInitials(name);
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
+      children: <Widget>[
+        AppGlassCard(
+          padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+          child: Column(
+            children: <Widget>[
+              Container(
+                width: 88,
+                height: 88,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: <Color>[
+                      accentColor.withValues(alpha: 0.95),
+                      accentColor.withValues(alpha: 0.55),
+                    ],
+                  ),
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      color: accentColor.withValues(alpha: 0.35),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  initials,
+                  style: const TextStyle(
+                    color: CupertinoColors.white,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                name,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.6,
+                ),
+              ),
+              if (hasPhone) ...<Widget>[
+                const SizedBox(height: 6),
+                Text(
+                  phone,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+              if (birthday.isNotEmpty) ...<Widget>[
+                const SizedBox(height: 12),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF2D55).withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: const Color(0xFFFF2D55).withValues(alpha: 0.18),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      const Icon(
+                        Icons.cake_rounded,
+                        size: 16,
+                        color: Color(0xFFFF2D55),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        birthday,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFFF2D55),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 18),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: _heroAction(
+                      label: 'Ara',
+                      color: CupertinoColors.activeGreen,
+                      enabled: hasPhone,
+                      onPressed: _callStudent,
+                      child: const Icon(
+                        CupertinoIcons.phone_fill,
+                        size: 18,
+                        color: CupertinoColors.activeGreen,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _heroAction(
+                      label: 'WhatsApp',
+                      color: const Color(0xFF25D366),
+                      enabled: hasPhone,
+                      onPressed: _openWhatsApp,
+                      child: const FaIcon(
+                        FontAwesomeIcons.whatsapp,
+                        size: 16,
+                        color: Color(0xFF25D366),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        _metricGlanceCard(
+          label: 'Ders ücreti',
+          value: cost.isEmpty ? '—' : cost,
+          subtitle: cost.isEmpty ? 'Belirtilmedi' : 'ders başı',
+          icon: CupertinoIcons.money_dollar_circle_fill,
+          color: CupertinoColors.activeBlue,
+        ),
+        if (birthday.isEmpty) ...<Widget>[
+          const SizedBox(height: 10),
+          AppGlassCard(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            child: Row(
+              children: <Widget>[
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF2D55).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.cake_rounded,
+                    color: Color(0xFFFF2D55),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Doğum günü eklenmedi',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        if (notes.isNotEmpty) ...<Widget>[
+          const SizedBox(height: 10),
+          AppGlassCard(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Icon(
+                      CupertinoIcons.doc_text_fill,
+                      size: 16,
+                      color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Notlar',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color:
+                            CupertinoColors.secondaryLabel.resolveFrom(context),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  notes,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    height: 1.45,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  String _studentInitials(String name) {
+    final List<String> parts = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((String p) => p.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) {
+      return '?';
+    }
+    if (parts.length == 1) {
+      return parts.first.substring(0, 1).toUpperCase();
+    }
+    return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
+  }
+
+  Widget _heroAction({
+    required String label,
+    required Color color,
+    required bool enabled,
+    required VoidCallback onPressed,
+    required Widget child,
+  }) {
+    return GestureDetector(
+      onTap: enabled ? onPressed : null,
+      child: Opacity(
+        opacity: enabled ? 1 : 0.4,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: color.withValues(alpha: 0.2)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              child,
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _metricGlanceCard({
+    required String label,
+    required String value,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+  }) {
+    return AppGlassCard(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: color),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: CupertinoColors.secondaryLabel.resolveFrom(context),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 12,
+              color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoEdit(Color accentColor) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       children: <Widget>[
@@ -809,76 +1368,10 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
         _sectionCard(
           context,
           title: 'Lesson Settings',
-          child: Column(
-            children: <Widget>[
-              _field(
-                _lessonCostController,
-                'Lesson Cost',
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-              ),
-              const SizedBox(height: 10),
-              CupertinoButton(
-                padding: EdgeInsets.zero,
-                onPressed: _showDetailColorPicker,
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: CupertinoColors.secondarySystemBackground,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: CupertinoColors.systemGrey4,
-                    ),
-                  ),
-                  child: Row(
-                    children: <Widget>[
-                      Container(
-                        width: 22,
-                        height: 22,
-                        decoration: BoxDecoration(
-                          color: _parseHexColor(_colorController.text),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: CupertinoColors.systemGrey4,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      const Expanded(
-                        child: Text(
-                          'Pick a color',
-                          style: TextStyle(
-                            color: CupertinoColors.label,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        _colorController.text.isEmpty
-                            ? _hexFromColor(
-                                _parseHexColor(_colorController.text),
-                              )
-                            : _colorController.text.toUpperCase(),
-                        style: const TextStyle(
-                          color: CupertinoColors.systemGrey,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      const Icon(
-                        CupertinoIcons.slider_horizontal_3,
-                        color: CupertinoColors.systemGrey,
-                        size: 18,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+          child: _field(
+            _lessonCostController,
+            'Lesson Cost',
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
         ),
         const SizedBox(height: 12),
@@ -900,7 +1393,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 14),
             decoration: BoxDecoration(
-              color: CupertinoColors.systemRed.withOpacity(0.12),
+              color: CupertinoColors.systemRed.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -986,7 +1479,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                 if (summary.lastLessonDate != null) ...<Widget>[
                   const SizedBox(height: 10),
                   Text(
-                    'Last lesson: ${summary.lastLessonDate}',
+                    'Son ders: ${_formatDisplayDate(summary.lastLessonDate)}',
                     style: const TextStyle(
                       fontSize: 13,
                       color: CupertinoColors.systemGrey,
@@ -1028,7 +1521,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                                       ),
                                     ),
                                     Text(
-                                      '${lesson.date} · ${lesson.startAt}'
+                                      '${_formatDisplayDate(lesson.date)} · ${_formatDisplayTime(lesson.startAt)}'
                                       '${lesson.price != null && lesson.price!.isNotEmpty ? ' · ${lesson.price}' : ''}',
                                       style: const TextStyle(
                                         fontSize: 12,
@@ -1186,7 +1679,64 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
     return '$value $currency';
   }
 
+  Future<void> _openAddPayment() async {
+    final Student student = Student(
+      id: widget.studentId,
+      name: _nameController.text.trim().isEmpty
+          ? 'Student'
+          : _nameController.text.trim(),
+      phone: _phoneController.text.trim().isEmpty
+          ? null
+          : _phoneController.text.trim(),
+      lessonCost: _lessonCostController.text.trim().isEmpty
+          ? null
+          : _lessonCostController.text.trim(),
+      color: _colorController.text.trim().isEmpty
+          ? null
+          : _colorController.text.trim(),
+    );
+
+    final bool? created = await Navigator.of(context).push<bool>(
+      CupertinoPageRoute<bool>(
+        builder: (BuildContext context) => CreatePaymentPage(
+          paymentService: _paymentService,
+          studentService: widget.studentService,
+          lessonService: _lessonService,
+          initialStudent: student,
+          lockStudent: true,
+        ),
+      ),
+    );
+    if (created == true && mounted) {
+      await _reloadBalance();
+    }
+  }
+
+  Future<void> _reloadBalance() async {
+    try {
+      final StudentBalance balance =
+          await widget.studentService.getStudentBalance(widget.studentId);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _balance = balance;
+        _paymentsError = null;
+      });
+    } on StudentServiceException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _paymentsError = error.message;
+      });
+    }
+  }
+
   Widget _profileHeader(Color accentColor) {
+    final String phone = _phoneController.text.trim();
+    final bool hasPhone = phone.isNotEmpty;
+
     return AppGlassCard(
       padding: const EdgeInsets.all(14),
       child: Row(
@@ -1221,9 +1771,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  _phoneController.text.trim().isEmpty
-                      ? 'No phone number'
-                      : _phoneController.text.trim(),
+                  hasPhone ? phone : 'No phone number',
                   style: const TextStyle(
                     color: CupertinoColors.systemGrey,
                   ),
@@ -1231,9 +1779,106 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
               ],
             ),
           ),
+          _contactActionButton(
+            color: CupertinoColors.activeGreen,
+            enabled: hasPhone,
+            onPressed: _callStudent,
+            child: const Icon(
+              CupertinoIcons.phone_fill,
+              size: 20,
+              color: CupertinoColors.activeGreen,
+            ),
+          ),
+          const SizedBox(width: 8),
+          _contactActionButton(
+            color: const Color(0xFF25D366),
+            enabled: hasPhone,
+            onPressed: _openWhatsApp,
+            child: const FaIcon(
+              FontAwesomeIcons.whatsapp,
+              size: 18,
+              color: Color(0xFF25D366),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Widget _contactActionButton({
+    required Color color,
+    required bool enabled,
+    required VoidCallback onPressed,
+    required Widget child,
+  }) {
+    return CupertinoButton(
+      padding: EdgeInsets.zero,
+      minimumSize: Size.zero,
+      onPressed: enabled ? onPressed : null,
+      child: Opacity(
+        opacity: enabled ? 1 : 0.35,
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.14),
+            shape: BoxShape.circle,
+          ),
+          alignment: Alignment.center,
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _callStudent() async {
+    final String? tel = _phoneForTel(_phoneController.text);
+    if (tel == null) {
+      await _showMessage('Add a phone number first.');
+      return;
+    }
+    final Uri uri = Uri(scheme: 'tel', path: tel);
+    final bool launched = await launchUrl(uri);
+    if (!launched && mounted) {
+      await _showMessage('Could not start the call.');
+    }
+  }
+
+  Future<void> _openWhatsApp() async {
+    final String? digits = _phoneForWhatsApp(_phoneController.text);
+    if (digits == null) {
+      await _showMessage('Add a phone number first.');
+      return;
+    }
+    final Uri uri = Uri.parse('https://wa.me/$digits');
+    final bool launched = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+    if (!launched && mounted) {
+      await _showMessage('Could not open WhatsApp.');
+    }
+  }
+
+  /// Digits (and optional leading +) for `tel:` links.
+  String? _phoneForTel(String raw) {
+    final String cleaned = raw.replaceAll(RegExp(r'[^\d+]'), '');
+    if (cleaned.isEmpty || RegExp(r'^\+?$').hasMatch(cleaned)) {
+      return null;
+    }
+    return cleaned;
+  }
+
+  /// International digits for WhatsApp (`wa.me`), TR local `0…` → `90…`.
+  String? _phoneForWhatsApp(String raw) {
+    String digits = raw.replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) {
+      return null;
+    }
+    if (digits.startsWith('0') && digits.length >= 10) {
+      digits = '90${digits.substring(1)}';
+    }
+    return digits;
   }
 
   Widget _sectionCard(
@@ -1298,118 +1943,6 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
     return Color.fromARGB(255, (rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF);
   }
 
-  String _hexFromColor(Color color) {
-    final int rgb = color.toARGB32() & 0x00FFFFFF;
-    return '#${rgb.toRadixString(16).padLeft(6, '0').toUpperCase()}';
-  }
-
-  Future<void> _showDetailColorPicker() async {
-    Color tempColor = _parseHexColor(_colorController.text);
-
-    await showCupertinoModalPopup<void>(
-      context: context,
-      builder: (BuildContext context) {
-        final double sheetHeight = MediaQuery.of(context).size.height * 0.82;
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            return Container(
-              height: sheetHeight,
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              color: CupertinoColors.systemBackground.resolveFrom(context),
-              child: SafeArea(
-                top: false,
-                child: Column(
-                  children: <Widget>[
-                    Row(
-                      children: <Widget>[
-                        CupertinoButton(
-                          padding: EdgeInsets.zero,
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('Cancel'),
-                        ),
-                        const Expanded(
-                          child: Text(
-                            'Avatar Color',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        CupertinoButton(
-                          padding: EdgeInsets.zero,
-                          onPressed: () {
-                            setState(() {
-                              _colorController.text = _hexFromColor(tempColor);
-                            });
-                            Navigator.of(context).pop();
-                          },
-                          child: const Text('Apply'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      width: 96,
-                      height: 96,
-                      decoration: BoxDecoration(
-                        color: tempColor,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: CupertinoColors.systemGrey4,
-                          width: 2,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _hexFromColor(tempColor),
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: CupertinoColors.systemGrey,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: CupertinoColors.secondarySystemBackground,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Material(
-                          type: MaterialType.transparency,
-                          child: SingleChildScrollView(
-                            child: ColorPicker(
-                              pickerColor: tempColor,
-                              onColorChanged: (Color value) {
-                                setModalState(() {
-                                  tempColor = value;
-                                });
-                              },
-                              enableAlpha: false,
-                              labelTypes: const <ColorLabelType>[],
-                              pickerAreaHeightPercent: 0.58,
-                              pickerAreaBorderRadius:
-                                  const BorderRadius.all(Radius.circular(10)),
-                              displayThumbColor: true,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
   Widget _birthdayButton() {
     return CupertinoButton(
       padding: EdgeInsets.zero,
@@ -1425,22 +1958,26 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
         child: Row(
           children: <Widget>[
             const Icon(
-              CupertinoIcons.calendar,
-              size: 18,
-              color: CupertinoColors.systemOrange,
+              Icons.cake_rounded,
+              size: 20,
+              color: Color(0xFFFF2D55),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
                 _selectedBirthday == null
-                    ? 'Add Birthday'
-                    : 'Birthday: ${_formatDate(_selectedBirthday)}',
-                style: const TextStyle(color: CupertinoColors.label),
+                    ? 'Doğum günü ekle'
+                    : _formatBirthdayDisplay(_selectedBirthday),
+                style: TextStyle(
+                  color: _selectedBirthday == null
+                      ? CupertinoColors.placeholderText.resolveFrom(context)
+                      : CupertinoColors.label.resolveFrom(context),
+                ),
               ),
             ),
             const Icon(
               CupertinoIcons.chevron_down,
-              size: 15,
+              size: 16,
               color: CupertinoColors.systemGrey,
             ),
           ],
@@ -1450,44 +1987,17 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
   }
 
   Future<void> _showBirthdayPicker() async {
-    DateTime tempDate = _selectedBirthday ?? DateTime(2010, 1, 1);
-    await showCupertinoModalPopup<void>(
+    final DateTime? picked = await showBirthdayCalendar(
       context: context,
-      builder: (BuildContext context) {
-        return Container(
-          height: 300,
-          color: CupertinoColors.systemBackground.resolveFrom(context),
-          child: Column(
-            children: <Widget>[
-              Container(
-                alignment: Alignment.centerRight,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: CupertinoButton(
-                  padding: EdgeInsets.zero,
-                  onPressed: () {
-                    setState(() {
-                      _selectedBirthday = tempDate;
-                    });
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('Done'),
-                ),
-              ),
-              Expanded(
-                child: CupertinoDatePicker(
-                  mode: CupertinoDatePickerMode.date,
-                  initialDateTime: tempDate,
-                  maximumDate: DateTime.now(),
-                  onDateTimeChanged: (DateTime value) {
-                    tempDate = value;
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+      initialDate: _selectedBirthday ?? DateTime(2010, 1, 1),
+      maximumDate: DateTime.now(),
     );
+    if (picked == null || !mounted) {
+      return;
+    }
+    setState(() {
+      _selectedBirthday = picked;
+    });
   }
 
   Future<bool> _handleBackPressed() async {
@@ -1495,43 +2005,34 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
       return true;
     }
 
-    bool shouldLeave = false;
-    await showCupertinoDialog<void>(
+    final bool? shouldLeave = await showAppAlert<bool>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: const Text('Unsaved changes'),
-          content: const Text('Save your changes before leaving?'),
-          actions: <Widget>[
-            CupertinoDialogAction(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            CupertinoDialogAction(
-              isDestructiveAction: true,
-              onPressed: () {
-                shouldLeave = true;
-                Navigator.of(context).pop();
-              },
-              child: const Text('Don\'t Save'),
-            ),
-            CupertinoDialogAction(
-              onPressed: () async {
-                final bool saved = await _saveChanges(showSuccess: false);
-                if (saved) {
-                  shouldLeave = true;
-                }
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
+      title: 'Unsaved changes',
+      message: 'Save your changes before leaving?',
+      actions: <AppAlertAction>[
+        AppAlertAction(
+          label: 'Cancel',
+          style: AppAlertStyle.cancel,
+          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(false),
+        ),
+        AppAlertAction(
+          label: "Don't Save",
+          style: AppAlertStyle.destructive,
+          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(true),
+        ),
+        AppAlertAction(
+          label: 'Save',
+          style: AppAlertStyle.primary,
+          onPressed: (BuildContext ctx) async {
+            final bool saved = await _saveChanges(showSuccess: false);
+            if (saved && ctx.mounted) {
+              Navigator.of(ctx).pop(true);
+            }
+          },
+        ),
+      ],
     );
-    return shouldLeave;
+    return shouldLeave == true;
   }
 
   bool get _isDirty {
@@ -1551,6 +2052,56 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
     final String month = date.month.toString().padLeft(2, '0');
     final String day = date.day.toString().padLeft(2, '0');
     return '$year-$month-$day';
+  }
+
+  String _formatBirthdayDisplay(DateTime? date) {
+    if (date == null) {
+      return '';
+    }
+    const List<String> months = <String>[
+      'Ocak',
+      'Şubat',
+      'Mart',
+      'Nisan',
+      'Mayıs',
+      'Haziran',
+      'Temmuz',
+      'Ağustos',
+      'Eylül',
+      'Ekim',
+      'Kasım',
+      'Aralık',
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
+  String _formatDisplayDate(String? raw) {
+    final DateTime? parsed = _parseDate(raw);
+    if (parsed == null) {
+      return (raw ?? '').trim();
+    }
+    return _formatBirthdayDisplay(parsed);
+  }
+
+  String _formatDisplayTime(String? raw) {
+    if (raw == null) {
+      return '';
+    }
+    final String value = raw.trim();
+    if (value.isEmpty) {
+      return '';
+    }
+    // "12:00:00" or "12:00"
+    final RegExp timeOnly = RegExp(r'^(\d{1,2}):(\d{2})');
+    final Match? match = timeOnly.firstMatch(value);
+    if (match != null) {
+      return '${match.group(1)!.padLeft(2, '0')}:${match.group(2)}';
+    }
+    final DateTime? parsed = DateTime.tryParse(value);
+    if (parsed != null) {
+      return '${parsed.hour.toString().padLeft(2, '0')}:${parsed.minute.toString().padLeft(2, '0')}';
+    }
+    return value;
   }
 
   DateTime? _parseDate(String? value) {
@@ -1670,33 +2221,24 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
   }
 
   Future<void> _deleteStudent() async {
-    bool confirmed = false;
-    await showCupertinoDialog<void>(
+    final bool? confirmed = await showAppAlert<bool>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: const Text('Delete Student'),
-          content: const Text(
-            'This student will be set inactive. Continue?',
-          ),
-          actions: <Widget>[
-            CupertinoDialogAction(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            CupertinoDialogAction(
-              isDestructiveAction: true,
-              onPressed: () {
-                confirmed = true;
-                Navigator.of(context).pop();
-              },
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
+      title: 'Delete Student',
+      message: 'This student will be set inactive. Continue?',
+      actions: <AppAlertAction>[
+        AppAlertAction(
+          label: 'Cancel',
+          style: AppAlertStyle.cancel,
+          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(false),
+        ),
+        AppAlertAction(
+          label: 'Delete',
+          style: AppAlertStyle.destructive,
+          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(true),
+        ),
+      ],
     );
-    if (!confirmed) {
+    if (confirmed != true) {
       return;
     }
     setState(() {
@@ -1720,20 +2262,13 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
   }
 
   Future<void> _showMessage(String message) {
-    return showCupertinoDialog<void>(
+    return showAppAlert<void>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: const Text('Student'),
-          content: Text(message),
-          actions: <Widget>[
-            CupertinoDialogAction(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
+      title: 'Student',
+      message: message,
+      actions: const <AppAlertAction>[
+        AppAlertAction(label: 'OK', style: AppAlertStyle.primary),
+      ],
     );
   }
 }
@@ -2013,44 +2548,17 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
   }
 
   Future<void> _showBirthdayPicker() async {
-    DateTime tempDate = _selectedBirthday ?? DateTime(2010, 1, 1);
-    await showCupertinoModalPopup<void>(
+    final DateTime? picked = await showBirthdayCalendar(
       context: context,
-      builder: (BuildContext context) {
-        return Container(
-          height: 300,
-          color: CupertinoColors.systemBackground.resolveFrom(context),
-          child: Column(
-            children: <Widget>[
-              Container(
-                alignment: Alignment.centerRight,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: CupertinoButton(
-                  padding: EdgeInsets.zero,
-                  onPressed: () {
-                    setState(() {
-                      _selectedBirthday = tempDate;
-                    });
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('Done'),
-                ),
-              ),
-              Expanded(
-                child: CupertinoDatePicker(
-                  mode: CupertinoDatePickerMode.date,
-                  initialDateTime: tempDate,
-                  maximumDate: DateTime.now(),
-                  onDateTimeChanged: (DateTime value) {
-                    tempDate = value;
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+      initialDate: _selectedBirthday ?? DateTime(2010, 1, 1),
+      maximumDate: DateTime.now(),
     );
+    if (picked == null || !mounted) {
+      return;
+    }
+    setState(() {
+      _selectedBirthday = picked;
+    });
   }
 
   String _formatDate(DateTime date) {
@@ -2178,20 +2686,13 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
   }
 
   Future<void> _showErrorDialog(String message) {
-    return showCupertinoDialog<void>(
+    return showAppAlert<void>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: const Text('Students'),
-          content: Text(message),
-          actions: <Widget>[
-            CupertinoDialogAction(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
+      title: 'Students',
+      message: message,
+      actions: const <AppAlertAction>[
+        AppAlertAction(label: 'OK', style: AppAlertStyle.primary),
+      ],
     );
   }
 }

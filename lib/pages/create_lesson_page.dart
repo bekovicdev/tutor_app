@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:tutor_app/groups/group_service.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/students/student_service.dart';
+import 'package:tutor_app/theme/app_dialogs.dart';
 
 class CreateLessonPage extends StatefulWidget {
   const CreateLessonPage({
@@ -321,59 +322,43 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
   }
 
   Future<void> _pickStudent() async {
-    await showCupertinoModalPopup<void>(
+    await showAppActionSheet<void>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoActionSheet(
-          title: const Text('Select Student'),
-          actions: _students.map((Student student) {
-            return CupertinoActionSheetAction(
-              onPressed: () {
-                setState(() {
-                  _selectedStudent = student;
-                  if (student.lessonCost != null &&
-                      student.lessonCost!.isNotEmpty &&
-                      _priceController.text.trim().isEmpty) {
-                    _priceController.text = student.lessonCost!;
-                  }
-                });
-                Navigator.of(context).pop();
-              },
-              child: Text(student.name),
-            );
-          }).toList(),
-          cancelButton: CupertinoActionSheetAction(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
+      title: 'Select Student',
+      actions: _students.map((Student student) {
+        return AppSheetAction(
+          label: student.name,
+          onPressed: (BuildContext ctx) {
+            setState(() {
+              _selectedStudent = student;
+              if (student.lessonCost != null &&
+                  student.lessonCost!.isNotEmpty &&
+                  _priceController.text.trim().isEmpty) {
+                _priceController.text = student.lessonCost!;
+              }
+            });
+            Navigator.of(ctx).pop();
+          },
         );
-      },
+      }).toList(),
     );
   }
 
   Future<void> _pickGroup() async {
-    await showCupertinoModalPopup<void>(
+    await showAppActionSheet<void>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoActionSheet(
-          title: const Text('Select Group'),
-          actions: _groups.map((TutorGroup group) {
-            return CupertinoActionSheetAction(
-              onPressed: () {
-                setState(() {
-                  _selectedGroup = group;
-                });
-                Navigator.of(context).pop();
-              },
-              child: Text(group.name),
-            );
-          }).toList(),
-          cancelButton: CupertinoActionSheetAction(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
+      title: 'Select Group',
+      actions: _groups.map((TutorGroup group) {
+        return AppSheetAction(
+          label: group.name,
+          onPressed: (BuildContext ctx) {
+            setState(() {
+              _selectedGroup = group;
+            });
+            Navigator.of(ctx).pop();
+          },
         );
-      },
+      }).toList(),
     );
   }
 
@@ -604,20 +589,13 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
   }
 
   Future<void> _showMessage(String message) {
-    return showCupertinoDialog<void>(
+    return showAppAlert<void>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: Text(_pageTitle),
-          content: Text(message),
-          actions: <Widget>[
-            CupertinoDialogAction(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
+      title: _pageTitle,
+      message: message,
+      actions: const <AppAlertAction>[
+        AppAlertAction(label: 'OK', style: AppAlertStyle.primary),
+      ],
     );
   }
 

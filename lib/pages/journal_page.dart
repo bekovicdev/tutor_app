@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/create_lesson_page.dart';
+import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
 
 class JournalPage extends StatefulWidget {
@@ -21,6 +24,8 @@ class _JournalPageState extends State<JournalPage> {
   static const int _endHour = 22;
 
   late final LessonService _lessonService;
+  Timer? _nowTicker;
+  DateTime _now = DateTime.now();
 
   DateTime _weekStart = _mondayOf(DateTime.now());
   DateTime _selectedDay = DateTime(
@@ -36,7 +41,21 @@ class _JournalPageState extends State<JournalPage> {
   void initState() {
     super.initState();
     _lessonService = LessonService(token: widget.token);
+    _nowTicker = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _now = DateTime.now();
+      });
+    });
     _loadWeek();
+  }
+
+  @override
+  void dispose() {
+    _nowTicker?.cancel();
+    super.dispose();
   }
 
   static DateTime _mondayOf(DateTime date) {
@@ -344,67 +363,165 @@ class _JournalPageState extends State<JournalPage> {
     final double timelineHeight = totalHours * _hourHeight;
     final List<Lesson> lessons = _selectedDayLessons;
     final int gridStartMinutes = _startHour * 60;
+    final Widget? nowLine = _buildNowLine(
+      gridStartMinutes: gridStartMinutes,
+    );
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(0, 0, 12, 24),
       child: SizedBox(
         height: timelineHeight,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
+          clipBehavior: Clip.none,
           children: <Widget>[
-            SizedBox(
-              width: 52,
-              child: Column(
-                children: List<Widget>.generate(totalHours, (int index) {
-                  final int hour = _startHour + index;
-                  return SizedBox(
-                    height: _hourHeight,
-                    child: Align(
-                      alignment: Alignment.topCenter,
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 0),
-                        child: Text(
-                          _formatHour(hour),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: CupertinoColors.secondaryLabel
-                                .resolveFrom(context),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ),
-            ),
-            Expanded(
-              child: Stack(
-                children: <Widget>[
-                  Column(
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                SizedBox(
+                  width: 52,
+                  child: Column(
                     children: List<Widget>.generate(totalHours, (int index) {
-                      return Container(
+                      final int hour = _startHour + index;
+                      return SizedBox(
                         height: _hourHeight,
-                        decoration: BoxDecoration(
-                          border: Border(
-                            top: BorderSide(
-                              color: CupertinoColors.separator
+                        child: Align(
+                          alignment: Alignment.topCenter,
+                          child: Text(
+                            _formatHour(hour),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: CupertinoColors.secondaryLabel
                                   .resolveFrom(context),
-                              width: 0.5,
                             ),
                           ),
                         ),
                       );
                     }),
                   ),
-                  ...lessons.map((Lesson lesson) {
-                    return _buildLessonBlock(
-                      lesson,
-                      gridStartMinutes: gridStartMinutes,
-                      timelineHeight: timelineHeight,
-                    );
-                  }),
-                ],
+                ),
+                Expanded(
+                  child: Stack(
+                    children: <Widget>[
+                      Column(
+                        children: List<Widget>.generate(totalHours, (int index) {
+                          return Container(
+                            height: _hourHeight,
+                            decoration: BoxDecoration(
+                              border: Border(
+                                top: BorderSide(
+                                  color: CupertinoColors.separator
+                                      .resolveFrom(context),
+                                  width: 0.5,
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                      ...lessons.map((Lesson lesson) {
+                        return _buildLessonBlock(
+                          lesson,
+                          gridStartMinutes: gridStartMinutes,
+                          timelineHeight: timelineHeight,
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            if (nowLine != null) nowLine,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget? _buildNowLine({
+    required int gridStartMinutes,
+  }) {
+    if (!_isSameDay(_selectedDay, _now)) {
+      return null;
+    }
+
+    final int nowMinutes = _now.hour * 60 + _now.minute;
+    final int gridEndMinutes = _endHour * 60;
+    if (nowMinutes < gridStartMinutes || nowMinutes > gridEndMinutes) {
+      return null;
+    }
+
+    final double top =
+        (nowMinutes - gridStartMinutes) / 60 * _hourHeight;
+    const Color nowColor = Color(0xFFFF3B30);
+    final String label =
+        '${_now.hour.toString().padLeft(2, '0')}:${_now.minute.toString().padLeft(2, '0')}';
+
+    return Positioned(
+      top: top - 8,
+      left: 0,
+      right: 0,
+      height: 16,
+      child: IgnorePointer(
+        child: Row(
+          children: <Widget>[
+            SizedBox(
+              width: 52,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: nowColor,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: <BoxShadow>[
+                      BoxShadow(
+                        color: nowColor.withValues(alpha: 0.35),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      color: CupertinoColors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.2,
+                      height: 1.1,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(
+                color: nowColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+            Expanded(
+              child: Container(
+                height: 2,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: <Color>[
+                      nowColor,
+                      nowColor.withValues(alpha: 0.55),
+                    ],
+                  ),
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      color: nowColor.withValues(alpha: 0.35),
+                      blurRadius: 6,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -431,7 +548,7 @@ class _JournalPageState extends State<JournalPage> {
         ((clippedEnd - clippedStart) / 60 * _hourHeight).clamp(28.0, timelineHeight);
 
     final Color accent = _parseHexColor(lesson.accentColor);
-    final Color bg = accent.withOpacity(0.18);
+    final Color bg = accent.withValues(alpha: 0.18);
     final bool cancelled = lesson.status == 'cancelled';
     final bool completed = lesson.status == 'completed';
 
@@ -443,7 +560,11 @@ class _JournalPageState extends State<JournalPage> {
       child: GestureDetector(
         onTap: () => _showLessonDetails(lesson),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          padding: EdgeInsets.symmetric(
+            horizontal: 10,
+            vertical: height < 40 ? 4 : 8,
+          ),
+          clipBehavior: Clip.hardEdge,
           decoration: BoxDecoration(
             color: cancelled ? CupertinoColors.systemGrey5 : bg,
             borderRadius: BorderRadius.circular(10),
@@ -452,52 +573,67 @@ class _JournalPageState extends State<JournalPage> {
               width: 1.2,
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                lesson.displayTitle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: cancelled
-                      ? CupertinoColors.systemGrey
-                      : CupertinoColors.label.resolveFrom(context),
-                  decoration:
-                      cancelled ? TextDecoration.lineThrough : null,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                '${lesson.startAt} · ${lesson.durationMinutes}m'
-                '${completed ? ' · done' : ''}'
-                '${lesson.isGroup ? ' · group' : ''}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: cancelled
-                      ? CupertinoColors.systemGrey2
-                      : accent.withOpacity(0.95),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              if (height > 52 &&
-                  lesson.displaySubtitle != lesson.displayTitle) ...<Widget>[
-                const SizedBox(height: 2),
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              final List<Widget> lines = <Widget>[
                 Text(
-                  lesson.displaySubtitle,
+                  lesson.displayTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: CupertinoColors.systemGrey,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    height: 1.1,
+                    color: cancelled
+                        ? CupertinoColors.systemGrey
+                        : CupertinoColors.label.resolveFrom(context),
+                    decoration:
+                        cancelled ? TextDecoration.lineThrough : null,
                   ),
                 ),
-              ],
-            ],
+              ];
+              if (constraints.maxHeight >= 28) {
+                lines.add(const SizedBox(height: 2));
+                lines.add(
+                  Text(
+                    '${lesson.startAt} · ${lesson.durationMinutes}m'
+                    '${completed ? ' · done' : ''}'
+                    '${lesson.isGroup ? ' · group' : ''}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      height: 1.1,
+                      color: cancelled
+                          ? CupertinoColors.systemGrey2
+                          : accent.withValues(alpha: 0.95),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                );
+              }
+              if (constraints.maxHeight >= 44 &&
+                  lesson.displaySubtitle != lesson.displayTitle) {
+                lines.add(const SizedBox(height: 2));
+                lines.add(
+                  Text(
+                    lesson.displaySubtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      height: 1.1,
+                      color: CupertinoColors.systemGrey,
+                    ),
+                  ),
+                );
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: lines,
+              );
+            },
           ),
         ),
       ),
@@ -531,50 +667,42 @@ class _JournalPageState extends State<JournalPage> {
   }
 
   Future<void> _showLessonDetails(Lesson lesson) async {
-    await showCupertinoModalPopup<void>(
+    await showAppActionSheet<void>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoActionSheet(
-          title: Text(lesson.displayTitle),
-          message: Text(
-            '${lesson.date} · ${lesson.startAt} · ${lesson.durationMinutes} min\n'
-            '${lesson.displaySubtitle}\n'
-            'Status: ${lesson.status}'
-            '${lesson.notes != null && lesson.notes!.isNotEmpty ? '\n${lesson.notes}' : ''}',
+      title: lesson.displayTitle,
+      message:
+          '${lesson.date} · ${lesson.startAt} · ${lesson.durationMinutes} min\n'
+          '${lesson.displaySubtitle}\n'
+          'Status: ${lesson.status}'
+          '${lesson.notes != null && lesson.notes!.isNotEmpty ? '\n${lesson.notes}' : ''}',
+      cancelLabel: 'Close',
+      actions: <AppSheetAction>[
+        if (lesson.status == 'scheduled')
+          AppSheetAction(
+            label: 'Mark Completed',
+            onPressed: (BuildContext ctx) async {
+              Navigator.of(ctx).pop();
+              await _updateStatus(lesson, 'completed');
+            },
           ),
-          actions: <Widget>[
-            if (lesson.status == 'scheduled')
-              CupertinoActionSheetAction(
-                onPressed: () async {
-                  Navigator.of(context).pop();
-                  await _updateStatus(lesson, 'completed');
-                },
-                child: const Text('Mark Completed'),
-              ),
-            if (lesson.status != 'cancelled')
-              CupertinoActionSheetAction(
-                isDestructiveAction: true,
-                onPressed: () async {
-                  Navigator.of(context).pop();
-                  await _updateStatus(lesson, 'cancelled');
-                },
-                child: const Text('Cancel Lesson'),
-              ),
-            CupertinoActionSheetAction(
-              isDestructiveAction: true,
-              onPressed: () async {
-                Navigator.of(context).pop();
-                await _confirmDelete(lesson);
-              },
-              child: const Text('Delete'),
-            ),
-          ],
-          cancelButton: CupertinoActionSheetAction(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
+        if (lesson.status != 'cancelled')
+          AppSheetAction(
+            label: 'Cancel Lesson',
+            isDestructive: true,
+            onPressed: (BuildContext ctx) async {
+              Navigator.of(ctx).pop();
+              await _updateStatus(lesson, 'cancelled');
+            },
           ),
-        );
-      },
+        AppSheetAction(
+          label: 'Delete',
+          isDestructive: true,
+          onPressed: (BuildContext ctx) async {
+            Navigator.of(ctx).pop();
+            await _confirmDelete(lesson);
+          },
+        ),
+      ],
     );
   }
 
@@ -591,31 +719,24 @@ class _JournalPageState extends State<JournalPage> {
   }
 
   Future<void> _confirmDelete(Lesson lesson) async {
-    bool confirmed = false;
-    await showCupertinoDialog<void>(
+    final bool? confirmed = await showAppAlert<bool>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: const Text('Delete Lesson'),
-          content: Text('Delete "${lesson.displayTitle}" permanently?'),
-          actions: <Widget>[
-            CupertinoDialogAction(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            CupertinoDialogAction(
-              isDestructiveAction: true,
-              onPressed: () {
-                confirmed = true;
-                Navigator.of(context).pop();
-              },
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
+      title: 'Delete Lesson',
+      message: 'Delete "${lesson.displayTitle}" permanently?',
+      actions: <AppAlertAction>[
+        AppAlertAction(
+          label: 'Cancel',
+          style: AppAlertStyle.cancel,
+          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(false),
+        ),
+        AppAlertAction(
+          label: 'Delete',
+          style: AppAlertStyle.destructive,
+          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(true),
+        ),
+      ],
     );
-    if (!confirmed) {
+    if (confirmed != true) {
       return;
     }
     try {
@@ -627,20 +748,13 @@ class _JournalPageState extends State<JournalPage> {
   }
 
   Future<void> _showError(String message) {
-    return showCupertinoDialog<void>(
+    return showAppAlert<void>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: const Text('Journal'),
-          content: Text(message),
-          actions: <Widget>[
-            CupertinoDialogAction(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
+      title: 'Journal',
+      message: message,
+      actions: const <AppAlertAction>[
+        AppAlertAction(label: 'OK', style: AppAlertStyle.primary),
+      ],
     );
   }
 }

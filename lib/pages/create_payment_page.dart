@@ -2,18 +2,27 @@ import 'package:flutter/cupertino.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/payments/payment_service.dart';
 import 'package:tutor_app/students/student_service.dart';
+import 'package:tutor_app/theme/app_dialogs.dart';
 
 class CreatePaymentPage extends StatefulWidget {
   const CreatePaymentPage({
     required this.paymentService,
     required this.studentService,
     required this.lessonService,
+    this.initialStudent,
+    this.lockStudent = false,
     super.key,
   });
 
   final PaymentService paymentService;
   final StudentService studentService;
   final LessonService lessonService;
+
+  /// When set, this student is pre-selected after load.
+  final Student? initialStudent;
+
+  /// When true (and [initialStudent] is set), student cannot be changed.
+  final bool lockStudent;
 
   @override
   State<CreatePaymentPage> createState() => _CreatePaymentPageState();
@@ -81,12 +90,24 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
     if (!mounted) {
       return;
     }
+
+    Student? selected = widget.initialStudent;
+    if (selected != null) {
+      final int id = selected.id;
+      final bool inList = students.any((Student s) => s.id == id);
+      if (!inList) {
+        students = <Student>[selected, ...students];
+      } else {
+        selected = students.firstWhere((Student s) => s.id == id);
+      }
+    } else if (students.isNotEmpty) {
+      selected = students.first;
+    }
+
     setState(() {
       _students = students;
       _lessons = lessons;
-      if (students.isNotEmpty && _selectedStudent == null) {
-        _selectedStudent = students.first;
-      }
+      _selectedStudent = selected;
       _isLoading = false;
     });
   }
@@ -226,6 +247,11 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
                       'No students available.',
                       style: TextStyle(color: CupertinoColors.systemGrey),
                     )
+                  else if (widget.lockStudent && widget.initialStudent != null)
+                    _lockedField(
+                      label: _selectedStudent?.name ??
+                          widget.initialStudent!.name,
+                    )
                   else
                     _pickerButton(
                       label: _selectedStudent?.name ?? 'Select student',
@@ -303,6 +329,18 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
     );
   }
 
+  Widget _lockedField({required String label}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: _fieldDecoration(context),
+      child: Text(
+        label,
+        style: const TextStyle(color: CupertinoColors.label),
+      ),
+    );
+  }
+
   Widget _sectionTitle(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -333,75 +371,54 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
   }
 
   Future<void> _pickStudent() async {
-    await showCupertinoModalPopup<void>(
+    await showAppActionSheet<void>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoActionSheet(
-          title: const Text('Select Student'),
-          actions: _students.map((Student student) {
-            return CupertinoActionSheetAction(
-              onPressed: () {
-                setState(() {
-                  _selectedStudent = student;
-                  if (_selectedLesson != null &&
-                      _selectedLesson!.studentId != null &&
-                      _selectedLesson!.studentId != student.id) {
-                    _selectedLesson = null;
-                  }
-                });
-                Navigator.of(context).pop();
-              },
-              child: Text(student.name),
-            );
-          }).toList(),
-          cancelButton: CupertinoActionSheetAction(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
+      title: 'Select Student',
+      actions: _students.map((Student student) {
+        return AppSheetAction(
+          label: student.name,
+          onPressed: (BuildContext ctx) {
+            setState(() {
+              _selectedStudent = student;
+              if (_selectedLesson != null &&
+                  _selectedLesson!.studentId != null &&
+                  _selectedLesson!.studentId != student.id) {
+                _selectedLesson = null;
+              }
+            });
+            Navigator.of(ctx).pop();
+          },
         );
-      },
+      }).toList(),
     );
   }
 
   Future<void> _pickLesson() async {
     final List<Lesson> lessons = _selectableLessons;
-    await showCupertinoModalPopup<void>(
+    await showAppActionSheet<void>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoActionSheet(
-          title: const Text('Select Lesson'),
-          message: lessons.isEmpty
-              ? const Text('No lessons found for this filter.')
-              : null,
-          actions: <CupertinoActionSheetAction>[
-            CupertinoActionSheetAction(
-              onPressed: () {
-                setState(() {
-                  _selectedLesson = null;
-                });
-                Navigator.of(context).pop();
-              },
-              child: const Text('No lesson'),
-            ),
-            ...lessons.map((Lesson lesson) {
-              return CupertinoActionSheetAction(
-                onPressed: () {
-                  _applyLessonSelection(lesson);
-                  Navigator.of(context).pop();
-                },
-                child: Text(
-                  _lessonLabel(lesson),
-                  style: const TextStyle(fontSize: 14),
-                ),
-              );
-            }),
-          ],
-          cancelButton: CupertinoActionSheetAction(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-        );
-      },
+      title: 'Select Lesson',
+      message: lessons.isEmpty ? 'No lessons found for this filter.' : null,
+      actions: <AppSheetAction>[
+        AppSheetAction(
+          label: 'No lesson',
+          onPressed: (BuildContext ctx) {
+            setState(() {
+              _selectedLesson = null;
+            });
+            Navigator.of(ctx).pop();
+          },
+        ),
+        ...lessons.map((Lesson lesson) {
+          return AppSheetAction(
+            label: _lessonLabel(lesson),
+            onPressed: (BuildContext ctx) {
+              _applyLessonSelection(lesson);
+              Navigator.of(ctx).pop();
+            },
+          );
+        }),
+      ],
     );
   }
 
@@ -475,20 +492,13 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
   }
 
   Future<void> _showMessage(String message) {
-    return showCupertinoDialog<void>(
+    return showAppAlert<void>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: const Text('Payment'),
-          content: Text(message),
-          actions: <Widget>[
-            CupertinoDialogAction(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
+      title: 'Payment',
+      message: message,
+      actions: const <AppAlertAction>[
+        AppAlertAction(label: 'OK', style: AppAlertStyle.primary),
+      ],
     );
   }
 

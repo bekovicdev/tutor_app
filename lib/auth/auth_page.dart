@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:tutor_app/notifications/fcm_service.dart';
 import 'package:tutor_app/auth/auth_service.dart';
+import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 enum AuthMode { login, register }
@@ -602,20 +603,13 @@ class _AuthPageState extends State<AuthPage> {
   }
 
   Future<void> _showMessage(String message) {
-    return showCupertinoDialog<void>(
+    return showAppAlert<void>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: const Text('Auth'),
-          content: Text(message),
-          actions: <Widget>[
-            CupertinoDialogAction(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
+      title: 'Auth',
+      message: message,
+      actions: const <AppAlertAction>[
+        AppAlertAction(label: 'OK', style: AppAlertStyle.primary),
+      ],
     );
   }
 }

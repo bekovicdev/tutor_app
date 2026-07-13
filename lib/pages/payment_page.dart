@@ -5,6 +5,7 @@ import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/create_payment_page.dart';
 import 'package:tutor_app/payments/payment_service.dart';
 import 'package:tutor_app/students/student_service.dart';
+import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
 
 enum _PaymentTab { overview, monthly, receivables, prepaid, payments }
@@ -301,34 +302,26 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Future<void> _deletePayment(Payment payment) async {
-    bool confirmed = false;
-    await showCupertinoDialog<void>(
+    final bool? confirmed = await showAppAlert<bool>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: const Text('Delete Payment'),
-          content: Text(
-            'Remove ${_formatNum(payment.amount)} payment? '
-            'Linked lesson may return to unpaid.',
-          ),
-          actions: <Widget>[
-            CupertinoDialogAction(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            CupertinoDialogAction(
-              isDestructiveAction: true,
-              onPressed: () {
-                confirmed = true;
-                Navigator.of(context).pop();
-              },
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
+      title: 'Delete Payment',
+      message:
+          'Remove ${_formatNum(payment.amount)} payment? '
+          'Linked lesson may return to unpaid.',
+      actions: <AppAlertAction>[
+        AppAlertAction(
+          label: 'Cancel',
+          style: AppAlertStyle.cancel,
+          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(false),
+        ),
+        AppAlertAction(
+          label: 'Delete',
+          style: AppAlertStyle.destructive,
+          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(true),
+        ),
+      ],
     );
-    if (!confirmed) {
+    if (confirmed != true) {
       return;
     }
 
@@ -358,20 +351,13 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Future<void> _showMessage(String message) {
-    return showCupertinoDialog<void>(
+    return showAppAlert<void>(
       context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: const Text('Payment'),
-          content: Text(message),
-          actions: <Widget>[
-            CupertinoDialogAction(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
+      title: 'Payment',
+      message: message,
+      actions: const <AppAlertAction>[
+        AppAlertAction(label: 'OK', style: AppAlertStyle.primary),
+      ],
     );
   }
 
