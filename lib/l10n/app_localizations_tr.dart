@@ -166,6 +166,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get oauthCouldNotStart => 'OAuth akışı başlatılamadı.';
 
   @override
+  String get oauthInvalidGrantHint =>
+      'Google girişi süresi doldu veya yönlendirme adresi uyuşmuyor. Tarayıcıyı kapat, Google Cloud\'da http://127.0.0.1:8000/api/auth/google/callback adresinin kayıtlı olduğundan emin ol, sonra uygulamadan tekrar dene.';
+
+  @override
   String get settings => 'Ayarlar';
 
   @override

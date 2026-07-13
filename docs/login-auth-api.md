@@ -72,6 +72,11 @@ Notes:
 - Provider mismatch on account: `422`
 - Inactive user: `422`
 - Mobile redirect target can be configured as `app://auth-callback?token=...`
+- Google Cloud **Authorized redirect URIs** must match `GOOGLE_REDIRECT_URI` **exactly**
+  (e.g. `http://127.0.0.1:8000/api/auth/google/callback`). `localhost` ≠ `127.0.0.1`.
+- `invalid_grant` usually means: code reused/refreshed, or redirect URI mismatch, or expired code.
+  Close the browser and start Google login again from the app; do not reload the callback URL.
+- After changing `.env`, run `php artisan config:clear` and restart the API.
 
 ### Current User
 

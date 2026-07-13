@@ -112,6 +112,9 @@ Border? appNavigationBarBorderFor(Brightness brightness) {
 
 CupertinoThemeData _classicTheme(Brightness brightness) {
   final bool isDark = brightness == Brightness.dark;
+  final Color label = isDark ? CupertinoColors.white : CupertinoColors.black;
+  final Color secondary =
+      isDark ? const Color(0x99EBEBF5) : const Color(0x993C3C43);
   return CupertinoThemeData(
     brightness: brightness,
     primaryColor: CupertinoColors.activeBlue,
@@ -119,56 +122,51 @@ CupertinoThemeData _classicTheme(Brightness brightness) {
     barBackgroundColor: AppSurfaces.bar(brightness),
     textTheme: CupertinoTextThemeData(
       primaryColor: isDark ? CupertinoColors.white : CupertinoColors.label,
-      textStyle: TextStyle(
-        color: isDark ? CupertinoColors.white : CupertinoColors.black,
+      textStyle: _appTextStyle(color: label, fontSize: 17),
+      actionTextStyle: _appTextStyle(
+        color: CupertinoColors.activeBlue,
         fontSize: 17,
       ),
-      navTitleTextStyle: TextStyle(
-        color: isDark ? CupertinoColors.white : CupertinoColors.black,
+      navActionTextStyle: _appTextStyle(
+        color: CupertinoColors.activeBlue,
+        fontSize: 17,
+      ),
+      navTitleTextStyle: _appTextStyle(
+        color: label,
         fontSize: 17,
         fontWeight: FontWeight.w600,
       ),
-      navLargeTitleTextStyle: TextStyle(
-        color: isDark ? CupertinoColors.white : CupertinoColors.black,
+      navLargeTitleTextStyle: _appTextStyle(
+        color: label,
         fontSize: 34,
         fontWeight: FontWeight.w700,
       ),
-      tabLabelTextStyle: TextStyle(
-        color: isDark ? const Color(0x99EBEBF5) : const Color(0x993C3C43),
-        fontSize: 10,
-      ),
+      tabLabelTextStyle: _appTextStyle(color: secondary, fontSize: 10),
+      pickerTextStyle: _appTextStyle(color: label, fontSize: 21),
+      dateTimePickerTextStyle: _appTextStyle(color: label, fontSize: 21),
     ),
   );
 }
 
 CupertinoThemeData _liquidGlassTheme(Brightness brightness) {
-  final bool isDark = brightness == Brightness.dark;
-  return CupertinoThemeData(
-    brightness: brightness,
-    primaryColor: CupertinoColors.activeBlue,
-    scaffoldBackgroundColor: AppSurfaces.scaffold(brightness),
-    barBackgroundColor: AppSurfaces.bar(brightness),
-    textTheme: CupertinoTextThemeData(
-      primaryColor: isDark ? CupertinoColors.white : CupertinoColors.label,
-      textStyle: TextStyle(
-        color: isDark ? CupertinoColors.white : CupertinoColors.black,
-        fontSize: 17,
-      ),
-      navTitleTextStyle: TextStyle(
-        color: isDark ? CupertinoColors.white : CupertinoColors.black,
-        fontSize: 17,
-        fontWeight: FontWeight.w600,
-      ),
-      navLargeTitleTextStyle: TextStyle(
-        color: isDark ? CupertinoColors.white : CupertinoColors.black,
-        fontSize: 34,
-        fontWeight: FontWeight.w700,
-      ),
-      tabLabelTextStyle: TextStyle(
-        color: isDark ? const Color(0x99EBEBF5) : const Color(0x993C3C43),
-        fontSize: 10,
-      ),
-    ),
+  // Same text styles as classic; glass only affects surfaces/chrome.
+  return _classicTheme(brightness);
+}
+
+/// Explicit [inherit]: false so theme switches never hit TextStyle.lerp asserts.
+TextStyle _appTextStyle({
+  required Color color,
+  required double fontSize,
+  FontWeight fontWeight = FontWeight.w400,
+}) {
+  return TextStyle(
+    inherit: false,
+    color: color,
+    fontSize: fontSize,
+    fontWeight: fontWeight,
+    fontFamily: '.SF Pro Text',
+    letterSpacing: -0.41,
+    decoration: TextDecoration.none,
   );
 }
 

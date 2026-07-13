@@ -44,6 +44,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _loadThemePreference();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      applySystemUiOverlay(_resolvedBrightness);
+    });
   }
 
   @override
@@ -56,6 +59,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void didChangePlatformBrightness() {
     if (_themePreference == AppThemePreference.system) {
       setState(() {});
+      applySystemUiOverlay(_resolvedBrightness);
     }
   }
 
@@ -67,12 +71,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     setState(() {
       _themePreference = preference;
     });
+    applySystemUiOverlay(_resolvedBrightness);
   }
 
   Future<void> _onThemePreferenceChanged(AppThemePreference value) async {
     setState(() {
       _themePreference = value;
     });
+    applySystemUiOverlay(_resolvedBrightness);
     await AppSettings.setThemePreference(value);
   }
 
@@ -85,7 +91,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final Brightness brightness = _resolvedBrightness;
-    applySystemUiOverlay(brightness);
 
     return CupertinoApp(
       onGenerateTitle: (BuildContext context) => context.l10n.appTitle,
@@ -115,9 +120,16 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       },
       builder: (BuildContext context, Widget? child) {
         final MediaQueryData media = MediaQuery.of(context);
+        final TextStyle rootStyle =
+            CupertinoTheme.of(context).textTheme.textStyle;
         return MediaQuery(
           data: media.copyWith(platformBrightness: brightness),
-          child: child ?? const SizedBox.shrink(),
+          // Keep a stable non-inheriting root style so brightness changes
+          // do not lerp inherit:true ↔ inherit:false TextStyles.
+          child: DefaultTextStyle(
+            style: rootStyle,
+            child: child ?? const SizedBox.shrink(),
+          ),
         );
       },
       home: AppRoot(
@@ -292,6 +304,8 @@ class _AppRootState extends State<AppRoot> {
       return;
     }
 
+    final String display = _friendlyOAuthMessage(message);
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) {
         return;
@@ -299,12 +313,26 @@ class _AppRootState extends State<AppRoot> {
       await showAppAlert<void>(
         context: context,
         title: context.l10n.oauthError,
-        message: message,
+        message: display,
         actions: <AppAlertAction>[
           AppAlertAction(label: context.l10n.ok, style: AppAlertStyle.primary),
         ],
       );
     });
+  }
+
+  String _friendlyOAuthMessage(String message) {
+    final String lower = message.toLowerCase();
+    if (lower.contains('invalid_grant') ||
+        lower.contains('redirect uri') ||
+        lower.contains('redirect_uri')) {
+      return context.l10n.oauthInvalidGrantHint;
+    }
+    // Strip Guzzle ClientException noise if backend somehow forwarded raw text.
+    if (lower.contains('client error:') && lower.contains('googleapis.com')) {
+      return context.l10n.oauthInvalidGrantHint;
+    }
+    return message;
   }
 
   @override

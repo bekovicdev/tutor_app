@@ -167,6 +167,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get oauthCouldNotStart => 'OAuth flow could not be started.';
 
   @override
+  String get oauthInvalidGrantHint =>
+      'Google sign-in expired or the redirect URI does not match. Close the browser, confirm Google Cloud has http://127.0.0.1:8000/api/auth/google/callback, then try again from the app.';
+
+  @override
   String get settings => 'Settings';
 
   @override

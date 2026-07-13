@@ -404,6 +404,12 @@ abstract class AppLocalizations {
   /// **'OAuth flow could not be started.'**
   String get oauthCouldNotStart;
 
+  /// No description provided for @oauthInvalidGrantHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in expired or the redirect URI does not match. Close the browser, confirm Google Cloud has http://127.0.0.1:8000/api/auth/google/callback, then try again from the app.'**
+  String get oauthInvalidGrantHint;
+
   /// No description provided for @settings.
   ///
   /// In en, this message translates to:

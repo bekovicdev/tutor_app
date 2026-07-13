@@ -1,4 +1,6 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' show Material, MaterialType;
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:tutor_app/groups/group_service.dart';
 import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/students/student_service.dart';
@@ -517,20 +519,21 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: Text(context.l10n.addGroupTitle),
+        middle: Text(l10n.addGroupTitle),
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () => Navigator.of(context).pop(false),
-          child: Text(context.l10n.cancel),
+          child: Text(l10n.cancel),
         ),
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: _isSubmitting ? null : _submit,
           child: _isSubmitting
               ? const CupertinoActivityIndicator()
-              : Text(context.l10n.save),
+              : Text(l10n.save),
         ),
       ),
       child: SafeArea(
@@ -543,7 +546,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                 width: 88,
                 height: 88,
                 decoration: BoxDecoration(
-                  color: _selectedColor.withOpacity(0.2),
+                  color: _selectedColor.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                   border: Border.all(color: _selectedColor, width: 2),
                 ),
@@ -554,10 +557,53 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                 ),
               ),
             ),
+            const SizedBox(height: 10),
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: _showAdvancedColorPicker,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: CupertinoColors.secondarySystemBackground,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: CupertinoColors.systemGrey4),
+                ),
+                child: Row(
+                  children: <Widget>[
+                    Container(
+                      width: 26,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        color: _selectedColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: CupertinoColors.systemGrey4),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        l10n.pickAColor,
+                        style: const TextStyle(
+                          color: CupertinoColors.label,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const Icon(
+                      CupertinoIcons.slider_horizontal_3,
+                      color: CupertinoColors.systemGrey,
+                    ),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 16),
             CupertinoTextField(
               controller: _nameController,
-              placeholder: context.l10n.groupName,
+              placeholder: l10n.groupName,
               textAlign: TextAlign.center,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
               decoration: BoxDecoration(
@@ -566,53 +612,120 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                 border: Border.all(color: CupertinoColors.systemGrey4),
               ),
             ),
-            const SizedBox(height: 16),
-            Text(
-              context.l10n.color,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: CupertinoColors.secondaryLabel.resolveFrom(context),
-              ),
-            ),
-            const SizedBox(height: 8),
-            _colorSlider('R', _red, (int v) => setState(() => _red = v)),
-            _colorSlider('G', _green, (int v) => setState(() => _green = v)),
-            _colorSlider('B', _blue, (int v) => setState(() => _blue = v)),
-            const SizedBox(height: 8),
-            Text(
-              _hexFromColor(_selectedColor),
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: CupertinoColors.systemGrey,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _colorSlider(String label, int value, ValueChanged<int> onChanged) {
-    return Row(
-      children: <Widget>[
-        SizedBox(
-          width: 24,
-          child: Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-        ),
-        Expanded(
-          child: CupertinoSlider(
-            min: 0,
-            max: 255,
-            value: value.toDouble(),
-            onChanged: (double v) => onChanged(v.round()),
-          ),
-        ),
-        SizedBox(width: 36, child: Text('$value', textAlign: TextAlign.end)),
-      ],
+  Future<void> _showAdvancedColorPicker() async {
+    final AppLocalizations l10n = context.l10n;
+    Color tempColor = _selectedColor;
+
+    await showCupertinoModalPopup<void>(
+      context: context,
+      builder: (BuildContext context) {
+        final double sheetHeight = MediaQuery.of(context).size.height * 0.82;
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              height: sheetHeight,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              color: CupertinoColors.systemBackground.resolveFrom(context),
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  children: <Widget>[
+                    Row(
+                      children: <Widget>[
+                        CupertinoButton(
+                          padding: EdgeInsets.zero,
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text(l10n.cancel),
+                        ),
+                        Expanded(
+                          child: Text(
+                            l10n.color,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        CupertinoButton(
+                          padding: EdgeInsets.zero,
+                          onPressed: () {
+                            setState(() {
+                              _red = (tempColor.r * 255.0).round() & 0xff;
+                              _green = (tempColor.g * 255.0).round() & 0xff;
+                              _blue = (tempColor.b * 255.0).round() & 0xff;
+                            });
+                            Navigator.of(context).pop();
+                          },
+                          child: Text(l10n.done),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      width: 96,
+                      height: 96,
+                      decoration: BoxDecoration(
+                        color: tempColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: CupertinoColors.systemGrey4,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _hexFromColor(tempColor),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: CupertinoColors.systemGrey,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: CupertinoColors.secondarySystemBackground,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Material(
+                          type: MaterialType.transparency,
+                          child: SingleChildScrollView(
+                            child: ColorPicker(
+                              pickerColor: tempColor,
+                              onColorChanged: (Color value) {
+                                setModalState(() {
+                                  tempColor = value;
+                                });
+                              },
+                              enableAlpha: false,
+                              labelTypes: const <ColorLabelType>[],
+                              pickerAreaHeightPercent: 0.58,
+                              pickerAreaBorderRadius: const BorderRadius.all(
+                                Radius.circular(10),
+                              ),
+                              displayThumbColor: true,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

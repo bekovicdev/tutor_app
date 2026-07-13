@@ -57,6 +57,7 @@
   "passwordConfirmationRequired": "Password confirmation is required.",
   "couldNotOpenOAuth": "Could not open OAuth page.",
   "oauthCouldNotStart": "OAuth flow could not be started.",
+  "oauthInvalidGrantHint": "Google sign-in expired or the redirect URI does not match. Close the browser, confirm Google Cloud has http://127.0.0.1:8000/api/auth/google/callback, then try again from the app.",
   "settings": "Settings",
   "signedInAs": "Signed in as {name}",
   "@signedInAs": {

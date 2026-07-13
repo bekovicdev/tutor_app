@@ -51,6 +51,7 @@
   "passwordConfirmationRequired": "Şifre tekrarı gerekli.",
   "couldNotOpenOAuth": "OAuth sayfası açılamadı.",
   "oauthCouldNotStart": "OAuth akışı başlatılamadı.",
+  "oauthInvalidGrantHint": "Google girişi süresi doldu veya yönlendirme adresi uyuşmuyor. Tarayıcıyı kapat, Google Cloud'da http://127.0.0.1:8000/api/auth/google/callback adresinin kayıtlı olduğundan emin ol, sonra uygulamadan tekrar dene.",
   "settings": "Ayarlar",
   "signedInAs": "{name} olarak giriş yapıldı",
   "logout": "Çıkış yap",
