@@ -1304,6 +1304,24 @@ abstract class AppLocalizations {
   /// **'Add Lesson'**
   String get addLesson;
 
+  /// No description provided for @editSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Schedule'**
+  String get editSchedule;
+
+  /// No description provided for @editLesson.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Lesson'**
+  String get editLesson;
+
+  /// No description provided for @deleteLessonConfirmShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this lesson permanently?'**
+  String get deleteLessonConfirmShort;
+
   /// No description provided for @target.
   ///
   /// In en, this message translates to:
@@ -1585,6 +1603,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Used as the default price when creating new lessons.'**
   String get teachingDefaultsHint;
+
+  /// No description provided for @selectTimeSlot.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a time slot'**
+  String get selectTimeSlot;
+
+  /// No description provided for @selectTimeSlotHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a highlighted cell to choose day and time.'**
+  String get selectTimeSlotHint;
+
+  /// No description provided for @selectedSlot.
+  ///
+  /// In en, this message translates to:
+  /// **'{date} · {time}'**
+  String selectedSlot(String date, String time);
 }
 
 class _AppLocalizationsDelegate

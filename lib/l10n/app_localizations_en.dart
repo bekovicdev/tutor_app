@@ -654,6 +654,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addLesson => 'Add Lesson';
 
   @override
+  String get editSchedule => 'Edit Schedule';
+
+  @override
+  String get editLesson => 'Edit Lesson';
+
+  @override
+  String get deleteLessonConfirmShort => 'Delete this lesson permanently?';
+
+  @override
   String get target => 'Target';
 
   @override
@@ -805,4 +814,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get teachingDefaultsHint =>
       'Used as the default price when creating new lessons.';
+
+  @override
+  String get selectTimeSlot => 'Select a time slot';
+
+  @override
+  String get selectTimeSlotHint =>
+      'Tap a highlighted cell to choose day and time.';
+
+  @override
+  String selectedSlot(String date, String time) {
+    return '$date · $time';
+  }
 }

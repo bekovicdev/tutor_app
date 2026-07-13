@@ -154,6 +154,14 @@ class Lesson {
 
   int get endMinutes => startMinutes + durationMinutes;
 
+  static String _normalizeDateKey(String raw) {
+    final String trimmed = raw.trim();
+    if (trimmed.length >= 10) {
+      return trimmed.substring(0, 10);
+    }
+    return trimmed;
+  }
+
   factory Lesson.fromJson(Map<String, dynamic> json) {
     final List<dynamic> notesJson =
         (json['student_notes'] as List<dynamic>?) ?? <dynamic>[];
@@ -165,7 +173,7 @@ class Lesson {
       studentId: (json['student_id'] as num?)?.toInt(),
       groupId: (json['group_id'] as num?)?.toInt(),
       title: json['title'] as String?,
-      date: (json['date'] as String?) ?? '',
+      date: _normalizeDateKey((json['date'] as String?) ?? ''),
       startAt: (json['start_at'] as String?) ?? '00:00',
       durationMinutes: (json['duration_minutes'] as num?)?.toInt() ?? 0,
       isFree: json['is_free'] as bool?,
@@ -303,6 +311,12 @@ class LessonService {
     );
     final Map<String, dynamic> json = await _request(method: 'GET', uri: uri);
     final List<Lesson> lessons = _parseLessons(json['data']);
+    final bool hasSourceValues = lessons.any(
+      (Lesson lesson) => lesson.source != null && lesson.source!.isNotEmpty,
+    );
+    if (!hasSourceValues) {
+      return lessons;
+    }
     return _filterBySource(lessons, source);
   }
 
@@ -321,6 +335,14 @@ class LessonService {
     final Map<String, dynamic> json = await _request(method: 'GET', uri: uri);
     final Map<String, dynamic>? data = json['data'] as Map<String, dynamic>?;
     final List<Lesson> lessons = _parseLessons(data?['lessons'] ?? data);
+    // Only client-filter when the API actually returns source values.
+    // Older backends ignore `source` and would otherwise yield an empty list.
+    final bool hasSourceValues = lessons.any(
+      (Lesson lesson) => lesson.source != null && lesson.source!.isNotEmpty,
+    );
+    if (!hasSourceValues) {
+      return lessons;
+    }
     return _filterBySource(lessons, source);
   }
 

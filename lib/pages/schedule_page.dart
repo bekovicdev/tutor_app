@@ -3,7 +3,6 @@ import 'package:intl/intl.dart' as intl;
 import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/create_lesson_page.dart';
-import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
 
 class SchedulePage extends StatefulWidget {
@@ -21,6 +20,7 @@ class _SchedulePageState extends State<SchedulePage> {
   static const int _hoursInDay = 24;
 
   late final LessonService _lessonService;
+  final ScrollController _gridScrollController = ScrollController();
 
   DateTime _weekStart = _mondayOf(DateTime.now());
   DateTime _selectedDay = DateTime(
@@ -31,12 +31,21 @@ class _SchedulePageState extends State<SchedulePage> {
   List<Lesson> _weekLessons = <Lesson>[];
   bool _isLoading = true;
   String? _errorMessage;
+  bool _slotPicking = false;
+  DateTime? _pressedSlotDay;
+  int? _pressedSlotHour;
 
   @override
   void initState() {
     super.initState();
     _lessonService = LessonService(token: widget.token);
     _loadWeek();
+  }
+
+  @override
+  void dispose() {
+    _gridScrollController.dispose();
+    super.dispose();
   }
 
   static DateTime _mondayOf(DateTime date) {
@@ -59,9 +68,11 @@ class _SchedulePageState extends State<SchedulePage> {
 
   List<Lesson> _lessonsForDay(DateTime day) {
     final String key = _formatDate(day);
-    return _weekLessons
-        .where((Lesson lesson) => lesson.date.startsWith(key))
-        .toList();
+    return _weekLessons.where((Lesson lesson) {
+      final String raw = lesson.date.trim();
+      final String dayKey = raw.length >= 10 ? raw.substring(0, 10) : raw;
+      return dayKey == key;
+    }).toList();
   }
 
   Future<void> _loadWeek() async {
@@ -116,18 +127,57 @@ class _SchedulePageState extends State<SchedulePage> {
   }
 
   void _selectDay(DateTime day) {
+    if (_slotPicking) {
+      return;
+    }
     setState(() {
       _selectedDay = DateTime(day.year, day.month, day.day);
     });
   }
 
-  Future<void> _openCreateLesson() async {
+  void _startSlotPicking() {
+    setState(() {
+      _slotPicking = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_gridScrollController.hasClients) {
+        return;
+      }
+      final int focusHour = DateTime.now().hour.clamp(7, 20);
+      final double offset = (focusHour * _hourHeight) -
+          (_gridScrollController.position.viewportDimension / 3);
+      _gridScrollController.animateTo(
+        offset.clamp(0.0, _gridScrollController.position.maxScrollExtent),
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  void _cancelSlotPicking() {
+    setState(() {
+      _slotPicking = false;
+      _pressedSlotDay = null;
+      _pressedSlotHour = null;
+    });
+  }
+
+  Future<void> _onSlotSelected(DateTime day, int hour) async {
+    setState(() {
+      _slotPicking = false;
+      _pressedSlotDay = null;
+      _pressedSlotHour = null;
+      _selectedDay = DateTime(day.year, day.month, day.day);
+    });
+    final String startAt = '${hour.toString().padLeft(2, '0')}:00';
     final bool? created = await Navigator.of(context).push<bool>(
       CupertinoPageRoute<bool>(
         builder: (BuildContext context) => CreateLessonPage(
           token: widget.token,
           source: LessonSource.schedule,
-          initialDate: _selectedDay,
+          initialDate: day,
+          initialStartAt: startAt,
+          lockDateTime: true,
         ),
       ),
     );
@@ -136,32 +186,58 @@ class _SchedulePageState extends State<SchedulePage> {
     }
   }
 
+  Future<void> _openCreateLesson() async {
+    _startSlotPicking();
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: Text(l10n.schedule),
+        middle: Text(_slotPicking ? l10n.selectTimeSlot : l10n.schedule),
         border: appNavigationBarBorderOf(context),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            CupertinoButton(
-              padding: EdgeInsets.zero,
-              onPressed: _openCreateLesson,
-              child: const Icon(CupertinoIcons.add),
-            ),
-            CupertinoButton(
-              padding: EdgeInsets.zero,
-              onPressed: _goToToday,
-              child: Text(l10n.today),
-            ),
-          ],
-        ),
+        leading: _slotPicking
+            ? CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: _cancelSlotPicking,
+                child: Text(l10n.cancel),
+              )
+            : null,
+        trailing: _slotPicking
+            ? null
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    onPressed: _openCreateLesson,
+                    child: const Icon(CupertinoIcons.add),
+                  ),
+                  CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    onPressed: _goToToday,
+                    child: Text(l10n.today),
+                  ),
+                ],
+              ),
       ),
       child: SafeArea(
         child: Column(
           children: <Widget>[
+            if (_slotPicking)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 2),
+                child: Text(
+                  l10n.selectTimeSlotHint,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                  ),
+                ),
+              ),
             _buildWeekNav(),
             _buildDayHeader(),
             Expanded(child: _buildGrid()),
@@ -300,6 +376,7 @@ class _SchedulePageState extends State<SchedulePage> {
     final double gridHeight = _hoursInDay * _hourHeight;
 
     return SingleChildScrollView(
+      controller: _gridScrollController,
       padding: const EdgeInsets.only(bottom: 16, right: 8),
       child: SizedBox(
         height: gridHeight,
@@ -338,9 +415,31 @@ class _SchedulePageState extends State<SchedulePage> {
                   lessons: _lessonsForDay(day),
                   hourHeight: _hourHeight,
                   hoursInDay: _hoursInDay,
-                  selected: selected,
+                  selected: selected && !_slotPicking,
+                  slotPicking: _slotPicking,
+                  pressedHour: _slotPicking &&
+                          _pressedSlotDay != null &&
+                          _isSameDay(_pressedSlotDay!, day)
+                      ? _pressedSlotHour
+                      : null,
                   onDayTap: () => _selectDay(day),
-                  onLessonTap: _showLessonDetails,
+                  onSlotTap: (int hour) => _onSlotSelected(day, hour),
+                  onSlotPressStart: (int hour) {
+                    setState(() {
+                      _pressedSlotDay = day;
+                      _pressedSlotHour = hour;
+                    });
+                  },
+                  onSlotPressEnd: () {
+                    if (_pressedSlotDay == null && _pressedSlotHour == null) {
+                      return;
+                    }
+                    setState(() {
+                      _pressedSlotDay = null;
+                      _pressedSlotHour = null;
+                    });
+                  },
+                  onLessonTap: _openLessonEditor,
                   parseColor: _parseHexColor,
                 ),
               );
@@ -375,17 +474,19 @@ class _SchedulePageState extends State<SchedulePage> {
     );
   }
 
-  Future<void> _showLessonDetails(Lesson lesson) async {
-    await showAppActionSheet<void>(
-      context: context,
-      title: lesson.displayTitle,
-      message:
-          '${lesson.date} · ${lesson.startAt} · ${context.l10n.minutes(lesson.durationMinutes)}\n'
-          '${lesson.displaySubtitle}\n'
-          '${context.l10n.status}: ${lesson.status}',
-      cancelLabel: context.l10n.close,
-      actions: const <AppSheetAction>[],
+  Future<void> _openLessonEditor(Lesson lesson) async {
+    final bool? changed = await Navigator.of(context).push<bool>(
+      CupertinoPageRoute<bool>(
+        builder: (BuildContext context) => CreateLessonPage(
+          token: widget.token,
+          source: LessonSource.schedule,
+          lesson: lesson,
+        ),
+      ),
     );
+    if (changed == true) {
+      await _loadWeek();
+    }
   }
 }
 
@@ -396,7 +497,12 @@ class _DayColumn extends StatelessWidget {
     required this.hourHeight,
     required this.hoursInDay,
     required this.selected,
+    required this.slotPicking,
+    required this.pressedHour,
     required this.onDayTap,
+    required this.onSlotTap,
+    required this.onSlotPressStart,
+    required this.onSlotPressEnd,
     required this.onLessonTap,
     required this.parseColor,
   });
@@ -406,7 +512,12 @@ class _DayColumn extends StatelessWidget {
   final double hourHeight;
   final int hoursInDay;
   final bool selected;
+  final bool slotPicking;
+  final int? pressedHour;
   final VoidCallback onDayTap;
+  final ValueChanged<int> onSlotTap;
+  final ValueChanged<int> onSlotPressStart;
+  final VoidCallback onSlotPressEnd;
   final ValueChanged<Lesson> onLessonTap;
   final Color Function(String? hex) parseColor;
 
@@ -415,14 +526,17 @@ class _DayColumn extends StatelessWidget {
     final double height = hoursInDay * hourHeight;
     final Color line = CupertinoColors.separator
         .resolveFrom(context)
-        .withValues(alpha: 0.55);
+        .withValues(alpha: slotPicking ? 0.75 : 0.55);
     final Color selectedFill = CupertinoColors.activeBlue
         .resolveFrom(context)
         .withValues(alpha: 0.06);
+    final Color pressFill = CupertinoColors.label
+        .resolveFrom(context)
+        .withValues(alpha: 0.08);
 
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
-      onTap: onDayTap,
+      onTap: slotPicking ? null : onDayTap,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 1),
         decoration: BoxDecoration(
@@ -450,8 +564,8 @@ class _DayColumn extends StatelessWidget {
                   return const SizedBox.shrink();
                 }
                 final double top = start / 60 * hourHeight;
-                final double blockHeight = ((end - start) / 60 * hourHeight)
-                    .clamp(16.0, height);
+                final double blockHeight =
+                    ((end - start) / 60 * hourHeight).clamp(16.0, height);
 
                 final Color accent = parseColor(lesson.accentColor);
                 final bool cancelled = lesson.status == 'cancelled';
@@ -461,45 +575,76 @@ class _DayColumn extends StatelessWidget {
                   left: 1,
                   right: 1,
                   height: blockHeight,
-                  child: GestureDetector(
-                    onTap: () => onLessonTap(lesson),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 3,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: cancelled
-                            ? CupertinoColors.systemGrey5
-                            : accent.withValues(alpha: 0.22),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                          color: cancelled
-                              ? CupertinoColors.systemGrey3
-                              : accent,
-                          width: 0.8,
-                        ),
-                      ),
-                      child: Text(
-                        lesson.displayTitle,
-                        maxLines: blockHeight < 28 ? 1 : 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          height: 1.1,
-                          color: cancelled
-                              ? CupertinoColors.systemGrey
-                              : CupertinoColors.label.resolveFrom(context),
-                          decoration: cancelled
-                              ? TextDecoration.lineThrough
-                              : null,
+                  child: IgnorePointer(
+                    ignoring: slotPicking,
+                    child: GestureDetector(
+                      onTap: () => onLessonTap(lesson),
+                      child: Opacity(
+                        opacity: slotPicking ? 0.4 : 1,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 3,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: cancelled
+                                ? CupertinoColors.systemGrey5
+                                : accent.withValues(alpha: 0.22),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: cancelled
+                                  ? CupertinoColors.systemGrey3
+                                  : accent,
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Text(
+                            lesson.displayTitle,
+                            maxLines: blockHeight < 28 ? 1 : 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              height: 1.1,
+                              color: cancelled
+                                  ? CupertinoColors.systemGrey
+                                  : CupertinoColors.label.resolveFrom(context),
+                              decoration: cancelled
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
                 );
               }),
+              if (slotPicking)
+                ...List<Widget>.generate(hoursInDay, (int hour) {
+                  final bool pressed = pressedHour == hour;
+                  return Positioned(
+                    top: hour * hourHeight,
+                    left: 0,
+                    right: 0,
+                    height: hourHeight,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapDown: (_) => onSlotPressStart(hour),
+                      onTapCancel: onSlotPressEnd,
+                      onTapUp: (_) => onSlotPressEnd(),
+                      onTap: () => onSlotTap(hour),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 90),
+                        margin: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: pressed ? pressFill : null,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
             ],
           ),
         ),

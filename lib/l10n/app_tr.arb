@@ -201,6 +201,9 @@
   "selectStudentOrLesson": "Bir öğrenci veya ders seçin.",
   "addSchedule": "Programa Ekle",
   "addLesson": "Ders Ekle",
+  "editSchedule": "Programı Düzenle",
+  "editLesson": "Dersi Düzenle",
+  "deleteLessonConfirmShort": "Bu ders kalıcı olarak silinsin mi?",
   "target": "Hedef",
   "date": "Tarih",
   "startTime": "Başlangıç saati",
@@ -247,5 +250,8 @@
   "signedInWith": "{provider} ile giriş yapıldı",
   "support": "Destek",
   "supportMessage": "Soru veya geri bildirim için bize yazabilirsiniz.",
-  "teachingDefaultsHint": "Yeni ders oluştururken varsayılan ücret olarak kullanılır."
+  "teachingDefaultsHint": "Yeni ders oluştururken varsayılan ücret olarak kullanılır.",
+  "selectTimeSlot": "Saat dilimi seç",
+  "selectTimeSlotHint": "Gün ve saati seçmek için vurgulanan bir hücreye dokun.",
+  "selectedSlot": "{date} · {time}"
 }

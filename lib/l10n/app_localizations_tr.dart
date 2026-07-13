@@ -654,6 +654,15 @@ class AppLocalizationsTr extends AppLocalizations {
   String get addLesson => 'Ders Ekle';
 
   @override
+  String get editSchedule => 'Programı Düzenle';
+
+  @override
+  String get editLesson => 'Dersi Düzenle';
+
+  @override
+  String get deleteLessonConfirmShort => 'Bu ders kalıcı olarak silinsin mi?';
+
+  @override
   String get target => 'Hedef';
 
   @override
@@ -806,4 +815,16 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get teachingDefaultsHint =>
       'Yeni ders oluştururken varsayılan ücret olarak kullanılır.';
+
+  @override
+  String get selectTimeSlot => 'Saat dilimi seç';
+
+  @override
+  String get selectTimeSlotHint =>
+      'Gün ve saati seçmek için vurgulanan bir hücreye dokun.';
+
+  @override
+  String selectedSlot(String date, String time) {
+    return '$date · $time';
+  }
 }

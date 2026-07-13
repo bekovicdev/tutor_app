@@ -297,6 +297,9 @@
   "selectStudentOrLesson": "Select a student or lesson.",
   "addSchedule": "Add Schedule",
   "addLesson": "Add Lesson",
+  "editSchedule": "Edit Schedule",
+  "editLesson": "Edit Lesson",
+  "deleteLessonConfirmShort": "Delete this lesson permanently?",
   "target": "Target",
   "date": "Date",
   "startTime": "Start time",
@@ -369,5 +372,14 @@
   },
   "support": "Support",
   "supportMessage": "Questions or feedback? Email us anytime.",
-  "teachingDefaultsHint": "Used as the default price when creating new lessons."
+  "teachingDefaultsHint": "Used as the default price when creating new lessons.",
+  "selectTimeSlot": "Select a time slot",
+  "selectTimeSlotHint": "Tap a highlighted cell to choose day and time.",
+  "selectedSlot": "{date} · {time}",
+  "@selectedSlot": {
+    "placeholders": {
+      "date": {"type": "String"},
+      "time": {"type": "String"}
+    }
+  }
 }

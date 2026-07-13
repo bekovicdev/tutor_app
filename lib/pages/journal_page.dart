@@ -734,6 +734,18 @@ class _JournalPageState extends State<JournalPage> {
     );
   }
 
+  String _statusLabel(AppLocalizations l10n, String status) {
+    switch (status) {
+      case 'completed':
+        return l10n.completed;
+      case 'cancelled':
+        return l10n.cancelled;
+      case 'scheduled':
+      default:
+        return l10n.scheduled;
+    }
+  }
+
   Future<void> _showLessonDetails(Lesson lesson) async {
     await showAppActionSheet<void>(
       context: context,
@@ -741,7 +753,7 @@ class _JournalPageState extends State<JournalPage> {
       message:
           '${lesson.date} · ${lesson.startAt} · ${context.l10n.minutes(lesson.durationMinutes)}\n'
           '${lesson.displaySubtitle}\n'
-          '${context.l10n.status}: ${lesson.status}'
+          '${context.l10n.status}: ${_statusLabel(context.l10n, lesson.status)}'
           '${lesson.notes != null && lesson.notes!.isNotEmpty ? '\n${lesson.notes}' : ''}',
       cancelLabel: context.l10n.close,
       actions: <AppSheetAction>[

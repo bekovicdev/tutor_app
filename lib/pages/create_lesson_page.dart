@@ -11,6 +11,8 @@ class CreateLessonPage extends StatefulWidget {
     required this.source,
     this.initialDate,
     this.initialStartAt,
+    this.lockDateTime = false,
+    this.lesson,
     super.key,
   });
 
@@ -18,6 +20,14 @@ class CreateLessonPage extends StatefulWidget {
   final String source;
   final DateTime? initialDate;
   final String? initialStartAt;
+
+  /// When true, date and start time are fixed (e.g. picked from schedule grid).
+  final bool lockDateTime;
+
+  /// When set, the page edits this lesson instead of creating a new one.
+  final Lesson? lesson;
+
+  bool get isEditing => lesson != null;
 
   @override
   State<CreateLessonPage> createState() => _CreateLessonPageState();
@@ -63,7 +73,35 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
       final int minute = int.tryParse(parts[1]) ?? 0;
       _startTime = Duration(hours: hour, minutes: minute);
     }
+    final Lesson? existing = widget.lesson;
+    if (existing != null) {
+      _applyLesson(existing);
+    }
     _loadLookups();
+  }
+
+  void _applyLesson(Lesson lesson) {
+    final String dateKey = lesson.date.length >= 10
+        ? lesson.date.substring(0, 10)
+        : lesson.date;
+    final DateTime? parsedDate = DateTime.tryParse(dateKey);
+    if (parsedDate != null) {
+      _date = DateTime(parsedDate.year, parsedDate.month, parsedDate.day);
+    }
+    final List<String> parts = lesson.startAt.split(':');
+    if (parts.length >= 2) {
+      _startTime = Duration(
+        hours: int.tryParse(parts[0]) ?? 10,
+        minutes: int.tryParse(parts[1]) ?? 0,
+      );
+    }
+    _durationMinutes = lesson.durationMinutes > 0 ? lesson.durationMinutes : 60;
+    _status = lesson.status;
+    _isGroup = lesson.isGroup;
+    _isFree = lesson.isFree == true;
+    _titleController.text = lesson.title ?? '';
+    _priceController.text = lesson.price ?? '';
+    _notesController.text = lesson.notes ?? '';
   }
 
   @override
@@ -93,19 +131,53 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     setState(() {
       _students = students;
       _groups = groups;
-      if (students.isNotEmpty) {
-        _selectedStudent = students.first;
-      }
-      if (groups.isNotEmpty) {
-        _selectedGroup = groups.first;
+      final Lesson? existing = widget.lesson;
+      if (existing != null) {
+        if (existing.isGroup) {
+          TutorGroup? match;
+          for (final TutorGroup group in groups) {
+            if (group.id == existing.groupId) {
+              match = group;
+              break;
+            }
+          }
+          _selectedGroup = match ?? (groups.isNotEmpty ? groups.first : null);
+          _selectedStudent = students.isNotEmpty ? students.first : null;
+        } else {
+          Student? match;
+          for (final Student student in students) {
+            if (student.id == existing.studentId) {
+              match = student;
+              break;
+            }
+          }
+          _selectedStudent =
+              match ?? (students.isNotEmpty ? students.first : null);
+          _selectedGroup = groups.isNotEmpty ? groups.first : null;
+        }
+      } else {
+        if (students.isNotEmpty) {
+          _selectedStudent = students.first;
+        }
+        if (groups.isNotEmpty) {
+          _selectedGroup = groups.first;
+        }
       }
       _isLoading = false;
     });
   }
 
-  String get _pageTitle => widget.source == LessonSource.schedule
-      ? context.l10n.addSchedule
-      : context.l10n.addLesson;
+  String get _pageTitle {
+    final AppLocalizations l10n = context.l10n;
+    if (widget.isEditing) {
+      return widget.source == LessonSource.schedule
+          ? l10n.editSchedule
+          : l10n.editLesson;
+    }
+    return widget.source == LessonSource.schedule
+        ? l10n.addSchedule
+        : l10n.addLesson;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -172,17 +244,53 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                       onPressed: _students.isEmpty ? null : _pickStudent,
                     ),
                   const SizedBox(height: 16),
-                  _sectionTitle(l10n.date),
+                  if (widget.lockDateTime && !widget.isEditing) ...<Widget>[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: CupertinoColors.activeBlue.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: CupertinoColors.activeBlue.withValues(alpha: 0.25),
+                        ),
+                      ),
+                      child: Row(
+                        children: <Widget>[
+                          const Icon(
+                            CupertinoIcons.calendar,
+                            size: 18,
+                            color: CupertinoColors.activeBlue,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              l10n.selectedSlot(
+                                _formatDate(_date),
+                                _formatTimeDisplay(_startTime),
+                              ),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else ...<Widget>[
+                    _sectionTitle(l10n.date),
+                    _pickerButton(
+                      label: _formatDate(_date),
+                      onPressed: _pickDate,
+                    ),
+                    const SizedBox(height: 16),
+                    _sectionTitle(l10n.startTime),
                   _pickerButton(
-                    label: _formatDate(_date),
-                    onPressed: _pickDate,
-                  ),
-                  const SizedBox(height: 16),
-                  _sectionTitle(l10n.startTime),
-                  _pickerButton(
-                    label: _formatTime(_startTime),
+                    label: _formatTimeDisplay(_startTime),
                     onPressed: _pickTime,
                   ),
+                  ],
                   const SizedBox(height: 16),
                   _sectionTitle(l10n.duration),
                   _pickerButton(
@@ -272,6 +380,20 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                     padding: const EdgeInsets.all(12),
                     decoration: _fieldDecoration(context),
                   ),
+                  if (widget.isEditing) ...<Widget>[
+                    const SizedBox(height: 28),
+                    CupertinoButton(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      onPressed: _isSubmitting ? null : _confirmDelete,
+                      child: Text(
+                        l10n.deleteLesson,
+                        style: const TextStyle(
+                          color: CupertinoColors.systemRed,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
       ),
@@ -561,22 +683,87 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
       _isSubmitting = true;
     });
     try {
-      await _lessonService.createLesson(
-        LessonCreateRequest(
-          date: _formatDate(_date),
-          startAt: _formatTime(_startTime),
-          durationMinutes: _durationMinutes,
-          studentId: _isGroup ? null : _selectedStudent?.id,
-          groupId: _isGroup ? _selectedGroup?.id : null,
-          title: _titleController.text.trim(),
-          isFree: _isFree,
-          price: price,
-          notes: _notesController.text.trim(),
-          source: widget.source,
-          status: widget.source == LessonSource.journal ? _status : 'scheduled',
-          paymentStatus: _isFree ? null : 'unpaid',
+      final Lesson? existing = widget.lesson;
+      if (existing != null) {
+        await _lessonService.updateLesson(
+          id: existing.id,
+          body: <String, dynamic>{
+            'date': _formatDate(_date),
+            'start_at': _formatTime(_startTime),
+            'duration_minutes': _durationMinutes,
+            'student_id': _isGroup ? null : _selectedStudent?.id,
+            'group_id': _isGroup ? _selectedGroup?.id : null,
+            'title': _titleController.text.trim(),
+            'is_free': _isFree,
+            if (!_isFree && price != null) 'price': price,
+            'notes': _notesController.text.trim(),
+            if (widget.source == LessonSource.journal) 'status': _status,
+          },
+        );
+      } else {
+        await _lessonService.createLesson(
+          LessonCreateRequest(
+            date: _formatDate(_date),
+            startAt: _formatTime(_startTime),
+            durationMinutes: _durationMinutes,
+            studentId: _isGroup ? null : _selectedStudent?.id,
+            groupId: _isGroup ? _selectedGroup?.id : null,
+            title: _titleController.text.trim(),
+            isFree: _isFree,
+            price: price,
+            notes: _notesController.text.trim(),
+            source: widget.source,
+            status: widget.source == LessonSource.journal ? _status : 'scheduled',
+            paymentStatus: _isFree ? null : 'unpaid',
+          ),
+        );
+      }
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pop(true);
+    } on LessonServiceException catch (error) {
+      await _showMessage(error.message);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _confirmDelete() async {
+    final Lesson? existing = widget.lesson;
+    if (existing == null) {
+      return;
+    }
+    final AppLocalizations l10n = context.l10n;
+    final bool? confirmed = await showAppAlert<bool>(
+      context: context,
+      title: l10n.deleteLesson,
+      message: l10n.deleteLessonConfirmShort,
+      actions: <AppAlertAction>[
+        AppAlertAction(
+          label: l10n.cancel,
+          style: AppAlertStyle.cancel,
+          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(false),
         ),
-      );
+        AppAlertAction(
+          label: l10n.delete,
+          style: AppAlertStyle.destructive,
+          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(true),
+        ),
+      ],
+    );
+    if (confirmed != true) {
+      return;
+    }
+    setState(() {
+      _isSubmitting = true;
+    });
+    try {
+      await _lessonService.deleteLesson(existing.id);
       if (!mounted) {
         return;
       }
@@ -613,5 +800,11 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     final String h = time.inHours.toString().padLeft(2, '0');
     final String m = (time.inMinutes % 60).toString().padLeft(2, '0');
     return '$h:$m:00';
+  }
+
+  String _formatTimeDisplay(Duration time) {
+    final String h = time.inHours.toString().padLeft(2, '0');
+    final String m = (time.inMinutes % 60).toString().padLeft(2, '0');
+    return '$h.$m';
   }
 }
