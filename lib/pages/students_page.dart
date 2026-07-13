@@ -2,10 +2,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show Material, MaterialType;
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:tutor_app/groups/group_service.dart';
+import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/group_detail_page.dart';
 import 'package:tutor_app/students/student_service.dart';
 
 enum _StudentsViewMode { students, groups }
+
+enum _StudentDetailTab { info, lessons, payments }
 
 class StudentsPage extends StatefulWidget {
   const StudentsPage({
@@ -668,10 +671,17 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
   final TextEditingController _notesController = TextEditingController();
   final TextEditingController _colorController = TextEditingController();
 
+  late final LessonService _lessonService;
+
+  _StudentDetailTab _tab = _StudentDetailTab.info;
   bool _isLoading = true;
   bool _isSaving = false;
   bool _isDeleting = false;
   StudentSummary? _summary;
+  StudentBalance? _balance;
+  List<Lesson> _completedLessons = <Lesson>[];
+  String? _paymentsError;
+  String? _lessonsError;
   DateTime? _selectedBirthday;
   String _initialName = '';
   String _initialPhone = '';
@@ -683,6 +693,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
   @override
   void initState() {
     super.initState();
+    _lessonService = LessonService(token: widget.studentService.token);
     _loadDetail();
   }
 
@@ -698,7 +709,6 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final Color accentColor = _parseHexColor(_colorController.text);
     return WillPopScope(
       onWillPop: _handleBackPressed,
       child: CupertinoPageScaffold(
@@ -719,190 +729,461 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
         child: SafeArea(
           child: _isLoading
               ? const Center(child: CupertinoActivityIndicator())
-              : ListView(
-                padding: const EdgeInsets.all(16),
-                children: <Widget>[
-                  _profileHeader(accentColor),
-                  const SizedBox(height: 12),
-                  _sectionCard(
-                    context,
-                    title: 'Basic Info',
-                    child: Column(
-                      children: <Widget>[
-                        _field(_nameController, 'Name *'),
-                        const SizedBox(height: 10),
-                        _field(
-                          _phoneController,
-                          'Phone',
-                          keyboardType: TextInputType.phone,
-                        ),
-                        const SizedBox(height: 10),
-                        _birthdayButton(),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _sectionCard(
-                    context,
-                    title: 'Lesson Settings',
-                    child: Column(
-                      children: <Widget>[
-                        _field(
-                          _lessonCostController,
-                          'Lesson Cost',
-                          keyboardType:
-                              const TextInputType.numberWithOptions(decimal: true),
-                        ),
-                        const SizedBox(height: 10),
-                        CupertinoButton(
-                          padding: EdgeInsets.zero,
-                          onPressed: _showDetailColorPicker,
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: CupertinoColors.secondarySystemBackground,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: CupertinoColors.systemGrey4,
-                              ),
-                            ),
-                            child: Row(
-                              children: <Widget>[
-                                Container(
-                                  width: 22,
-                                  height: 22,
-                                  decoration: BoxDecoration(
-                                    color: _parseHexColor(_colorController.text),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: CupertinoColors.systemGrey4,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    'Pick a color',
-                                    style: const TextStyle(
-                                      color: CupertinoColors.label,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  _colorController.text.isEmpty
-                                      ? _hexFromColor(
-                                          _parseHexColor(_colorController.text),
-                                        )
-                                      : _colorController.text.toUpperCase(),
-                                  style: const TextStyle(
-                                    color: CupertinoColors.systemGrey,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                const Icon(
-                                  CupertinoIcons.slider_horizontal_3,
-                                  color: CupertinoColors.systemGrey,
-                                  size: 18,
-                                ),
-                              ],
-                            ),
+              : Column(
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                      child: CupertinoSlidingSegmentedControl<_StudentDetailTab>(
+                        groupValue: _tab,
+                        children: const <_StudentDetailTab, Widget>{
+                          _StudentDetailTab.info: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            child: Text('Info'),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _sectionCard(
-                    context,
-                    title: 'Notes',
-                    child: _field(
-                      _notesController,
-                      'Notes',
-                      minLines: 4,
-                      maxLines: 5,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  if (_summary != null) ...<Widget>[
-                    _sectionCard(
-                      context,
-                      title: 'Summary',
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: <Widget>[
-                          _summaryChip(
-                            'Lessons',
-                            '${_summary!.lessonsTotal}',
-                            CupertinoColors.activeBlue,
+                          _StudentDetailTab.lessons: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            child: Text('Lessons'),
                           ),
-                          _summaryChip(
-                            'Completed',
-                            '${_summary!.lessonsCompleted}',
-                            CupertinoColors.activeGreen,
+                          _StudentDetailTab.payments: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            child: Text('Payments'),
                           ),
-                          _summaryChip(
-                            'Cancelled',
-                            '${_summary!.lessonsCancelled}',
-                            CupertinoColors.systemRed,
-                          ),
-                          _summaryChip(
-                            'Last',
-                            _summary!.lastLessonDate ?? '-',
-                            CupertinoColors.systemGrey,
-                          ),
-                        ],
+                        },
+                        onValueChanged: (_StudentDetailTab? value) {
+                          if (value == null) {
+                            return;
+                          }
+                          setState(() {
+                            _tab = value;
+                          });
+                        },
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    Expanded(child: _buildTabBody()),
                   ],
-                  const SizedBox(height: 10),
-                  CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: _isDeleting ? null : _deleteStudent,
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      decoration: BoxDecoration(
-                        color: CupertinoColors.systemRed.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          if (_isDeleting) ...<Widget>[
-                            const CupertinoActivityIndicator(),
-                            const SizedBox(width: 8),
-                          ] else ...<Widget>[
-                            const Icon(
-                              CupertinoIcons.delete,
-                              size: 18,
-                              color: CupertinoColors.systemRed,
-                            ),
-                            const SizedBox(width: 8),
-                          ],
-                          const Text(
-                            'Delete Student',
-                            style: TextStyle(
-                              color: CupertinoColors.systemRed,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
         ),
       ),
     );
+  }
+
+  Widget _buildTabBody() {
+    switch (_tab) {
+      case _StudentDetailTab.info:
+        return _buildInfoTab();
+      case _StudentDetailTab.lessons:
+        return _buildLessonsTab();
+      case _StudentDetailTab.payments:
+        return _buildPaymentsTab();
+    }
+  }
+
+  Widget _buildInfoTab() {
+    final Color accentColor = _parseHexColor(_colorController.text);
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      children: <Widget>[
+        _profileHeader(accentColor),
+        const SizedBox(height: 12),
+        _sectionCard(
+          context,
+          title: 'Basic Info',
+          child: Column(
+            children: <Widget>[
+              _field(_nameController, 'Name *'),
+              const SizedBox(height: 10),
+              _field(
+                _phoneController,
+                'Phone',
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 10),
+              _birthdayButton(),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        _sectionCard(
+          context,
+          title: 'Lesson Settings',
+          child: Column(
+            children: <Widget>[
+              _field(
+                _lessonCostController,
+                'Lesson Cost',
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+              ),
+              const SizedBox(height: 10),
+              CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: _showDetailColorPicker,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.secondarySystemBackground,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: CupertinoColors.systemGrey4,
+                    ),
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          color: _parseHexColor(_colorController.text),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: CupertinoColors.systemGrey4,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Text(
+                          'Pick a color',
+                          style: TextStyle(
+                            color: CupertinoColors.label,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        _colorController.text.isEmpty
+                            ? _hexFromColor(
+                                _parseHexColor(_colorController.text),
+                              )
+                            : _colorController.text.toUpperCase(),
+                        style: const TextStyle(
+                          color: CupertinoColors.systemGrey,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const Icon(
+                        CupertinoIcons.slider_horizontal_3,
+                        color: CupertinoColors.systemGrey,
+                        size: 18,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        _sectionCard(
+          context,
+          title: 'Notes',
+          child: _field(
+            _notesController,
+            'Notes',
+            minLines: 4,
+            maxLines: 5,
+          ),
+        ),
+        const SizedBox(height: 20),
+        CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: _isDeleting ? null : _deleteStudent,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            decoration: BoxDecoration(
+              color: CupertinoColors.systemRed.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                if (_isDeleting) ...<Widget>[
+                  const CupertinoActivityIndicator(),
+                  const SizedBox(width: 8),
+                ] else ...<Widget>[
+                  const Icon(
+                    CupertinoIcons.delete,
+                    size: 18,
+                    color: CupertinoColors.systemRed,
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                const Text(
+                  'Delete Student',
+                  style: TextStyle(
+                    color: CupertinoColors.systemRed,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLessonsTab() {
+    final StudentSummary? summary = _summary;
+    final int completedCount = summary?.lessonsCompleted ??
+        _completedLessons.length;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      children: <Widget>[
+        _sectionCard(
+          context,
+          title: 'Completed lessons',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                '$completedCount',
+                style: const TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.w700,
+                  color: CupertinoColors.activeGreen,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Lessons with status completed',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: CupertinoColors.systemGrey,
+                ),
+              ),
+              if (summary != null) ...<Widget>[
+                const SizedBox(height: 14),
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: _metricTile(
+                        label: 'Total',
+                        value: '${summary.lessonsTotal}',
+                        color: CupertinoColors.activeBlue,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _metricTile(
+                        label: 'Cancelled',
+                        value: '${summary.lessonsCancelled}',
+                        color: CupertinoColors.systemRed,
+                      ),
+                    ),
+                  ],
+                ),
+                if (summary.lastLessonDate != null) ...<Widget>[
+                  const SizedBox(height: 10),
+                  Text(
+                    'Last lesson: ${summary.lastLessonDate}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: CupertinoColors.systemGrey,
+                    ),
+                  ),
+                ],
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        _sectionCard(
+          context,
+          title: 'Completed list',
+          child: _lessonsError != null
+              ? Text(
+                  _lessonsError!,
+                  style: const TextStyle(color: CupertinoColors.systemRed),
+                )
+              : _completedLessons.isEmpty
+                  ? const Text(
+                      'No completed lessons yet.',
+                      style: TextStyle(color: CupertinoColors.systemGrey),
+                    )
+                  : Column(
+                      children: _completedLessons.map((Lesson lesson) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    Text(
+                                      lesson.displayTitle,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${lesson.date} · ${lesson.startAt}'
+                                      '${lesson.price != null && lesson.price!.isNotEmpty ? ' · ${lesson.price}' : ''}',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: CupertinoColors.systemGrey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(
+                                CupertinoIcons.checkmark_circle_fill,
+                                size: 18,
+                                color: CupertinoColors.activeGreen,
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPaymentsTab() {
+    final StudentBalance? balance = _balance;
+    if (_paymentsError != null && balance == null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            _paymentsError!,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: CupertinoColors.systemRed),
+          ),
+        ),
+      );
+    }
+    if (balance == null) {
+      return const Center(child: Text('No payment data.'));
+    }
+    final String currency =
+        balance.currency.isEmpty ? 'TRY' : balance.currency;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      children: <Widget>[
+        if (_paymentsError != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              _paymentsError!,
+              style: const TextStyle(
+                fontSize: 12,
+                color: CupertinoColors.systemOrange,
+              ),
+            ),
+          ),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: _metricTile(
+                label: 'Total paid',
+                value: _money(balance.paidAmount, currency),
+                color: CupertinoColors.activeGreen,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _metricTile(
+                label: 'Prepaid',
+                value: _money(balance.prepaidAmount, currency),
+                color: CupertinoColors.systemPurple,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        _metricTile(
+          label: 'Debts (unpaid)',
+          value: _money(balance.unpaidAmount, currency),
+          color: CupertinoColors.systemOrange,
+        ),
+        const SizedBox(height: 12),
+        _sectionCard(
+          context,
+          title: 'Cashflow',
+          child: Column(
+            children: <Widget>[
+              _balanceRow('Collected', balance.cashCollected, currency),
+              _balanceRow('Refunded', balance.cashRefunded, currency),
+              _balanceRow('Net', balance.cashNet, currency),
+              _balanceRow('Settled', balance.settledAmount, currency),
+              _balanceRow('Lesson total', balance.totalAmount, currency),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _metricTile({
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _balanceRow(String label, num amount, String currency) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Text(label),
+          Text(
+            _money(amount, currency),
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _money(num amount, String currency) {
+    final String value = amount == amount.roundToDouble()
+        ? amount.toInt().toString()
+        : amount.toStringAsFixed(2);
+    return '$value $currency';
   }
 
   Widget _profileHeader(Color accentColor) {
@@ -983,34 +1264,6 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
           const SizedBox(height: 10),
           child,
         ],
-      ),
-    );
-  }
-
-  Widget _summaryChip(String label, String value, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: RichText(
-        text: TextSpan(
-          style: const TextStyle(color: CupertinoColors.black),
-          children: <InlineSpan>[
-            TextSpan(
-              text: '$label: ',
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            TextSpan(
-              text: value,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -1318,6 +1571,30 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
     try {
       final StudentDetail detail =
           await widget.studentService.getStudentDetail(widget.studentId);
+
+      StudentBalance? balance;
+      String? paymentsError;
+      try {
+        balance =
+            await widget.studentService.getStudentBalance(widget.studentId);
+      } on StudentServiceException catch (error) {
+        paymentsError = error.message;
+      }
+
+      List<Lesson> completed = <Lesson>[];
+      String? lessonsError;
+      try {
+        completed = await _lessonService.listLessons(
+          studentId: widget.studentId,
+          status: 'completed',
+          source: LessonSource.journal,
+          sortBy: 'date',
+          sortDirection: 'desc',
+        );
+      } on LessonServiceException catch (error) {
+        lessonsError = error.message;
+      }
+
       if (!mounted) {
         return;
       }
@@ -1335,6 +1612,10 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
       _initialBirthday = _formatDate(_selectedBirthday);
       setState(() {
         _summary = detail.summary;
+        _balance = balance;
+        _completedLessons = completed;
+        _paymentsError = paymentsError;
+        _lessonsError = lessonsError;
       });
     } on StudentServiceException catch (error) {
       await _showMessage(error.message);

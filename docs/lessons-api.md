@@ -33,11 +33,12 @@ Schedule and Journal stay independent: each page only lists and creates lessons 
 - `payment_status` (optional): `unpaid`, `paid`, or `prepaid`
 - `is_paid_for` (optional): `true` / `false` (legacy; prefer `payment_status`)
 - `source` (optional): `schedule` or `journal`
+- `student_id` (optional): filter individual lessons for a student
 - `search` (optional): title and notes
 - `sort_by` (optional): date, start_at, created_at, status (default date)
 - `sort_direction` (optional): asc or desc (default desc)
 
-**Example:** `GET /api/lessons?source=journal&payment_status=unpaid`
+**Example:** `GET /api/lessons?source=journal&student_id=12&status=completed`
 
 ### Create Lesson
 

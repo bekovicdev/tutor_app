@@ -281,6 +281,7 @@ class LessonService {
     bool? isPaidFor,
     String? search,
     String? source,
+    int? studentId,
     String sortBy = 'date',
     String sortDirection = 'asc',
   }) async {
@@ -297,6 +298,7 @@ class LessonService {
         if (isPaidFor != null) 'is_paid_for': '$isPaidFor',
         if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
         if (source != null && source.isNotEmpty) 'source': source,
+        if (studentId != null) 'student_id': '$studentId',
       },
     );
     final Map<String, dynamic> json = await _request(method: 'GET', uri: uri);
