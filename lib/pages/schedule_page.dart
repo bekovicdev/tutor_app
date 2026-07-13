@@ -17,12 +17,17 @@ class SchedulePage extends StatefulWidget {
 
 class _SchedulePageState extends State<SchedulePage> {
   static const double _hourHeight = 48;
-  static const double _hourLabelWidth = 40;
+  static const double _hourLabelWidth = 48;
   static const int _hoursInDay = 24;
 
   late final LessonService _lessonService;
 
   DateTime _weekStart = _mondayOf(DateTime.now());
+  DateTime _selectedDay = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+    DateTime.now().day,
+  );
   List<Lesson> _weekLessons = <Lesson>[];
   bool _isLoading = true;
   String? _errorMessage;
@@ -96,15 +101,24 @@ class _SchedulePageState extends State<SchedulePage> {
   void _shiftWeek(int deltaWeeks) {
     setState(() {
       _weekStart = _weekStart.add(Duration(days: 7 * deltaWeeks));
+      _selectedDay = _selectedDay.add(Duration(days: 7 * deltaWeeks));
     });
     _loadWeek();
   }
 
   void _goToToday() {
+    final DateTime today = DateTime.now();
     setState(() {
-      _weekStart = _mondayOf(DateTime.now());
+      _weekStart = _mondayOf(today);
+      _selectedDay = DateTime(today.year, today.month, today.day);
     });
     _loadWeek();
+  }
+
+  void _selectDay(DateTime day) {
+    setState(() {
+      _selectedDay = DateTime(day.year, day.month, day.day);
+    });
   }
 
   Future<void> _openCreateLesson() async {
@@ -113,7 +127,7 @@ class _SchedulePageState extends State<SchedulePage> {
         builder: (BuildContext context) => CreateLessonPage(
           token: widget.token,
           source: LessonSource.schedule,
-          initialDate: DateTime.now(),
+          initialDate: _selectedDay,
         ),
       ),
     );
@@ -128,7 +142,7 @@ class _SchedulePageState extends State<SchedulePage> {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: Text(l10n.schedule),
-        border: appNavigationBarBorder,
+        border: appNavigationBarBorderOf(context),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
@@ -203,41 +217,58 @@ class _SchedulePageState extends State<SchedulePage> {
           ...List<Widget>.generate(7, (int index) {
             final DateTime day = _weekDays[index];
             final bool isToday = _isSameDay(day, today);
+            final bool selected = _isSameDay(day, _selectedDay);
             return Expanded(
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 1),
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                decoration: BoxDecoration(
-                  color: isToday
-                      ? CupertinoColors.activeBlue.withOpacity(0.12)
-                      : CupertinoColors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  children: <Widget>[
-                    Text(
-                      weekdayFormat.format(day),
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: isToday
-                            ? CupertinoColors.activeBlue
-                            : CupertinoColors.secondaryLabel.resolveFrom(
-                                context,
-                              ),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _selectDay(day),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 160),
+                  margin: const EdgeInsets.symmetric(horizontal: 1),
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? CupertinoColors.activeBlue
+                        : isToday
+                            ? CupertinoColors.activeBlue.withValues(alpha: 0.12)
+                            : CupertinoColors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    border: isToday && !selected
+                        ? Border.all(
+                            color: CupertinoColors.activeBlue,
+                            width: 1.2,
+                          )
+                        : null,
+                  ),
+                  child: Column(
+                    children: <Widget>[
+                      Text(
+                        weekdayFormat.format(day),
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: selected
+                              ? CupertinoColors.white
+                              : isToday
+                                  ? CupertinoColors.activeBlue
+                                  : CupertinoColors.secondaryLabel
+                                      .resolveFrom(context),
+                        ),
                       ),
-                    ),
-                    Text(
-                      '${day.day}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: isToday
-                            ? CupertinoColors.activeBlue
-                            : CupertinoColors.label.resolveFrom(context),
+                      Text(
+                        '${day.day}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: selected
+                              ? CupertinoColors.white
+                              : isToday
+                                  ? CupertinoColors.activeBlue
+                                  : CupertinoColors.label.resolveFrom(context),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             );
@@ -300,12 +331,15 @@ class _SchedulePageState extends State<SchedulePage> {
             ),
             ...List<Widget>.generate(7, (int dayIndex) {
               final DateTime day = _weekDays[dayIndex];
+              final bool selected = _isSameDay(day, _selectedDay);
               return Expanded(
                 child: _DayColumn(
                   day: day,
                   lessons: _lessonsForDay(day),
                   hourHeight: _hourHeight,
                   hoursInDay: _hoursInDay,
+                  selected: selected,
+                  onDayTap: () => _selectDay(day),
                   onLessonTap: _showLessonDetails,
                   parseColor: _parseHexColor,
                 ),
@@ -318,7 +352,7 @@ class _SchedulePageState extends State<SchedulePage> {
   }
 
   String _formatHourLabel(int hour) {
-    return hour.toString().padLeft(2, '0');
+    return '${hour.toString().padLeft(2, '0')}.00';
   }
 
   Color _parseHexColor(String? hex) {
@@ -361,6 +395,8 @@ class _DayColumn extends StatelessWidget {
     required this.lessons,
     required this.hourHeight,
     required this.hoursInDay,
+    required this.selected,
+    required this.onDayTap,
     required this.onLessonTap,
     required this.parseColor,
   });
@@ -369,6 +405,8 @@ class _DayColumn extends StatelessWidget {
   final List<Lesson> lessons;
   final double hourHeight;
   final int hoursInDay;
+  final bool selected;
+  final VoidCallback onDayTap;
   final ValueChanged<Lesson> onLessonTap;
   final Color Function(String? hex) parseColor;
 
@@ -377,83 +415,93 @@ class _DayColumn extends StatelessWidget {
     final double height = hoursInDay * hourHeight;
     final Color line = CupertinoColors.separator
         .resolveFrom(context)
-        .withOpacity(0.55);
+        .withValues(alpha: 0.55);
+    final Color selectedFill = CupertinoColors.activeBlue
+        .resolveFrom(context)
+        .withValues(alpha: 0.06);
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 1),
-      decoration: BoxDecoration(
-        border: Border(left: BorderSide(color: line, width: 0.5)),
-      ),
-      child: SizedBox(
-        height: height,
-        child: Stack(
-          children: <Widget>[
-            Column(
-              children: List<Widget>.generate(hoursInDay, (int hour) {
-                return Container(
-                  height: hourHeight,
-                  decoration: BoxDecoration(
-                    border: Border(top: BorderSide(color: line, width: 0.5)),
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: onDayTap,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 1),
+        decoration: BoxDecoration(
+          color: selected ? selectedFill : null,
+          border: Border(left: BorderSide(color: line, width: 0.5)),
+        ),
+        child: SizedBox(
+          height: height,
+          child: Stack(
+            children: <Widget>[
+              Column(
+                children: List<Widget>.generate(hoursInDay, (int hour) {
+                  return Container(
+                    height: hourHeight,
+                    decoration: BoxDecoration(
+                      border: Border(top: BorderSide(color: line, width: 0.5)),
+                    ),
+                  );
+                }),
+              ),
+              ...lessons.map((Lesson lesson) {
+                final int start = lesson.startMinutes.clamp(0, 24 * 60);
+                final int end = lesson.endMinutes.clamp(0, 24 * 60);
+                if (end <= start) {
+                  return const SizedBox.shrink();
+                }
+                final double top = start / 60 * hourHeight;
+                final double blockHeight = ((end - start) / 60 * hourHeight)
+                    .clamp(16.0, height);
+
+                final Color accent = parseColor(lesson.accentColor);
+                final bool cancelled = lesson.status == 'cancelled';
+
+                return Positioned(
+                  top: top,
+                  left: 1,
+                  right: 1,
+                  height: blockHeight,
+                  child: GestureDetector(
+                    onTap: () => onLessonTap(lesson),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 3,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: cancelled
+                            ? CupertinoColors.systemGrey5
+                            : accent.withValues(alpha: 0.22),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: cancelled
+                              ? CupertinoColors.systemGrey3
+                              : accent,
+                          width: 0.8,
+                        ),
+                      ),
+                      child: Text(
+                        lesson.displayTitle,
+                        maxLines: blockHeight < 28 ? 1 : 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          height: 1.1,
+                          color: cancelled
+                              ? CupertinoColors.systemGrey
+                              : CupertinoColors.label.resolveFrom(context),
+                          decoration: cancelled
+                              ? TextDecoration.lineThrough
+                              : null,
+                        ),
+                      ),
+                    ),
                   ),
                 );
               }),
-            ),
-            ...lessons.map((Lesson lesson) {
-              final int start = lesson.startMinutes.clamp(0, 24 * 60);
-              final int end = lesson.endMinutes.clamp(0, 24 * 60);
-              if (end <= start) {
-                return const SizedBox.shrink();
-              }
-              final double top = start / 60 * hourHeight;
-              final double blockHeight = ((end - start) / 60 * hourHeight)
-                  .clamp(16.0, height);
-
-              final Color accent = parseColor(lesson.accentColor);
-              final bool cancelled = lesson.status == 'cancelled';
-
-              return Positioned(
-                top: top,
-                left: 1,
-                right: 1,
-                height: blockHeight,
-                child: GestureDetector(
-                  onTap: () => onLessonTap(lesson),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 3,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: cancelled
-                          ? CupertinoColors.systemGrey5
-                          : accent.withOpacity(0.22),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: cancelled ? CupertinoColors.systemGrey3 : accent,
-                        width: 0.8,
-                      ),
-                    ),
-                    child: Text(
-                      lesson.displayTitle,
-                      maxLines: blockHeight < 28 ? 1 : 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
-                        height: 1.1,
-                        color: cancelled
-                            ? CupertinoColors.systemGrey
-                            : CupertinoColors.label.resolveFrom(context),
-                        decoration: cancelled
-                            ? TextDecoration.lineThrough
-                            : null,
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }),
-          ],
+            ],
+          ),
         ),
       ),
     );

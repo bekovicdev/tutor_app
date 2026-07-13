@@ -1417,6 +1417,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} lessons · oldest {date}'**
   String lessonsOldest(int count, String date);
+
+  /// No description provided for @account.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get account;
+
+  /// No description provided for @profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profile;
+
+  /// No description provided for @teaching.
+  ///
+  /// In en, this message translates to:
+  /// **'Teaching'**
+  String get teaching;
+
+  /// No description provided for @preferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferences'**
+  String get preferences;
+
+  /// No description provided for @about.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get about;
+
+  /// No description provided for @defaultIndividualCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Default individual fee'**
+  String get defaultIndividualCost;
+
+  /// No description provided for @defaultGroupCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Default group fee'**
+  String get defaultGroupCost;
+
+  /// No description provided for @notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notifications;
+
+  /// No description provided for @notificationsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Lesson reminders and payment alerts'**
+  String get notificationsSubtitle;
+
+  /// No description provided for @appearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get appearance;
+
+  /// No description provided for @themeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get themeSystem;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeLight;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeDark;
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @languageFollowsDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Follows device language'**
+  String get languageFollowsDevice;
+
+  /// No description provided for @languageEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get languageEnglish;
+
+  /// No description provided for @languageTurkish.
+  ///
+  /// In en, this message translates to:
+  /// **'Turkish'**
+  String get languageTurkish;
+
+  /// No description provided for @appVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get appVersion;
+
+  /// No description provided for @editProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit profile'**
+  String get editProfile;
+
+  /// No description provided for @editProfileComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile editing will be available soon.'**
+  String get editProfileComingSoon;
+
+  /// No description provided for @logoutConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out?'**
+  String get logoutConfirmTitle;
+
+  /// No description provided for @logoutConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You will need to sign in again to continue.'**
+  String get logoutConfirmMessage;
+
+  /// No description provided for @costPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 500'**
+  String get costPlaceholder;
+
+  /// No description provided for @currencyTry.
+  ///
+  /// In en, this message translates to:
+  /// **'TRY'**
+  String get currencyTry;
+
+  /// No description provided for @signedInWith.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in with {provider}'**
+  String signedInWith(String provider);
+
+  /// No description provided for @support.
+  ///
+  /// In en, this message translates to:
+  /// **'Support'**
+  String get support;
+
+  /// No description provided for @supportMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Questions or feedback? Email us anytime.'**
+  String get supportMessage;
+
+  /// No description provided for @teachingDefaultsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Used as the default price when creating new lessons.'**
+  String get teachingDefaultsHint;
 }
 
 class _AppLocalizationsDelegate

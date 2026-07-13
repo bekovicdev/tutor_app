@@ -18,9 +18,9 @@ class JournalPage extends StatefulWidget {
 }
 
 class _JournalPageState extends State<JournalPage> {
-  static const double _hourHeight = 72;
-  static const int _startHour = 7;
-  static const int _endHour = 22;
+  static const double _hourHeight = 64;
+  static const int _startHour = 0;
+  static const int _endHour = 24;
 
   late final LessonService _lessonService;
   Timer? _nowTicker;
@@ -159,7 +159,7 @@ class _JournalPageState extends State<JournalPage> {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: Text(l10n.journal),
-        border: appNavigationBarBorder,
+        border: appNavigationBarBorderOf(context),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
@@ -355,21 +355,26 @@ class _JournalPageState extends State<JournalPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 SizedBox(
-                  width: 52,
+                  width: 48,
                   child: Column(
                     children: List<Widget>.generate(totalHours, (int index) {
                       final int hour = _startHour + index;
                       return SizedBox(
                         height: _hourHeight,
                         child: Align(
-                          alignment: Alignment.topCenter,
-                          child: Text(
-                            _formatHour(hour),
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: CupertinoColors.secondaryLabel.resolveFrom(
-                                context,
+                          alignment: Alignment.topRight,
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 8, top: 0),
+                            child: Text(
+                              _formatHour(hour),
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                fontFeatures: const <FontFeature>[
+                                  FontFeature.tabularFigures(),
+                                ],
+                                color: CupertinoColors.secondaryLabel
+                                    .resolveFrom(context),
                               ),
                             ),
                           ),
@@ -433,7 +438,7 @@ class _JournalPageState extends State<JournalPage> {
     final double top = (nowMinutes - gridStartMinutes) / 60 * _hourHeight;
     const Color nowColor = Color(0xFFFF3B30);
     final String label =
-        '${_now.hour.toString().padLeft(2, '0')}:${_now.minute.toString().padLeft(2, '0')}';
+        '${_now.hour.toString().padLeft(2, '0')}.${_now.minute.toString().padLeft(2, '0')}';
 
     return Positioned(
       top: top - 8,
@@ -444,33 +449,39 @@ class _JournalPageState extends State<JournalPage> {
         child: Row(
           children: <Widget>[
             SizedBox(
-              width: 52,
+              width: 48,
               child: Align(
                 alignment: Alignment.centerRight,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: nowColor,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: <BoxShadow>[
-                      BoxShadow(
-                        color: nowColor.withValues(alpha: 0.35),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: nowColor,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: <BoxShadow>[
+                        BoxShadow(
+                          color: nowColor.withValues(alpha: 0.35),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        color: CupertinoColors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.2,
+                        height: 1.1,
+                        fontFeatures: <FontFeature>[
+                          FontFeature.tabularFigures(),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: Text(
-                    label,
-                    style: const TextStyle(
-                      color: CupertinoColors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.2,
-                      height: 1.1,
                     ),
                   ),
                 ),
@@ -522,104 +533,185 @@ class _JournalPageState extends State<JournalPage> {
 
     final double top = clippedStart / 60 * _hourHeight;
     final double height = ((clippedEnd - clippedStart) / 60 * _hourHeight)
-        .clamp(28.0, timelineHeight);
+        .clamp(32.0, timelineHeight);
 
     final Color accent = _parseHexColor(lesson.accentColor);
-    final Color bg = accent.withValues(alpha: 0.18);
     final bool cancelled = lesson.status == 'cancelled';
     final bool completed = lesson.status == 'completed';
+    final Brightness brightness = CupertinoTheme.of(context).brightness ??
+        MediaQuery.platformBrightnessOf(context);
+    final bool isDark = brightness == Brightness.dark;
+
+    final Color surface = cancelled
+        ? (isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF2F2F7))
+        : Color.alphaBlend(
+            accent.withValues(alpha: isDark ? 0.22 : 0.12),
+            isDark ? const Color(0xFF1C1C1E) : CupertinoColors.white,
+          );
+    final Color titleColor = cancelled
+        ? CupertinoColors.secondaryLabel.resolveFrom(context)
+        : CupertinoColors.label.resolveFrom(context);
+    final Color metaColor = cancelled
+        ? CupertinoColors.tertiaryLabel.resolveFrom(context)
+        : accent;
 
     return Positioned(
-      top: top,
-      left: 4,
-      right: 4,
-      height: height,
+      top: top + 2,
+      left: 6,
+      right: 2,
+      height: height - 4,
       child: GestureDetector(
         onTap: () => _showLessonDetails(lesson),
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: height < 40 ? 4 : 8,
-          ),
-          clipBehavior: Clip.hardEdge,
+        child: DecoratedBox(
           decoration: BoxDecoration(
-            color: cancelled ? CupertinoColors.systemGrey5 : bg,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: cancelled ? CupertinoColors.systemGrey3 : accent,
-              width: 1.2,
-            ),
+            color: surface,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: cancelled
+                ? null
+                : <BoxShadow>[
+                    BoxShadow(
+                      color: accent.withValues(alpha: isDark ? 0.18 : 0.12),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
           ),
-          child: LayoutBuilder(
-            builder: (BuildContext context, BoxConstraints constraints) {
-              final List<Widget> lines = <Widget>[
-                Text(
-                  lesson.displayTitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    height: 1.1,
-                    color: cancelled
-                        ? CupertinoColors.systemGrey
-                        : CupertinoColors.label.resolveFrom(context),
-                    decoration: cancelled ? TextDecoration.lineThrough : null,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Container(
+                  width: 4,
+                  color: cancelled
+                      ? CupertinoColors.systemGrey3.resolveFrom(context)
+                      : accent,
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      10,
+                      height < 40 ? 6 : 8,
+                      10,
+                      height < 40 ? 6 : 8,
+                    ),
+                    child: LayoutBuilder(
+                      builder:
+                          (BuildContext context, BoxConstraints constraints) {
+                        final AppLocalizations l10n = context.l10n;
+                        final String timeRange =
+                            '${_formatClock(lesson.startMinutes)}–${_formatClock(lesson.endMinutes)}';
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            Row(
+                              children: <Widget>[
+                                Expanded(
+                                  child: Text(
+                                    lesson.displayTitle,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      height: 1.15,
+                                      color: titleColor,
+                                      decoration: cancelled
+                                          ? TextDecoration.lineThrough
+                                          : null,
+                                    ),
+                                  ),
+                                ),
+                                if (completed || cancelled) ...<Widget>[
+                                  const SizedBox(width: 6),
+                                  _statusPill(
+                                    label: cancelled
+                                        ? l10n.cancelled
+                                        : l10n.completed,
+                                    color: cancelled
+                                        ? CupertinoColors.systemGrey
+                                        : CupertinoColors.activeGreen,
+                                  ),
+                                ],
+                              ],
+                            ),
+                            if (constraints.maxHeight >= 30) ...<Widget>[
+                              const SizedBox(height: 3),
+                              Text(
+                                timeRange,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  height: 1.1,
+                                  fontWeight: FontWeight.w600,
+                                  color: metaColor,
+                                  fontFeatures: const <FontFeature>[
+                                    FontFeature.tabularFigures(),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            if (constraints.maxHeight >= 48 &&
+                                lesson.displaySubtitle !=
+                                    lesson.displayTitle) ...<Widget>[
+                              const SizedBox(height: 2),
+                              Text(
+                                lesson.displaySubtitle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  height: 1.1,
+                                  color: CupertinoColors.secondaryLabel
+                                      .resolveFrom(context),
+                                ),
+                              ),
+                            ],
+                          ],
+                        );
+                      },
+                    ),
                   ),
                 ),
-              ];
-              if (constraints.maxHeight >= 28) {
-                lines.add(const SizedBox(height: 2));
-                lines.add(
-                  Text(
-                    '${lesson.startAt} · ${context.l10n.minutes(lesson.durationMinutes)}'
-                    '${completed ? ' · ${context.l10n.done.toLowerCase()}' : ''}'
-                    '${lesson.isGroup ? ' · ${context.l10n.group.toLowerCase()}' : ''}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11,
-                      height: 1.1,
-                      color: cancelled
-                          ? CupertinoColors.systemGrey2
-                          : accent.withValues(alpha: 0.95),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                );
-              }
-              if (constraints.maxHeight >= 44 &&
-                  lesson.displaySubtitle != lesson.displayTitle) {
-                lines.add(const SizedBox(height: 2));
-                lines.add(
-                  Text(
-                    lesson.displaySubtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      height: 1.1,
-                      color: CupertinoColors.systemGrey,
-                    ),
-                  ),
-                );
-              }
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: lines,
-              );
-            },
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
+  Widget _statusPill({required String label, required Color color}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          color: color,
+          height: 1.1,
+        ),
+      ),
+    );
+  }
+
   String _formatHour(int hour) {
-    final int h12 = hour % 12 == 0 ? 12 : hour % 12;
-    final String suffix = hour < 12 ? 'AM' : 'PM';
-    return '$h12 $suffix';
+    final int h = hour % 24;
+    return '${h.toString().padLeft(2, '0')}.00';
+  }
+
+  String _formatClock(int minutes) {
+    final int h = (minutes ~/ 60) % 24;
+    final int m = minutes % 60;
+    return '${h.toString().padLeft(2, '0')}.${m.toString().padLeft(2, '0')}';
   }
 
   Color _parseHexColor(String? hex) {

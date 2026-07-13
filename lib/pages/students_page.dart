@@ -84,7 +84,7 @@ class _StudentsPageState extends State<StudentsPage> {
             ),
           ],
         ),
-        border: appNavigationBarBorder,
+        border: appNavigationBarBorderOf(context),
       ),
       child: SafeArea(
         child: Stack(
@@ -886,7 +886,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
       child: CupertinoPageScaffold(
         navigationBar: CupertinoNavigationBar(
           middle: Text(l10n.studentDetail),
-          border: appNavigationBarBorder,
+          border: appNavigationBarBorderOf(context),
           leading: CupertinoButton(
             padding: EdgeInsets.zero,
             onPressed: () async {

@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 /// Shared spacing / radius tuned for iOS 26–style surfaces.
 abstract final class AppGlassTokens {
@@ -24,6 +25,49 @@ bool get supportsLiquidGlass {
   }
 }
 
+/// iOS-like surface colors that stay readable in dark mode.
+abstract final class AppSurfaces {
+  static Color scaffold(Brightness brightness) => brightness == Brightness.dark
+      ? const Color(0xFF000000)
+      : const Color(0xFFF2F2F7);
+
+  static Color bar(Brightness brightness) => brightness == Brightness.dark
+      ? const Color(0xF21C1C1E)
+      : const Color(0xF2F9F9F9);
+
+  static Color card(Brightness brightness) => brightness == Brightness.dark
+      ? const Color(0xFF1C1C1E)
+      : const Color(0xFFFFFFFF);
+
+  static Color cardElevated(Brightness brightness) =>
+      brightness == Brightness.dark
+          ? const Color(0xFF2C2C2E)
+          : const Color(0xFFFFFFFF);
+
+  static Color separator(Brightness brightness) => brightness == Brightness.dark
+      ? const Color(0x403C3C43)
+      : const Color(0x4A3C3C43);
+
+  static Color secondaryLabel(Brightness brightness) =>
+      brightness == Brightness.dark
+          ? const Color(0x99EBEBF5)
+          : const Color(0x993C3C43);
+}
+
+void applySystemUiOverlay(Brightness brightness) {
+  final bool isDark = brightness == Brightness.dark;
+  SystemChrome.setSystemUIOverlayStyle(
+    SystemUiOverlayStyle(
+      statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      systemNavigationBarColor:
+          isDark ? const Color(0xFF000000) : const Color(0xFFF2F2F7),
+      systemNavigationBarIconBrightness:
+          isDark ? Brightness.light : Brightness.dark,
+    ),
+  );
+}
+
 CupertinoThemeData buildAppCupertinoTheme(Brightness brightness) {
   if (supportsLiquidGlass) {
     return _liquidGlassTheme(brightness);
@@ -32,22 +76,68 @@ CupertinoThemeData buildAppCupertinoTheme(Brightness brightness) {
 }
 
 /// No bottom hairline on Liquid Glass; classic Cupertino hairline otherwise.
-Border? get appNavigationBarBorder {
+Border? appNavigationBarBorderOf(BuildContext context) {
   if (supportsLiquidGlass) {
     return null;
   }
-  return const Border(
+  final Brightness brightness = CupertinoTheme.of(context).brightness ??
+      MediaQuery.platformBrightnessOf(context);
+  return Border(
     bottom: BorderSide(
-      color: Color(0x4D000000),
-      width: 0.0,
+      color: AppSurfaces.separator(brightness),
+      width: 0.5,
+    ),
+  );
+}
+
+/// Prefer [appNavigationBarBorderOf].
+@Deprecated('Use appNavigationBarBorderOf(context)')
+Border? get appNavigationBarBorder {
+  final Brightness brightness =
+      WidgetsBinding.instance.platformDispatcher.platformBrightness;
+  return appNavigationBarBorderFor(brightness);
+}
+
+Border? appNavigationBarBorderFor(Brightness brightness) {
+  if (supportsLiquidGlass) {
+    return null;
+  }
+  return Border(
+    bottom: BorderSide(
+      color: AppSurfaces.separator(brightness),
+      width: 0.5,
     ),
   );
 }
 
 CupertinoThemeData _classicTheme(Brightness brightness) {
+  final bool isDark = brightness == Brightness.dark;
   return CupertinoThemeData(
     brightness: brightness,
     primaryColor: CupertinoColors.activeBlue,
+    scaffoldBackgroundColor: AppSurfaces.scaffold(brightness),
+    barBackgroundColor: AppSurfaces.bar(brightness),
+    textTheme: CupertinoTextThemeData(
+      primaryColor: isDark ? CupertinoColors.white : CupertinoColors.label,
+      textStyle: TextStyle(
+        color: isDark ? CupertinoColors.white : CupertinoColors.black,
+        fontSize: 17,
+      ),
+      navTitleTextStyle: TextStyle(
+        color: isDark ? CupertinoColors.white : CupertinoColors.black,
+        fontSize: 17,
+        fontWeight: FontWeight.w600,
+      ),
+      navLargeTitleTextStyle: TextStyle(
+        color: isDark ? CupertinoColors.white : CupertinoColors.black,
+        fontSize: 34,
+        fontWeight: FontWeight.w700,
+      ),
+      tabLabelTextStyle: TextStyle(
+        color: isDark ? const Color(0x99EBEBF5) : const Color(0x993C3C43),
+        fontSize: 10,
+      ),
+    ),
   );
 }
 
@@ -56,15 +146,28 @@ CupertinoThemeData _liquidGlassTheme(Brightness brightness) {
   return CupertinoThemeData(
     brightness: brightness,
     primaryColor: CupertinoColors.activeBlue,
-    scaffoldBackgroundColor: isDark
-        ? const Color(0xFF000000)
-        : const Color(0xFFF2F2F7),
-    barBackgroundColor: (isDark
-            ? const Color(0xCC1C1C1E)
-            : const Color(0xCCF9F9F9))
-        .withValues(alpha: 0.72),
+    scaffoldBackgroundColor: AppSurfaces.scaffold(brightness),
+    barBackgroundColor: AppSurfaces.bar(brightness),
     textTheme: CupertinoTextThemeData(
       primaryColor: isDark ? CupertinoColors.white : CupertinoColors.label,
+      textStyle: TextStyle(
+        color: isDark ? CupertinoColors.white : CupertinoColors.black,
+        fontSize: 17,
+      ),
+      navTitleTextStyle: TextStyle(
+        color: isDark ? CupertinoColors.white : CupertinoColors.black,
+        fontSize: 17,
+        fontWeight: FontWeight.w600,
+      ),
+      navLargeTitleTextStyle: TextStyle(
+        color: isDark ? CupertinoColors.white : CupertinoColors.black,
+        fontSize: 34,
+        fontWeight: FontWeight.w700,
+      ),
+      tabLabelTextStyle: TextStyle(
+        color: isDark ? const Color(0x99EBEBF5) : const Color(0x993C3C43),
+        fontSize: 10,
+      ),
     ),
   );
 }
@@ -98,16 +201,25 @@ class AppGlassCard extends StatelessWidget {
     return _glassCard(context);
   }
 
+  Brightness _brightness(BuildContext context) {
+    return CupertinoTheme.of(context).brightness ??
+        MediaQuery.platformBrightnessOf(context);
+  }
+
   Widget _classicCard(BuildContext context) {
+    final Brightness brightness = _brightness(context);
     final Widget content = Container(
       width: double.infinity,
       padding: padding,
       decoration: BoxDecoration(
-        color: tint ??
-            CupertinoColors.secondarySystemGroupedBackground
-                .resolveFrom(context),
+        color: tint ?? AppSurfaces.card(brightness),
         borderRadius: BorderRadius.circular(
           borderRadius > 14 ? 12 : borderRadius,
+        ),
+        border: Border.all(
+          color: brightness == Brightness.dark
+              ? const Color(0x14FFFFFF)
+              : const Color(0x08000000),
         ),
       ),
       child: child,
@@ -119,20 +231,16 @@ class AppGlassCard extends StatelessWidget {
   }
 
   Widget _glassCard(BuildContext context) {
-    final Brightness brightness = CupertinoTheme.of(context).brightness ??
-        MediaQuery.platformBrightnessOf(context);
+    final Brightness brightness = _brightness(context);
     final bool isDark = brightness == Brightness.dark;
 
     final Color fill = tint ??
-        (isDark
-            ? const Color(0xCC2C2C2E)
-            : const Color(0xCCFFFFFF));
-    final Color borderColor = isDark
-        ? const Color(0x33FFFFFF)
-        : const Color(0x40FFFFFF);
+        (isDark ? const Color(0xE61C1C1E) : const Color(0xE6FFFFFF));
+    final Color borderColor =
+        isDark ? const Color(0x22FFFFFF) : const Color(0x33FFFFFF);
     final List<Color> sheen = isDark
         ? <Color>[
-            const Color(0x22FFFFFF),
+            const Color(0x18FFFFFF),
             const Color(0x00FFFFFF),
           ]
         : <Color>[

@@ -717,4 +717,93 @@ class AppLocalizationsTr extends AppLocalizations {
   String lessonsOldest(int count, String date) {
     return '$count ders · en eski $date';
   }
+
+  @override
+  String get account => 'Hesap';
+
+  @override
+  String get profile => 'Profil';
+
+  @override
+  String get teaching => 'Ders';
+
+  @override
+  String get preferences => 'Tercihler';
+
+  @override
+  String get about => 'Hakkında';
+
+  @override
+  String get defaultIndividualCost => 'Varsayılan bireysel ücret';
+
+  @override
+  String get defaultGroupCost => 'Varsayılan grup ücreti';
+
+  @override
+  String get notifications => 'Bildirimler';
+
+  @override
+  String get notificationsSubtitle => 'Ders hatırlatmaları ve ödeme uyarıları';
+
+  @override
+  String get appearance => 'Görünüm';
+
+  @override
+  String get themeSystem => 'Sistem';
+
+  @override
+  String get themeLight => 'Açık';
+
+  @override
+  String get themeDark => 'Koyu';
+
+  @override
+  String get language => 'Dil';
+
+  @override
+  String get languageFollowsDevice => 'Cihaz dilini takip eder';
+
+  @override
+  String get languageEnglish => 'İngilizce';
+
+  @override
+  String get languageTurkish => 'Türkçe';
+
+  @override
+  String get appVersion => 'Sürüm';
+
+  @override
+  String get editProfile => 'Profili düzenle';
+
+  @override
+  String get editProfileComingSoon => 'Profil düzenleme yakında eklenecek.';
+
+  @override
+  String get logoutConfirmTitle => 'Çıkış yapılsın mı?';
+
+  @override
+  String get logoutConfirmMessage =>
+      'Devam etmek için tekrar giriş yapmanız gerekir.';
+
+  @override
+  String get costPlaceholder => 'Örn. 500';
+
+  @override
+  String get currencyTry => 'TRY';
+
+  @override
+  String signedInWith(String provider) {
+    return '$provider ile giriş yapıldı';
+  }
+
+  @override
+  String get support => 'Destek';
+
+  @override
+  String get supportMessage =>
+      'Soru veya geri bildirim için bize yazabilirsiniz.';
+
+  @override
+  String get teachingDefaultsHint =>
+      'Yeni ders oluştururken varsayılan ücret olarak kullanılır.';
 }

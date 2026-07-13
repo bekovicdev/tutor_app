@@ -336,5 +336,38 @@
       "count": {"type": "int"},
       "date": {"type": "String"}
     }
-  }
+  },
+  "account": "Account",
+  "profile": "Profile",
+  "teaching": "Teaching",
+  "preferences": "Preferences",
+  "about": "About",
+  "defaultIndividualCost": "Default individual fee",
+  "defaultGroupCost": "Default group fee",
+  "notifications": "Notifications",
+  "notificationsSubtitle": "Lesson reminders and payment alerts",
+  "appearance": "Appearance",
+  "themeSystem": "System",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "language": "Language",
+  "languageFollowsDevice": "Follows device language",
+  "languageEnglish": "English",
+  "languageTurkish": "Turkish",
+  "appVersion": "Version",
+  "editProfile": "Edit profile",
+  "editProfileComingSoon": "Profile editing will be available soon.",
+  "logoutConfirmTitle": "Log out?",
+  "logoutConfirmMessage": "You will need to sign in again to continue.",
+  "costPlaceholder": "e.g. 500",
+  "currencyTry": "TRY",
+  "signedInWith": "Signed in with {provider}",
+  "@signedInWith": {
+    "placeholders": {
+      "provider": {"type": "String"}
+    }
+  },
+  "support": "Support",
+  "supportMessage": "Questions or feedback? Email us anytime.",
+  "teachingDefaultsHint": "Used as the default price when creating new lessons."
 }

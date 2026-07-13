@@ -15,6 +15,7 @@ import 'package:tutor_app/pages/payment_page.dart';
 import 'package:tutor_app/pages/schedule_page.dart';
 import 'package:tutor_app/pages/settings_page.dart';
 import 'package:tutor_app/pages/students_page.dart';
+import 'package:tutor_app/settings/app_settings.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
 
@@ -28,17 +29,70 @@ Future<void> main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  AppThemePreference _themePreference = AppThemePreference.system;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _loadThemePreference();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    if (_themePreference == AppThemePreference.system) {
+      setState(() {});
+    }
+  }
+
+  Future<void> _loadThemePreference() async {
+    final AppThemePreference preference = await AppSettings.themePreference();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _themePreference = preference;
+    });
+  }
+
+  Future<void> _onThemePreferenceChanged(AppThemePreference value) async {
+    setState(() {
+      _themePreference = value;
+    });
+    await AppSettings.setThemePreference(value);
+  }
+
+  Brightness get _resolvedBrightness {
+    final Brightness platform =
+        WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    return AppSettings.resolveBrightness(_themePreference, platform);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final Brightness brightness = _resolvedBrightness;
+    applySystemUiOverlay(brightness);
+
     return CupertinoApp(
       onGenerateTitle: (BuildContext context) => context.l10n.appTitle,
       navigatorObservers: supportsLiquidGlass
           ? <NavigatorObserver>[CNTabBarRouteObserver()]
           : const <NavigatorObserver>[],
-      theme: buildAppCupertinoTheme(Brightness.light),
+      theme: buildAppCupertinoTheme(brightness),
       localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
         AppLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
@@ -59,13 +113,30 @@ class MyApp extends StatelessWidget {
         }
         return const Locale('en');
       },
-      home: const AppRoot(),
+      builder: (BuildContext context, Widget? child) {
+        final MediaQueryData media = MediaQuery.of(context);
+        return MediaQuery(
+          data: media.copyWith(platformBrightness: brightness),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
+      home: AppRoot(
+        themePreference: _themePreference,
+        onThemePreferenceChanged: _onThemePreferenceChanged,
+      ),
     );
   }
 }
 
 class AppRoot extends StatefulWidget {
-  const AppRoot({super.key});
+  const AppRoot({
+    required this.themePreference,
+    required this.onThemePreferenceChanged,
+    super.key,
+  });
+
+  final AppThemePreference themePreference;
+  final ValueChanged<AppThemePreference> onThemePreferenceChanged;
 
   @override
   State<AppRoot> createState() => _AppRootState();
@@ -236,9 +307,6 @@ class _AppRootState extends State<AppRoot> {
 
   @override
   Widget build(BuildContext context) {
-    final Brightness brightness = MediaQuery.platformBrightnessOf(context);
-    final CupertinoThemeData theme = buildAppCupertinoTheme(brightness);
-
     Widget child;
     if (_isCheckingSession) {
       child = const CupertinoPageScaffold(
@@ -257,10 +325,12 @@ class _AppRootState extends State<AppRoot> {
       child = AppShell(
         session: _session!,
         onLogout: _logout,
+        themePreference: widget.themePreference,
+        onThemePreferenceChanged: widget.onThemePreferenceChanged,
       );
     }
 
-    return CupertinoTheme(data: theme, child: child);
+    return child;
   }
 }
 
@@ -268,11 +338,15 @@ class AppShell extends StatefulWidget {
   const AppShell({
     required this.session,
     required this.onLogout,
+    required this.themePreference,
+    required this.onThemePreferenceChanged,
     super.key,
   });
 
   final AuthSession session;
   final Future<void> Function() onLogout;
+  final AppThemePreference themePreference;
+  final ValueChanged<AppThemePreference> onThemePreferenceChanged;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -287,8 +361,10 @@ class _AppShellState extends State<AppShell> {
         JournalPage(token: widget.session.token),
         PaymentPage(token: widget.session.token),
         SettingsPage(
-          userName: widget.session.user.name,
+          user: widget.session.user,
           onLogout: widget.onLogout,
+          themePreference: widget.themePreference,
+          onThemePreferenceChanged: widget.onThemePreferenceChanged,
         ),
       ];
 

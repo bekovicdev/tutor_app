@@ -389,50 +389,29 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     await showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) {
-        return Container(
-          height: 280,
-          color: CupertinoColors.systemBackground.resolveFrom(context),
-          child: Column(
-            children: <Widget>[
-              SizedBox(
-                height: 44,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    CupertinoButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text(context.l10n.cancel),
-                    ),
-                    CupertinoButton(
-                      onPressed: () {
-                        setState(() {
-                          _durationMinutes = options[selectedIndex];
-                        });
-                        Navigator.of(context).pop();
-                      },
-                      child: Text(context.l10n.done),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: CupertinoPicker(
-                  scrollController: FixedExtentScrollController(
-                    initialItem: selectedIndex,
-                  ),
-                  itemExtent: 36,
-                  onSelectedItemChanged: (int index) {
-                    selectedIndex = index;
-                  },
-                  children: options
-                      .map(
-                        (int minutes) =>
-                            Center(child: Text(context.l10n.minutes(minutes))),
-                      )
-                      .toList(),
-                ),
-              ),
-            ],
+        return _pickerSheet(
+          context: context,
+          onCancel: () => Navigator.of(context).pop(),
+          onDone: () {
+            setState(() {
+              _durationMinutes = options[selectedIndex];
+            });
+            Navigator.of(context).pop();
+          },
+          child: CupertinoPicker(
+            scrollController: FixedExtentScrollController(
+              initialItem: selectedIndex,
+            ),
+            itemExtent: 36,
+            onSelectedItemChanged: (int index) {
+              selectedIndex = index;
+            },
+            children: options
+                .map(
+                  (int minutes) =>
+                      Center(child: Text(context.l10n.minutes(minutes))),
+                )
+                .toList(),
           ),
         );
       },
@@ -444,42 +423,21 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     await showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) {
-        return Container(
-          height: 280,
-          color: CupertinoColors.systemBackground.resolveFrom(context),
-          child: Column(
-            children: <Widget>[
-              SizedBox(
-                height: 44,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    CupertinoButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text(context.l10n.cancel),
-                    ),
-                    CupertinoButton(
-                      onPressed: () {
-                        setState(() {
-                          _date = temp;
-                        });
-                        Navigator.of(context).pop();
-                      },
-                      child: Text(context.l10n.done),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: CupertinoDatePicker(
-                  mode: CupertinoDatePickerMode.date,
-                  initialDateTime: _date,
-                  onDateTimeChanged: (DateTime value) {
-                    temp = value;
-                  },
-                ),
-              ),
-            ],
+        return _pickerSheet(
+          context: context,
+          onCancel: () => Navigator.of(context).pop(),
+          onDone: () {
+            setState(() {
+              _date = temp;
+            });
+            Navigator.of(context).pop();
+          },
+          child: CupertinoDatePicker(
+            mode: CupertinoDatePickerMode.date,
+            initialDateTime: _date,
+            onDateTimeChanged: (DateTime value) {
+              temp = value;
+            },
           ),
         );
       },
@@ -497,50 +455,82 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     await showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) {
-        return Container(
-          height: 280,
-          color: CupertinoColors.systemBackground.resolveFrom(context),
-          child: Column(
-            children: <Widget>[
-              SizedBox(
-                height: 44,
+        return _pickerSheet(
+          context: context,
+          onCancel: () => Navigator.of(context).pop(),
+          onDone: () {
+            setState(() {
+              _startTime = Duration(
+                hours: temp.hour,
+                minutes: temp.minute,
+              );
+            });
+            Navigator.of(context).pop();
+          },
+          child: CupertinoDatePicker(
+            mode: CupertinoDatePickerMode.time,
+            use24hFormat: true,
+            minuteInterval: 5,
+            initialDateTime: temp,
+            onDateTimeChanged: (DateTime value) {
+              temp = value;
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _pickerSheet({
+    required BuildContext context,
+    required VoidCallback onCancel,
+    required VoidCallback onDone,
+    required Widget child,
+  }) {
+    final AppLocalizations l10n = context.l10n;
+    return Container(
+      height: 300,
+      color: CupertinoColors.systemBackground.resolveFrom(context),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          children: <Widget>[
+            SizedBox(
+              height: 52,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
                     CupertinoButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text(context.l10n.cancel),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      minimumSize: Size.zero,
+                      onPressed: onCancel,
+                      child: Text(l10n.cancel),
                     ),
                     CupertinoButton(
-                      onPressed: () {
-                        setState(() {
-                          _startTime = Duration(
-                            hours: temp.hour,
-                            minutes: temp.minute,
-                          );
-                        });
-                        Navigator.of(context).pop();
-                      },
-                      child: Text(context.l10n.done),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      minimumSize: Size.zero,
+                      onPressed: onDone,
+                      child: Text(
+                        l10n.done,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
                     ),
                   ],
                 ),
               ),
-              Expanded(
-                child: CupertinoDatePicker(
-                  mode: CupertinoDatePickerMode.time,
-                  use24hFormat: true,
-                  minuteInterval: 5,
-                  initialDateTime: temp,
-                  onDateTimeChanged: (DateTime value) {
-                    temp = value;
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+            ),
+            Expanded(child: child),
+          ],
+        ),
+      ),
     );
   }
 

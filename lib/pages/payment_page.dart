@@ -382,7 +382,7 @@ class _PaymentPageState extends State<PaymentPage> {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: Text(context.l10n.payment),
-        border: appNavigationBarBorder,
+        border: appNavigationBarBorderOf(context),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
@@ -637,15 +637,39 @@ class _PaymentPageState extends State<PaymentPage> {
         '${_shortMonthDay(monthStart)} – ${_shortMonthDay(monthEnd)}';
     final String monthLabel = _monthTitle(_chartMonthKey);
     final Color chartColor = CupertinoTheme.of(context).primaryColor;
+    final Brightness brightness = CupertinoTheme.of(context).brightness ??
+        MediaQuery.platformBrightnessOf(context);
+    final bool isDark = brightness == Brightness.dark;
+    final Color chartBg = isDark
+        ? const Color(0xFF111214)
+        : CupertinoColors.secondarySystemGroupedBackground.resolveFrom(context);
+    final Color chartBorder = isDark
+        ? const Color(0xFF2A2C31)
+        : CupertinoColors.separator.resolveFrom(context).withValues(alpha: 0.45);
+    final Color primaryText = isDark
+        ? const Color(0xFFE8E9ED)
+        : CupertinoColors.label.resolveFrom(context);
+    final Color secondaryText = isDark
+        ? const Color(0xFF8B8F98)
+        : CupertinoColors.secondaryLabel.resolveFrom(context);
+    final Color mutedIcon = isDark
+        ? const Color(0xFFB0B3BA)
+        : CupertinoColors.secondaryLabel.resolveFrom(context);
+    final Color disabledIcon = isDark
+        ? const Color(0xFF555861)
+        : CupertinoColors.tertiaryLabel.resolveFrom(context);
+    final Color gridColor =
+        isDark ? const Color(0xFF3A3D44) : const Color(0xFFD1D1D6);
+    final Color pointHalo = isDark ? const Color(0xFF111214) : chartBg;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       children: <Widget>[
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF111214),
+            color: chartBg,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFF2A2C31)),
+            border: Border.all(color: chartBorder),
           ),
           padding: const EdgeInsets.fromLTRB(14, 12, 14, 16),
           child: Column(
@@ -659,9 +683,9 @@ class _PaymentPageState extends State<PaymentPage> {
                     onPressed: _isLoadingDaily
                         ? null
                         : () => _shiftChartMonth(-1),
-                    child: const Icon(
+                    child: Icon(
                       CupertinoIcons.chevron_left,
-                      color: Color(0xFFB0B3BA),
+                      color: mutedIcon,
                       size: 18,
                     ),
                   ),
@@ -669,10 +693,10 @@ class _PaymentPageState extends State<PaymentPage> {
                     child: Text(
                       monthLabel,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
-                        color: Color(0xFFE8E9ED),
+                        color: primaryText,
                       ),
                     ),
                   ),
@@ -685,9 +709,7 @@ class _PaymentPageState extends State<PaymentPage> {
                     child: Icon(
                       CupertinoIcons.chevron_right,
                       size: 18,
-                      color: canGoNext
-                          ? const Color(0xFFE8E9ED)
-                          : const Color(0xFF555861),
+                      color: canGoNext ? primaryText : disabledIcon,
                     ),
                   ),
                 ],
@@ -695,19 +717,19 @@ class _PaymentPageState extends State<PaymentPage> {
               const SizedBox(height: 8),
               Text(
                 rangeLabel,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF8B8F98),
+                  color: secondaryText,
                   fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 l10n.collectedLabel(_formatGrouped(monthCollected)),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
-                  color: CupertinoColors.white,
+                  color: primaryText,
                   letterSpacing: -0.6,
                 ),
               ),
@@ -768,6 +790,9 @@ class _PaymentPageState extends State<PaymentPage> {
                                 maxValue: maxCollected.toDouble(),
                                 selectedIndex: (_selectedDay ?? 1) - 1,
                                 lineColor: chartColor,
+                                gridColor: gridColor,
+                                labelColor: secondaryText,
+                                pointHaloColor: pointHalo,
                                 xLabels: _chartXLabels(_dailyPoints.length),
                                 yLabels: <String>[
                                   _compactNum(maxCollected),
@@ -1412,6 +1437,9 @@ class _RevenueAreaChartPainter extends CustomPainter {
     required this.maxValue,
     required this.selectedIndex,
     required this.lineColor,
+    required this.gridColor,
+    required this.labelColor,
+    required this.pointHaloColor,
     required this.xLabels,
     required this.yLabels,
   });
@@ -1420,11 +1448,12 @@ class _RevenueAreaChartPainter extends CustomPainter {
   final double maxValue;
   final int selectedIndex;
   final Color lineColor;
+  final Color gridColor;
+  final Color labelColor;
+  final Color pointHaloColor;
   final List<String> xLabels;
   final List<String> yLabels;
 
-  static const Color _gridColor = Color(0xFF3A3D44);
-  static const Color _labelColor = Color(0xFF8B8F98);
   static const double _rightGutter = 44;
   static const double _bottomGutter = 28;
   static const double _topPad = 8;
@@ -1491,7 +1520,7 @@ class _RevenueAreaChartPainter extends CustomPainter {
     final Offset selected = coords[sel];
 
     final Paint vLinePaint = Paint()
-      ..color = _gridColor
+      ..color = gridColor
       ..strokeWidth = 1
       ..style = PaintingStyle.stroke;
     canvas.drawLine(
@@ -1500,13 +1529,13 @@ class _RevenueAreaChartPainter extends CustomPainter {
       vLinePaint,
     );
 
-    canvas.drawCircle(selected, 5.5, Paint()..color = const Color(0xFF111214));
+    canvas.drawCircle(selected, 5.5, Paint()..color = pointHaloColor);
     canvas.drawCircle(selected, 4, Paint()..color = lineColor);
   }
 
   void _drawGrid(Canvas canvas, Rect chartRect) {
     final Paint paint = Paint()
-      ..color = _gridColor
+      ..color = gridColor
       ..strokeWidth = 1
       ..style = PaintingStyle.stroke;
 
@@ -1543,9 +1572,9 @@ class _RevenueAreaChartPainter extends CustomPainter {
       final double y = chartRect.top + chartRect.height * t;
       tp.text = TextSpan(
         text: yLabels[i],
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 10,
-          color: _labelColor,
+          color: labelColor,
           fontWeight: FontWeight.w500,
         ),
       );
@@ -1567,9 +1596,9 @@ class _RevenueAreaChartPainter extends CustomPainter {
           chartRect.left + (index / (points.length - 1)) * chartRect.width;
       tp.text = TextSpan(
         text: xLabels[i],
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 10,
-          color: _labelColor,
+          color: labelColor,
           fontWeight: FontWeight.w500,
         ),
       );
@@ -1621,6 +1650,9 @@ class _RevenueAreaChartPainter extends CustomPainter {
         oldDelegate.maxValue != maxValue ||
         oldDelegate.selectedIndex != selectedIndex ||
         oldDelegate.lineColor != lineColor ||
+        oldDelegate.gridColor != gridColor ||
+        oldDelegate.labelColor != labelColor ||
+        oldDelegate.pointHaloColor != pointHaloColor ||
         oldDelegate.xLabels != xLabels ||
         oldDelegate.yLabels != yLabels;
   }

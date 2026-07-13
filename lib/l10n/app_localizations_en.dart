@@ -717,4 +717,92 @@ class AppLocalizationsEn extends AppLocalizations {
   String lessonsOldest(int count, String date) {
     return '$count lessons · oldest $date';
   }
+
+  @override
+  String get account => 'Account';
+
+  @override
+  String get profile => 'Profile';
+
+  @override
+  String get teaching => 'Teaching';
+
+  @override
+  String get preferences => 'Preferences';
+
+  @override
+  String get about => 'About';
+
+  @override
+  String get defaultIndividualCost => 'Default individual fee';
+
+  @override
+  String get defaultGroupCost => 'Default group fee';
+
+  @override
+  String get notifications => 'Notifications';
+
+  @override
+  String get notificationsSubtitle => 'Lesson reminders and payment alerts';
+
+  @override
+  String get appearance => 'Appearance';
+
+  @override
+  String get themeSystem => 'System';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get languageFollowsDevice => 'Follows device language';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languageTurkish => 'Turkish';
+
+  @override
+  String get appVersion => 'Version';
+
+  @override
+  String get editProfile => 'Edit profile';
+
+  @override
+  String get editProfileComingSoon => 'Profile editing will be available soon.';
+
+  @override
+  String get logoutConfirmTitle => 'Log out?';
+
+  @override
+  String get logoutConfirmMessage =>
+      'You will need to sign in again to continue.';
+
+  @override
+  String get costPlaceholder => 'e.g. 500';
+
+  @override
+  String get currencyTry => 'TRY';
+
+  @override
+  String signedInWith(String provider) {
+    return 'Signed in with $provider';
+  }
+
+  @override
+  String get support => 'Support';
+
+  @override
+  String get supportMessage => 'Questions or feedback? Email us anytime.';
+
+  @override
+  String get teachingDefaultsHint =>
+      'Used as the default price when creating new lessons.';
 }
