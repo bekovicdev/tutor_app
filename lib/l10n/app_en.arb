@@ -1,0 +1,340 @@
+{
+  "@@locale": "en",
+  "appTitle": "Tutor App",
+  "tabStudents": "Students",
+  "tabSchedule": "Schedule",
+  "tabJournal": "Journal",
+  "tabPayment": "Payment",
+  "tabSettings": "Settings",
+  "ok": "OK",
+  "cancel": "Cancel",
+  "save": "Save",
+  "delete": "Delete",
+  "edit": "Edit",
+  "add": "Add",
+  "back": "Back",
+  "close": "Close",
+  "retry": "Retry",
+  "next": "Next",
+  "done": "Done",
+  "select": "Select",
+  "remove": "Remove",
+  "today": "Today",
+  "loading": "Loading…",
+  "somethingWentWrong": "Something went wrong",
+  "oauthError": "OAuth Error",
+  "oauthLoginFailed": "OAuth login failed.",
+  "authTitle": "Auth",
+  "welcomeTitle": "Welcome to Tutor App",
+  "createAccountTitle": "Create your account",
+  "authSubtitle": "Plan lessons, track notes, and manage your tutoring workflow.",
+  "login": "Login",
+  "register": "Register",
+  "createAccount": "Create Account",
+  "continueWithGoogle": "Continue with Google",
+  "continueWithApple": "Continue with Apple",
+  "orContinueWith": "or continue with",
+  "dontHaveAccount": "Don't have an account?",
+  "alreadyHaveAccount": "Already have an account?",
+  "stepOf": "Step {current} of {total}",
+  "@stepOf": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "email": "Email",
+  "password": "Password",
+  "name": "Name",
+  "phone": "Phone",
+  "passwordConfirmation": "Password Confirmation",
+  "individualLessonCostOptional": "Individual Lesson Cost (optional)",
+  "groupLessonCostOptional": "Group Lesson Cost (optional)",
+  "emailPasswordRequired": "Email and password are required.",
+  "nameRequired": "Name is required.",
+  "emailRequired": "Email is required.",
+  "passwordRequired": "Password is required.",
+  "passwordConfirmationRequired": "Password confirmation is required.",
+  "couldNotOpenOAuth": "Could not open OAuth page.",
+  "oauthCouldNotStart": "OAuth flow could not be started.",
+  "settings": "Settings",
+  "signedInAs": "Signed in as {name}",
+  "@signedInAs": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "logout": "Logout",
+  "students": "Students",
+  "groups": "Groups",
+  "studentCount": "{count} student(s)",
+  "@studentCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "groupCount": "{count} group(s)",
+  "@groupCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "searchByNameOrPhone": "Search by name or phone",
+  "searchGroups": "Search groups",
+  "noGroupsYet": "No groups yet",
+  "noGroupsHint": "Create a group to organize students together.",
+  "addGroup": "Add group",
+  "noStudentsYet": "No students yet",
+  "noStudentsHint": "Add your first student to start tracking lessons.",
+  "addStudent": "Add student",
+  "group": "Group",
+  "costPerLesson": "{cost} / lesson",
+  "@costPerLesson": {
+    "placeholders": {
+      "cost": {"type": "String"}
+    }
+  },
+  "deleteStudent": "Delete Student",
+  "deleteStudentConfirm": "Delete {name}? This will set status to inactive.",
+  "@deleteStudentConfirm": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "deleteGroup": "Delete Group",
+  "deleteGroupConfirm": "Delete {name}? This will set status to inactive.",
+  "@deleteGroupConfirm": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "studentDetail": "Student Detail",
+  "info": "Info",
+  "lessons": "Lessons",
+  "payments": "Payments",
+  "student": "Student",
+  "call": "Call",
+  "whatsApp": "WhatsApp",
+  "lessonFee": "Lesson fee",
+  "notSet": "Not set",
+  "perLesson": "per lesson",
+  "noBirthdayAdded": "No birthday added",
+  "notes": "Notes",
+  "lastLesson": "Last lesson: {date}",
+  "@lastLesson": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "tapPhotoToChange": "Tap photo to change or remove",
+  "studentName": "Student name",
+  "eg500": "e.g. 500",
+  "addShortNote": "Add a short note…",
+  "deleteStudentAction": "Delete student",
+  "selectDate": "Select date",
+  "profilePhoto": "Profile photo",
+  "chooseFromGallery": "Choose from gallery",
+  "camera": "Camera",
+  "removePhoto": "Remove photo",
+  "addPhoneFirst": "Add a phone number first.",
+  "couldNotStartCall": "Could not start the call.",
+  "couldNotOpenWhatsApp": "Could not open WhatsApp.",
+  "unsavedChanges": "Unsaved changes",
+  "saveBeforeLeaving": "Save your changes before leaving?",
+  "dontSave": "Don't Save",
+  "studentUpdated": "Student updated successfully.",
+  "deleteStudentContinue": "This student will be set inactive. Continue?",
+  "addStudentTitle": "Add Student",
+  "pickAColor": "Pick a color",
+  "nameAndSurname": "Name & Surname",
+  "addBirthday": "Add Birthday",
+  "birthday": "Birthday",
+  "birthdayColon": "Birthday: {date}",
+  "@birthdayColon": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "lessonCostColon": "Lesson Cost:",
+  "completedLessons": "Completed lessons",
+  "lessonsWithStatusCompleted": "Lessons with status completed",
+  "total": "Total",
+  "cancelled": "Cancelled",
+  "completedList": "Completed list",
+  "noCompletedLessonsYet": "No completed lessons yet.",
+  "noPaymentData": "No payment data.",
+  "totalPaid": "Total paid",
+  "prepaid": "Prepaid",
+  "debtsUnpaid": "Debts (unpaid)",
+  "cashflow": "Cashflow",
+  "collected": "Collected",
+  "refunded": "Refunded",
+  "net": "Net",
+  "settled": "Settled",
+  "lessonTotal": "Lesson total",
+  "noStudentsInGroup": "No students in this group.",
+  "inactiveInGroup": "Inactive in group",
+  "addToGroup": "Add to {name}",
+  "@addToGroup": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "chooseStudentToAdd": "Choose a student to add…",
+  "allStudentsAlreadyInGroup": "All students are already in this group.",
+  "removeFromGroup": "Remove from Group",
+  "removeStudentFromGroup": "Remove {student} from {group}?",
+  "@removeStudentFromGroup": {
+    "placeholders": {
+      "student": {"type": "String"},
+      "group": {"type": "String"}
+    }
+  },
+  "editGroup": "Edit Group",
+  "groupName": "Group name",
+  "color": "Color",
+  "colorHint": "Color (#33FF57)",
+  "addGroupTitle": "Add Group",
+  "schedule": "Schedule",
+  "journal": "Journal",
+  "payment": "Payment",
+  "markCompleted": "Mark Completed",
+  "cancelLesson": "Cancel Lesson",
+  "deleteLesson": "Delete Lesson",
+  "deleteLessonConfirm": "Delete \"{title}\" permanently?",
+  "@deleteLessonConfirm": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "overview": "Overview",
+  "monthly": "Monthly",
+  "receivables": "Receivables",
+  "deletePayment": "Delete Payment",
+  "deletePaymentConfirm": "Remove {amount} payment? Linked lesson may return to unpaid.",
+  "@deletePaymentConfirm": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "failedToLoad": "Failed to load {label}: {error}",
+  "@failedToLoad": {
+    "placeholders": {
+      "label": {"type": "String"},
+      "error": {"type": "String"}
+    }
+  },
+  "failedToLoadDailyChart": "Failed to load daily chart.",
+  "noOverviewData": "No overview data.",
+  "noReceivablesData": "No receivables data.",
+  "noPrepaidData": "No prepaid data.",
+  "noPaymentsYet": "No payments yet.",
+  "recordPayment": "Record payment",
+  "noGroupReceivables": "No group receivables.",
+  "noUnallocatedPrepaid": "No unallocated prepaid credits.",
+  "lessonSettlement": "Lesson settlement",
+  "earned": "Earned",
+  "byStudent": "By student",
+  "byGroup": "By group",
+  "unpaidLessons": "Unpaid lessons",
+  "unallocatedCredits": "Unallocated credits",
+  "monthTotals": "{month} totals",
+  "@monthTotals": {
+    "placeholders": {
+      "month": {"type": "String"}
+    }
+  },
+  "markPaid": "Mark paid",
+  "paid": "Paid",
+  "unpaid": "Unpaid",
+  "scheduled": "Scheduled",
+  "completed": "Completed",
+  "paidLessons": "Paid lessons",
+  "prepaidLessons": "Prepaid lessons",
+  "collectedLabel": "TRY {amount} Collected",
+  "@collectedLabel": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "cashNetLine": "Cash +{collected} / -{refunded} · Net {net}",
+  "@cashNetLine": {
+    "placeholders": {
+      "collected": {"type": "String"},
+      "refunded": {"type": "String"},
+      "net": {"type": "String"}
+    }
+  },
+  "cashLine": "Cash +{collected} / -{refunded}",
+  "@cashLine": {
+    "placeholders": {
+      "collected": {"type": "String"},
+      "refunded": {"type": "String"}
+    }
+  },
+  "recordPaymentTitle": "Record Payment",
+  "amount": "Amount",
+  "kind": "Kind",
+  "method": "Method",
+  "lessonOptional": "Lesson (optional)",
+  "kindLesson": "Lesson",
+  "kindPrepaid": "Prepaid",
+  "kindRefund": "Refund",
+  "methodCash": "Cash",
+  "methodTransfer": "Transfer",
+  "methodCard": "Card",
+  "methodOther": "Other",
+  "selectStudent": "Select student",
+  "selectLesson": "Select lesson",
+  "selectStudentTitle": "Select Student",
+  "selectLessonTitle": "Select Lesson",
+  "noLesson": "No lesson",
+  "noStudentsAvailable": "No students available.",
+  "noLessonsFound": "No lessons found for this filter.",
+  "applyToLessonStatus": "Apply to lesson status",
+  "optionalNotes": "Optional notes",
+  "enterValidAmount": "Enter a valid amount.",
+  "selectStudentOrLesson": "Select a student or lesson.",
+  "addSchedule": "Add Schedule",
+  "addLesson": "Add Lesson",
+  "target": "Target",
+  "date": "Date",
+  "startTime": "Start time",
+  "duration": "Duration",
+  "status": "Status",
+  "titleOptional": "Title (optional)",
+  "price": "Price",
+  "selectGroup": "Select group",
+  "selectGroupTitle": "Select Group",
+  "freeLesson": "Free lesson",
+  "minutes": "{count} min",
+  "@minutes": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "mathTutoringPlaceholder": "Math tutoring",
+  "selectAGroup": "Select a group.",
+  "selectAStudent": "Select a student.",
+  "enterValidPrice": "Enter a valid price.",
+  "dismiss": "Dismiss",
+  "lessonsCount": "{count} lessons",
+  "@lessonsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "unpaidLessonsCount": "{count} unpaid lessons",
+  "@unpaidLessonsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "lessonsOldest": "{count} lessons · oldest {date}",
+  "@lessonsOldest": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "date": {"type": "String"}
+    }
+  }
+}

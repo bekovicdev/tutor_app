@@ -5,7 +5,9 @@ import 'package:flutter/material.dart' show Icons, Material, MaterialType;
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:tutor_app/groups/group_service.dart';
+import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/create_payment_page.dart';
 import 'package:tutor_app/pages/group_detail_page.dart';
@@ -21,10 +23,7 @@ enum _StudentsViewMode { students, groups }
 enum _StudentDetailTab { info, lessons, payments }
 
 class StudentsPage extends StatefulWidget {
-  const StudentsPage({
-    required this.token,
-    super.key,
-  });
+  const StudentsPage({required this.token, super.key});
 
   final String token;
 
@@ -61,19 +60,20 @@ class _StudentsPageState extends State<StudentsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     final int itemCount = _isGroupMode ? _groups.length : _students.length;
     final String subtitle = _isLoading
-        ? 'Loading…'
+        ? l10n.loading
         : _isGroupMode
-            ? '$itemCount group${itemCount == 1 ? '' : 's'}'
-            : '$itemCount student${itemCount == 1 ? '' : 's'}';
+        ? l10n.groupCount(itemCount)
+        : l10n.studentCount(itemCount);
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text(_isGroupMode ? 'Groups' : 'Students'),
+            Text(_isGroupMode ? l10n.groups : l10n.students),
             Text(
               subtitle,
               style: TextStyle(
@@ -105,8 +105,8 @@ class _StudentsPageState extends State<StudentsPage> {
                     child: CupertinoSearchTextField(
                       controller: _searchController,
                       placeholder: _isGroupMode
-                          ? 'Search groups'
-                          : 'Search by name or phone',
+                          ? l10n.searchGroups
+                          : l10n.searchByNameOrPhone,
                       backgroundColor: const Color(0x00000000),
                       borderRadius: BorderRadius.circular(14),
                       onChanged: (_) => _reloadCurrentMode(),
@@ -117,16 +117,8 @@ class _StudentsPageState extends State<StudentsPage> {
                 Expanded(child: _buildBody()),
               ],
             ),
-            Positioned(
-              left: 16,
-              bottom: 14,
-              child: _buildModeSwitch(),
-            ),
-            Positioned(
-              right: 16,
-              bottom: 14,
-              child: _buildAddButton(),
-            ),
+            Positioned(left: 16, bottom: 14, child: _buildModeSwitch()),
+            Positioned(right: 16, bottom: 14, child: _buildAddButton()),
           ],
         ),
       ),
@@ -144,10 +136,7 @@ class _StudentsPageState extends State<StudentsPage> {
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: <Color>[
-              Color(0xFF5AC8FA),
-              CupertinoColors.activeBlue,
-            ],
+            colors: <Color>[Color(0xFF5AC8FA), CupertinoColors.activeBlue],
           ),
           boxShadow: <BoxShadow>[
             BoxShadow(
@@ -167,11 +156,13 @@ class _StudentsPageState extends State<StudentsPage> {
   }
 
   Widget _buildModeSwitch() {
+    final AppLocalizations l10n = context.l10n;
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: CupertinoColors.secondarySystemGroupedBackground
-            .resolveFrom(context),
+        color: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(
+          context,
+        ),
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
           color: CupertinoColors.systemGrey5.resolveFrom(context),
@@ -188,13 +179,13 @@ class _StudentsPageState extends State<StudentsPage> {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           _modeChip(
-            label: 'Students',
+            label: l10n.students,
             icon: CupertinoIcons.person_2,
             selected: !_isGroupMode,
             onTap: () => _setViewMode(_StudentsViewMode.students),
           ),
           _modeChip(
-            label: 'Groups',
+            label: l10n.groups,
             icon: CupertinoIcons.person_3,
             selected: _isGroupMode,
             onTap: () => _setViewMode(_StudentsViewMode.groups),
@@ -259,15 +250,16 @@ class _StudentsPageState extends State<StudentsPage> {
   }
 
   Widget _buildBody() {
+    final AppLocalizations l10n = context.l10n;
     if (_isLoading) {
       return const Center(child: CupertinoActivityIndicator());
     }
     if (_errorMessage != null) {
       return _emptyState(
         icon: CupertinoIcons.exclamationmark_triangle,
-        title: 'Something went wrong',
+        title: l10n.somethingWentWrong,
         message: _errorMessage!,
-        actionLabel: 'Retry',
+        actionLabel: l10n.retry,
         onAction: _reloadCurrentMode,
       );
     }
@@ -276,9 +268,9 @@ class _StudentsPageState extends State<StudentsPage> {
       if (_groups.isEmpty) {
         return _emptyState(
           icon: CupertinoIcons.person_3,
-          title: 'No groups yet',
-          message: 'Create a group to organize students together.',
-          actionLabel: 'Add group',
+          title: l10n.noGroupsYet,
+          message: l10n.noGroupsHint,
+          actionLabel: l10n.addGroup,
           onAction: _showCreateGroupSheet,
         );
       }
@@ -296,9 +288,9 @@ class _StudentsPageState extends State<StudentsPage> {
     if (_students.isEmpty) {
       return _emptyState(
         icon: CupertinoIcons.person_crop_circle_badge_plus,
-        title: 'No students yet',
-        message: 'Add your first student to start tracking lessons.',
-        actionLabel: 'Add student',
+        title: l10n.noStudentsYet,
+        message: l10n.noStudentsHint,
+        actionLabel: l10n.addStudent,
         onAction: _showCreateStudentSheet,
       );
     }
@@ -314,8 +306,9 @@ class _StudentsPageState extends State<StudentsPage> {
           confirmDismiss: () => _confirmDelete(student),
           onDismissed: () {
             setState(() {
-              _students =
-                  _students.where((Student s) => s.id != student.id).toList();
+              _students = _students
+                  .where((Student s) => s.id != student.id)
+                  .toList();
             });
           },
         );
@@ -343,20 +336,13 @@ class _StudentsPageState extends State<StudentsPage> {
                 color: CupertinoColors.activeBlue.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                icon,
-                size: 32,
-                color: CupertinoColors.activeBlue,
-              ),
+              child: Icon(icon, size: 32, color: CupertinoColors.activeBlue),
             ),
             const SizedBox(height: 16),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-              ),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             Text(
@@ -381,6 +367,7 @@ class _StudentsPageState extends State<StudentsPage> {
   }
 
   Widget _groupTile(TutorGroup group) {
+    final AppLocalizations l10n = context.l10n;
     final Color accent = _parseHexColor(group.color);
     return Dismissible(
       key: ValueKey<String>('group-${group.id}'),
@@ -426,10 +413,12 @@ class _StudentsPageState extends State<StudentsPage> {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      'Group',
+                      l10n.group,
                       style: TextStyle(
                         fontSize: 13,
-                        color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                        color: CupertinoColors.secondaryLabel.resolveFrom(
+                          context,
+                        ),
                       ),
                     ),
                   ],
@@ -452,6 +441,7 @@ class _StudentsPageState extends State<StudentsPage> {
     required Future<bool> Function() confirmDismiss,
     required VoidCallback onDismissed,
   }) {
+    final AppLocalizations l10n = context.l10n;
     final Color accent = _parseHexColor(student.color);
     final String? phone = student.phone;
     final String? cost = student.lessonCost;
@@ -500,14 +490,16 @@ class _StudentsPageState extends State<StudentsPage> {
                       Text(
                         <String>[
                           if (phone != null && phone.isNotEmpty) phone,
-                          if (cost != null && cost.isNotEmpty) '$cost / lesson',
+                          if (cost != null && cost.isNotEmpty)
+                            l10n.costPerLesson(cost),
                         ].join(' · '),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 13,
-                          color:
-                              CupertinoColors.secondaryLabel.resolveFrom(context),
+                          color: CupertinoColors.secondaryLabel.resolveFrom(
+                            context,
+                          ),
                         ),
                       ),
                     ],
@@ -550,26 +542,23 @@ class _StudentsPageState extends State<StudentsPage> {
               ),
         border: Border.all(color: accent.withValues(alpha: 0.85), width: 1.5),
         image: hasImage
-            ? DecorationImage(
-                image: NetworkImage(imageUrl),
-                fit: BoxFit.cover,
-              )
+            ? DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover)
             : null,
       ),
       alignment: Alignment.center,
       child: hasImage
           ? null
           : icon != null
-              ? Icon(icon, size: 20, color: accent)
-              : Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: accent,
-                    letterSpacing: 0.2,
-                  ),
-                ),
+          ? Icon(icon, size: 20, color: accent)
+          : Text(
+              label,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: accent,
+                letterSpacing: 0.2,
+              ),
+            ),
     );
   }
 
@@ -724,19 +713,19 @@ class _StudentsPageState extends State<StudentsPage> {
   }
 
   Future<bool> _confirmDelete(Student student) async {
+    final AppLocalizations l10n = context.l10n;
     final bool? shouldDelete = await showAppAlert<bool>(
       context: context,
-      title: 'Delete Student',
-      message:
-          'Delete ${student.name}? This will set status to inactive.',
+      title: l10n.deleteStudent,
+      message: l10n.deleteStudentConfirm(student.name),
       actions: <AppAlertAction>[
         AppAlertAction(
-          label: 'Cancel',
+          label: l10n.cancel,
           style: AppAlertStyle.cancel,
           onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(false),
         ),
         AppAlertAction(
-          label: 'Delete',
+          label: l10n.delete,
           style: AppAlertStyle.destructive,
           onPressed: (BuildContext ctx) async {
             try {
@@ -760,18 +749,19 @@ class _StudentsPageState extends State<StudentsPage> {
   }
 
   Future<bool> _confirmDeleteGroup(TutorGroup group) async {
+    final AppLocalizations l10n = context.l10n;
     final bool? shouldDelete = await showAppAlert<bool>(
       context: context,
-      title: 'Delete Group',
-      message: 'Delete ${group.name}? This will set status to inactive.',
+      title: l10n.deleteGroup,
+      message: l10n.deleteGroupConfirm(group.name),
       actions: <AppAlertAction>[
         AppAlertAction(
-          label: 'Cancel',
+          label: l10n.cancel,
           style: AppAlertStyle.cancel,
           onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(false),
         ),
         AppAlertAction(
-          label: 'Delete',
+          label: l10n.delete,
           style: AppAlertStyle.destructive,
           onPressed: (BuildContext ctx) async {
             try {
@@ -806,16 +796,22 @@ class _StudentsPageState extends State<StudentsPage> {
     if (rgb == null) {
       return CupertinoColors.activeBlue;
     }
-    return Color.fromARGB(255, (rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF);
+    return Color.fromARGB(
+      255,
+      (rgb >> 16) & 0xFF,
+      (rgb >> 8) & 0xFF,
+      rgb & 0xFF,
+    );
   }
 
   Future<void> _showErrorDialog(String message) {
+    final AppLocalizations l10n = context.l10n;
     return showAppAlert<void>(
       context: context,
-      title: 'Students',
+      title: l10n.students,
       message: message,
-      actions: const <AppAlertAction>[
-        AppAlertAction(label: 'OK', style: AppAlertStyle.primary),
+      actions: <AppAlertAction>[
+        AppAlertAction(label: l10n.ok, style: AppAlertStyle.primary),
       ],
     );
   }
@@ -884,11 +880,12 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     return WillPopScope(
       onWillPop: _handleBackPressed,
       child: CupertinoPageScaffold(
         navigationBar: CupertinoNavigationBar(
-          middle: const Text('Student Detail'),
+          middle: Text(l10n.studentDetail),
           border: appNavigationBarBorder,
           leading: CupertinoButton(
             padding: EdgeInsets.zero,
@@ -899,7 +896,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
               }
               Navigator.of(context).pop();
             },
-            child: const Text('Back'),
+            child: Text(l10n.back),
           ),
           trailing: _buildNavTrailing(),
         ),
@@ -910,31 +907,41 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                   children: <Widget>[
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                      child: CupertinoSlidingSegmentedControl<_StudentDetailTab>(
-                        groupValue: _tab,
-                        children: const <_StudentDetailTab, Widget>{
-                          _StudentDetailTab.info: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            child: Text('Info'),
+                      child:
+                          CupertinoSlidingSegmentedControl<_StudentDetailTab>(
+                            groupValue: _tab,
+                            children: <_StudentDetailTab, Widget>{
+                              _StudentDetailTab.info: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                child: Text(l10n.info),
+                              ),
+                              _StudentDetailTab.lessons: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                child: Text(l10n.lessons),
+                              ),
+                              _StudentDetailTab.payments: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                child: Text(l10n.payments),
+                              ),
+                            },
+                            onValueChanged: (_StudentDetailTab? value) {
+                              if (value == null) {
+                                return;
+                              }
+                              setState(() {
+                                _tab = value;
+                              });
+                            },
                           ),
-                          _StudentDetailTab.lessons: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            child: Text('Lessons'),
-                          ),
-                          _StudentDetailTab.payments: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            child: Text('Payments'),
-                          ),
-                        },
-                        onValueChanged: (_StudentDetailTab? value) {
-                          if (value == null) {
-                            return;
-                          }
-                          setState(() {
-                            _tab = value;
-                          });
-                        },
-                      ),
                     ),
                     Expanded(child: _buildTabBody()),
                   ],
@@ -945,6 +952,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
   }
 
   Widget? _buildNavTrailing() {
+    final AppLocalizations l10n = context.l10n;
     if (_isLoading) {
       return null;
     }
@@ -952,7 +960,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
       return CupertinoButton(
         padding: EdgeInsets.zero,
         onPressed: _openAddPayment,
-        child: const Text('Add'),
+        child: Text(l10n.add),
       );
     }
     if (_tab != _StudentDetailTab.info) {
@@ -965,7 +973,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
           CupertinoButton(
             padding: const EdgeInsets.only(right: 8),
             onPressed: _isSaving ? null : _cancelEditing,
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           CupertinoButton(
             padding: EdgeInsets.zero,
@@ -981,7 +989,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                   },
             child: _isSaving
                 ? const CupertinoActivityIndicator()
-                : const Text('Save'),
+                : Text(l10n.save),
           ),
         ],
       );
@@ -993,7 +1001,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
           _isEditing = true;
         });
       },
-      child: const Text('Edit'),
+      child: Text(l10n.edit),
     );
   }
 
@@ -1029,8 +1037,9 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
   }
 
   Widget _buildInfoView(Color accentColor) {
+    final AppLocalizations l10n = context.l10n;
     final String name = _nameController.text.trim().isEmpty
-        ? 'Öğrenci'
+        ? l10n.student
         : _nameController.text.trim();
     final String phone = _phoneController.text.trim();
     final String cost = _lessonCostController.text.trim();
@@ -1051,7 +1060,8 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                 height: 88,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: (_profilePictureUrl == null ||
+                  gradient:
+                      (_profilePictureUrl == null ||
                           _profilePictureUrl!.isEmpty)
                       ? LinearGradient(
                           begin: Alignment.topLeft,
@@ -1069,7 +1079,8 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                       offset: const Offset(0, 8),
                     ),
                   ],
-                  image: (_profilePictureUrl != null &&
+                  image:
+                      (_profilePictureUrl != null &&
                           _profilePictureUrl!.isNotEmpty)
                       ? DecorationImage(
                           image: NetworkImage(_profilePictureUrl!),
@@ -1078,8 +1089,8 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                       : null,
                 ),
                 alignment: Alignment.center,
-                child: (_profilePictureUrl == null ||
-                        _profilePictureUrl!.isEmpty)
+                child:
+                    (_profilePictureUrl == null || _profilePictureUrl!.isEmpty)
                     ? Text(
                         initials,
                         style: const TextStyle(
@@ -1115,8 +1126,10 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
               if (birthday.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 12),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 7,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFF2D55).withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(20),
@@ -1150,7 +1163,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                 children: <Widget>[
                   Expanded(
                     child: _heroAction(
-                      label: 'Ara',
+                      label: l10n.call,
                       color: CupertinoColors.activeGreen,
                       enabled: hasPhone,
                       onPressed: _callStudent,
@@ -1164,7 +1177,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: _heroAction(
-                      label: 'WhatsApp',
+                      label: l10n.whatsApp,
                       color: const Color(0xFF25D366),
                       enabled: hasPhone,
                       onPressed: _openWhatsApp,
@@ -1182,9 +1195,9 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
         ),
         const SizedBox(height: 14),
         _metricGlanceCard(
-          label: 'Ders ücreti',
+          label: l10n.lessonFee,
           value: cost.isEmpty ? '—' : cost,
-          subtitle: cost.isEmpty ? 'Belirtilmedi' : 'ders başı',
+          subtitle: cost.isEmpty ? l10n.notSet : l10n.perLesson,
           icon: CupertinoIcons.money_dollar_circle_fill,
           color: CupertinoColors.activeBlue,
         ),
@@ -1210,11 +1223,13 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Doğum günü eklenmedi',
+                    l10n.noBirthdayAdded,
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
-                      color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                      color: CupertinoColors.secondaryLabel.resolveFrom(
+                        context,
+                      ),
                     ),
                   ),
                 ),
@@ -1234,16 +1249,19 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                     Icon(
                       CupertinoIcons.doc_text_fill,
                       size: 16,
-                      color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                      color: CupertinoColors.secondaryLabel.resolveFrom(
+                        context,
+                      ),
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Notlar',
+                      l10n.notes,
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color:
-                            CupertinoColors.secondaryLabel.resolveFrom(context),
+                        color: CupertinoColors.secondaryLabel.resolveFrom(
+                          context,
+                        ),
                       ),
                     ),
                   ],
@@ -1373,11 +1391,12 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
   }
 
   Widget _buildInfoEdit(Color accentColor) {
+    final AppLocalizations l10n = context.l10n;
     final bool hasImage =
         _profilePictureUrl != null && _profilePictureUrl!.isNotEmpty;
     final String initials = _studentInitials(
       _nameController.text.trim().isEmpty
-          ? 'Ö'
+          ? l10n.student.substring(0, 1)
           : _nameController.text.trim(),
     );
 
@@ -1431,15 +1450,15 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                               color: CupertinoColors.white,
                             )
                           : hasImage
-                              ? null
-                              : Text(
-                                  initials,
-                                  style: const TextStyle(
-                                    color: CupertinoColors.white,
-                                    fontSize: 34,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
+                          ? null
+                          : Text(
+                              initials,
+                              style: const TextStyle(
+                                color: CupertinoColors.white,
+                                fontSize: 34,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
                     ),
                     Positioned(
                       right: 2,
@@ -1451,14 +1470,16 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                           color: CupertinoColors.activeBlue,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: CupertinoColors.systemBackground
-                                .resolveFrom(context),
+                            color: CupertinoColors.systemBackground.resolveFrom(
+                              context,
+                            ),
                             width: 3,
                           ),
                           boxShadow: <BoxShadow>[
                             BoxShadow(
-                              color: CupertinoColors.activeBlue
-                                  .withValues(alpha: 0.35),
+                              color: CupertinoColors.activeBlue.withValues(
+                                alpha: 0.35,
+                              ),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -1476,7 +1497,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Fotoğrafa dokunarak değiştir veya kaldır',
+                l10n.tapPhotoToChange,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -1492,34 +1513,35 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              _editFieldLabel('Ad'),
+              _editFieldLabel(l10n.name),
               _editField(
                 controller: _nameController,
-                placeholder: 'Öğrenci adı',
+                placeholder: l10n.studentName,
               ),
               const SizedBox(height: 16),
-              _editFieldLabel('Telefon'),
+              _editFieldLabel(l10n.phone),
               _editField(
                 controller: _phoneController,
                 placeholder: '05xx xxx xx xx',
                 keyboardType: TextInputType.phone,
               ),
               const SizedBox(height: 16),
-              _editFieldLabel('Doğum günü'),
+              _editFieldLabel(l10n.birthday),
               _birthdayButton(),
               const SizedBox(height: 16),
-              _editFieldLabel('Ders ücreti'),
+              _editFieldLabel(l10n.lessonFee),
               _editField(
                 controller: _lessonCostController,
-                placeholder: 'Örn. 500',
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                placeholder: l10n.eg500,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
               ),
               const SizedBox(height: 16),
-              _editFieldLabel('Notlar'),
+              _editFieldLabel(l10n.notes),
               _editField(
                 controller: _notesController,
-                placeholder: 'Kısa not ekle…',
+                placeholder: l10n.addShortNote,
                 minLines: 4,
                 maxLines: 6,
               ),
@@ -1554,9 +1576,9 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                   ),
                   const SizedBox(width: 8),
                 ],
-                const Text(
-                  'Öğrenciyi sil',
-                  style: TextStyle(
+                Text(
+                  l10n.deleteStudentAction,
+                  style: const TextStyle(
                     color: CupertinoColors.systemRed,
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
@@ -1599,38 +1621,37 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
       minLines: minLines,
       maxLines: maxLines,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-      style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-      ),
+      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
       placeholderStyle: TextStyle(
         color: CupertinoColors.placeholderText.resolveFrom(context),
         fontWeight: FontWeight.w400,
       ),
       decoration: BoxDecoration(
-        color: CupertinoColors.secondarySystemGroupedBackground
-            .resolveFrom(context),
+        color: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(
+          context,
+        ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: CupertinoColors.separator.resolveFrom(context).withValues(
-                alpha: 0.35,
-              ),
+          color: CupertinoColors.separator
+              .resolveFrom(context)
+              .withValues(alpha: 0.35),
         ),
       ),
     );
   }
 
   Widget _buildLessonsTab() {
+    final AppLocalizations l10n = context.l10n;
     final StudentSummary? summary = _summary;
-    final int completedCount = summary?.lessonsCompleted ??
-        _completedLessons.length;
+    final int completedCount =
+        summary?.lessonsCompleted ?? _completedLessons.length;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       children: <Widget>[
         _sectionCard(
           context,
-          title: 'Completed lessons',
+          title: l10n.completedLessons,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -1643,9 +1664,9 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Lessons with status completed',
-                style: TextStyle(
+              Text(
+                l10n.lessonsWithStatusCompleted,
+                style: const TextStyle(
                   fontSize: 13,
                   color: CupertinoColors.systemGrey,
                 ),
@@ -1656,7 +1677,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                   children: <Widget>[
                     Expanded(
                       child: _metricTile(
-                        label: 'Total',
+                        label: l10n.total,
                         value: '${summary.lessonsTotal}',
                         color: CupertinoColors.activeBlue,
                       ),
@@ -1664,7 +1685,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: _metricTile(
-                        label: 'Cancelled',
+                        label: l10n.cancelled,
                         value: '${summary.lessonsCancelled}',
                         color: CupertinoColors.systemRed,
                       ),
@@ -1674,7 +1695,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                 if (summary.lastLessonDate != null) ...<Widget>[
                   const SizedBox(height: 10),
                   Text(
-                    'Son ders: ${_formatDisplayDate(summary.lastLessonDate)}',
+                    l10n.lastLesson(_formatDisplayDate(summary.lastLessonDate)),
                     style: const TextStyle(
                       fontSize: 13,
                       color: CupertinoColors.systemGrey,
@@ -1688,60 +1709,61 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
         const SizedBox(height: 12),
         _sectionCard(
           context,
-          title: 'Completed list',
+          title: l10n.completedList,
           child: _lessonsError != null
               ? Text(
                   _lessonsError!,
                   style: const TextStyle(color: CupertinoColors.systemRed),
                 )
               : _completedLessons.isEmpty
-                  ? const Text(
-                      'No completed lessons yet.',
-                      style: TextStyle(color: CupertinoColors.systemGrey),
-                    )
-                  : Column(
-                      children: _completedLessons.map((Lesson lesson) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: Row(
-                            children: <Widget>[
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    Text(
-                                      lesson.displayTitle,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    Text(
-                                      '${_formatDisplayDate(lesson.date)} · ${_formatDisplayTime(lesson.startAt)}'
-                                      '${lesson.price != null && lesson.price!.isNotEmpty ? ' · ${lesson.price}' : ''}',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: CupertinoColors.systemGrey,
-                                      ),
-                                    ),
-                                  ],
+              ? Text(
+                  l10n.noCompletedLessonsYet,
+                  style: const TextStyle(color: CupertinoColors.systemGrey),
+                )
+              : Column(
+                  children: _completedLessons.map((Lesson lesson) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Text(
+                                  lesson.displayTitle,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
-                              ),
-                              const Icon(
-                                CupertinoIcons.checkmark_circle_fill,
-                                size: 18,
-                                color: CupertinoColors.activeGreen,
-                              ),
-                            ],
+                                Text(
+                                  '${_formatDisplayDate(lesson.date)} · ${_formatDisplayTime(lesson.startAt)}'
+                                  '${lesson.price != null && lesson.price!.isNotEmpty ? ' · ${lesson.price}' : ''}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: CupertinoColors.systemGrey,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        );
-                      }).toList(),
-                    ),
+                          const Icon(
+                            CupertinoIcons.checkmark_circle_fill,
+                            size: 18,
+                            color: CupertinoColors.activeGreen,
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
         ),
       ],
     );
   }
 
   Widget _buildPaymentsTab() {
+    final AppLocalizations l10n = context.l10n;
     final StudentBalance? balance = _balance;
     if (_paymentsError != null && balance == null) {
       return Center(
@@ -1756,10 +1778,9 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
       );
     }
     if (balance == null) {
-      return const Center(child: Text('No payment data.'));
+      return Center(child: Text(l10n.noPaymentData));
     }
-    final String currency =
-        balance.currency.isEmpty ? 'TRY' : balance.currency;
+    final String currency = balance.currency.isEmpty ? 'TRY' : balance.currency;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -1779,7 +1800,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
           children: <Widget>[
             Expanded(
               child: _metricTile(
-                label: 'Total paid',
+                label: l10n.totalPaid,
                 value: _money(balance.paidAmount, currency),
                 color: CupertinoColors.activeGreen,
               ),
@@ -1787,7 +1808,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
             const SizedBox(width: 8),
             Expanded(
               child: _metricTile(
-                label: 'Prepaid',
+                label: l10n.prepaid,
                 value: _money(balance.prepaidAmount, currency),
                 color: CupertinoColors.systemPurple,
               ),
@@ -1796,21 +1817,21 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
         ),
         const SizedBox(height: 8),
         _metricTile(
-          label: 'Debts (unpaid)',
+          label: l10n.debtsUnpaid,
           value: _money(balance.unpaidAmount, currency),
           color: CupertinoColors.systemOrange,
         ),
         const SizedBox(height: 12),
         _sectionCard(
           context,
-          title: 'Cashflow',
+          title: l10n.cashflow,
           child: Column(
             children: <Widget>[
-              _balanceRow('Collected', balance.cashCollected, currency),
-              _balanceRow('Refunded', balance.cashRefunded, currency),
-              _balanceRow('Net', balance.cashNet, currency),
-              _balanceRow('Settled', balance.settledAmount, currency),
-              _balanceRow('Lesson total', balance.totalAmount, currency),
+              _balanceRow(l10n.collected, balance.cashCollected, currency),
+              _balanceRow(l10n.refunded, balance.cashRefunded, currency),
+              _balanceRow(l10n.net, balance.cashNet, currency),
+              _balanceRow(l10n.settled, balance.settledAmount, currency),
+              _balanceRow(l10n.lessonTotal, balance.totalAmount, currency),
             ],
           ),
         ),
@@ -1841,10 +1862,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
           const SizedBox(height: 6),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-            ),
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -1875,10 +1893,11 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
   }
 
   Future<void> _openAddPayment() async {
+    final AppLocalizations l10n = context.l10n;
     final Student student = Student(
       id: widget.studentId,
       name: _nameController.text.trim().isEmpty
-          ? 'Student'
+          ? l10n.student
           : _nameController.text.trim(),
       phone: _phoneController.text.trim().isEmpty
           ? null
@@ -1909,8 +1928,8 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
 
   Future<void> _reloadBalance() async {
     try {
-      final StudentBalance balance =
-          await widget.studentService.getStudentBalance(widget.studentId);
+      final StudentBalance balance = await widget.studentService
+          .getStudentBalance(widget.studentId);
       if (!mounted) {
         return;
       }
@@ -1929,6 +1948,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
   }
 
   Future<void> _manageProfilePicture() async {
+    final AppLocalizations l10n = context.l10n;
     if (!_isEditing || _isUploadingPhoto) {
       return;
     }
@@ -1938,19 +1958,19 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
 
     final String? action = await showAppActionSheet<String>(
       context: context,
-      title: 'Profil fotoğrafı',
+      title: l10n.profilePhoto,
       actions: <AppSheetAction>[
         AppSheetAction(
-          label: 'Galeriden seç',
+          label: l10n.chooseFromGallery,
           onPressed: (BuildContext ctx) => Navigator.of(ctx).pop('gallery'),
         ),
         AppSheetAction(
-          label: 'Kamera',
+          label: l10n.camera,
           onPressed: (BuildContext ctx) => Navigator.of(ctx).pop('camera'),
         ),
         if (hasPhoto)
           AppSheetAction(
-            label: 'Fotoğrafı kaldır',
+            label: l10n.removePhoto,
             isDestructive: true,
             onPressed: (BuildContext ctx) => Navigator.of(ctx).pop('remove'),
           ),
@@ -1965,8 +1985,9 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
       return;
     }
 
-    final ImageSource source =
-        action == 'camera' ? ImageSource.camera : ImageSource.gallery;
+    final ImageSource source = action == 'camera'
+        ? ImageSource.camera
+        : ImageSource.gallery;
     final ImagePicker picker = ImagePicker();
     final XFile? picked = await picker.pickImage(
       source: source,
@@ -2027,22 +2048,24 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
   }
 
   Future<void> _callStudent() async {
+    final AppLocalizations l10n = context.l10n;
     final String? tel = _phoneForTel(_phoneController.text);
     if (tel == null) {
-      await _showMessage('Add a phone number first.');
+      await _showMessage(l10n.addPhoneFirst);
       return;
     }
     final Uri uri = Uri(scheme: 'tel', path: tel);
     final bool launched = await launchUrl(uri);
     if (!launched && mounted) {
-      await _showMessage('Could not start the call.');
+      await _showMessage(l10n.couldNotStartCall);
     }
   }
 
   Future<void> _openWhatsApp() async {
+    final AppLocalizations l10n = context.l10n;
     final String? digits = _phoneForWhatsApp(_phoneController.text);
     if (digits == null) {
-      await _showMessage('Add a phone number first.');
+      await _showMessage(l10n.addPhoneFirst);
       return;
     }
     final Uri uri = Uri.parse('https://wa.me/$digits');
@@ -2051,7 +2074,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
       mode: LaunchMode.externalApplication,
     );
     if (!launched && mounted) {
-      await _showMessage('Could not open WhatsApp.');
+      await _showMessage(l10n.couldNotOpenWhatsApp);
     }
   }
 
@@ -2089,10 +2112,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
         children: <Widget>[
           Text(
             title,
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 15,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
           ),
           const SizedBox(height: 10),
           child,
@@ -2113,10 +2133,16 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
     if (rgb == null) {
       return CupertinoColors.activeBlue;
     }
-    return Color.fromARGB(255, (rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF);
+    return Color.fromARGB(
+      255,
+      (rgb >> 16) & 0xFF,
+      (rgb >> 8) & 0xFF,
+      rgb & 0xFF,
+    );
   }
 
   Widget _birthdayButton() {
+    final AppLocalizations l10n = context.l10n;
     return CupertinoButton(
       padding: EdgeInsets.zero,
       onPressed: _showBirthdayPicker,
@@ -2124,13 +2150,14 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
-          color: CupertinoColors.secondarySystemGroupedBackground
-              .resolveFrom(context),
+          color: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(
+            context,
+          ),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: CupertinoColors.separator.resolveFrom(context).withValues(
-                  alpha: 0.35,
-                ),
+            color: CupertinoColors.separator
+                .resolveFrom(context)
+                .withValues(alpha: 0.35),
           ),
         ),
         child: Row(
@@ -2152,7 +2179,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
             Expanded(
               child: Text(
                 _selectedBirthday == null
-                    ? 'Tarih seç'
+                    ? l10n.selectDate
                     : _formatBirthdayDisplay(_selectedBirthday),
                 style: TextStyle(
                   fontSize: 16,
@@ -2193,23 +2220,24 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
       return true;
     }
 
+    final AppLocalizations l10n = context.l10n;
     final bool? shouldLeave = await showAppAlert<bool>(
       context: context,
-      title: 'Unsaved changes',
-      message: 'Save your changes before leaving?',
+      title: l10n.unsavedChanges,
+      message: l10n.saveBeforeLeaving,
       actions: <AppAlertAction>[
         AppAlertAction(
-          label: 'Cancel',
+          label: l10n.cancel,
           style: AppAlertStyle.cancel,
           onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(false),
         ),
         AppAlertAction(
-          label: "Don't Save",
+          label: l10n.dontSave,
           style: AppAlertStyle.destructive,
           onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(true),
         ),
         AppAlertAction(
-          label: 'Save',
+          label: l10n.save,
           style: AppAlertStyle.primary,
           onPressed: (BuildContext ctx) async {
             final bool saved = await _saveChanges(showSuccess: false);
@@ -2246,21 +2274,8 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
     if (date == null) {
       return '';
     }
-    const List<String> months = <String>[
-      'Ocak',
-      'Şubat',
-      'Mart',
-      'Nisan',
-      'Mayıs',
-      'Haziran',
-      'Temmuz',
-      'Ağustos',
-      'Eylül',
-      'Ekim',
-      'Kasım',
-      'Aralık',
-    ];
-    return '${date.day} ${months[date.month - 1]} ${date.year}';
+    final Locale locale = Localizations.localeOf(context);
+    return DateFormat.yMMMMd(locale.toLanguageTag()).format(date);
   }
 
   String _formatDisplayDate(String? raw) {
@@ -2301,14 +2316,16 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
 
   Future<void> _loadDetail() async {
     try {
-      final StudentDetail detail =
-          await widget.studentService.getStudentDetail(widget.studentId);
+      final StudentDetail detail = await widget.studentService.getStudentDetail(
+        widget.studentId,
+      );
 
       StudentBalance? balance;
       String? paymentsError;
       try {
-        balance =
-            await widget.studentService.getStudentBalance(widget.studentId);
+        balance = await widget.studentService.getStudentBalance(
+          widget.studentId,
+        );
       } on StudentServiceException catch (error) {
         paymentsError = error.message;
       }
@@ -2366,7 +2383,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
       return false;
     }
     if (_nameController.text.trim().isEmpty) {
-      await _showMessage('Name is required.');
+      await _showMessage(context.l10n.nameRequired);
       return false;
     }
     setState(() {
@@ -2388,7 +2405,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
         return false;
       }
       if (showSuccess) {
-        await _showMessage('Student updated successfully.');
+        await _showMessage(context.l10n.studentUpdated);
       }
       _initialName = _nameController.text;
       _initialPhone = _phoneController.text;
@@ -2410,18 +2427,19 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
   }
 
   Future<void> _deleteStudent() async {
+    final AppLocalizations l10n = context.l10n;
     final bool? confirmed = await showAppAlert<bool>(
       context: context,
-      title: 'Delete Student',
-      message: 'This student will be set inactive. Continue?',
+      title: l10n.deleteStudent,
+      message: l10n.deleteStudentContinue,
       actions: <AppAlertAction>[
         AppAlertAction(
-          label: 'Cancel',
+          label: l10n.cancel,
           style: AppAlertStyle.cancel,
           onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(false),
         ),
         AppAlertAction(
-          label: 'Delete',
+          label: l10n.delete,
           style: AppAlertStyle.destructive,
           onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(true),
         ),
@@ -2451,12 +2469,13 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
   }
 
   Future<void> _showMessage(String message) {
+    final AppLocalizations l10n = context.l10n;
     return showAppAlert<void>(
       context: context,
-      title: 'Student',
+      title: l10n.student,
       message: message,
-      actions: const <AppAlertAction>[
-        AppAlertAction(label: 'OK', style: AppAlertStyle.primary),
+      actions: <AppAlertAction>[
+        AppAlertAction(label: l10n.ok, style: AppAlertStyle.primary),
       ],
     );
   }
@@ -2493,20 +2512,21 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: const Text('Add Student'),
+        middle: Text(l10n.addStudentTitle),
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: _isSubmitting ? null : _submit,
           child: _isSubmitting
               ? const CupertinoActivityIndicator()
-              : const Text('Save'),
+              : Text(l10n.save),
         ),
       ),
       child: SafeArea(
@@ -2535,7 +2555,10 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
               padding: EdgeInsets.zero,
               onPressed: _showAdvancedColorPicker,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: CupertinoColors.secondarySystemBackground,
                   borderRadius: BorderRadius.circular(12),
@@ -2555,7 +2578,7 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Pick a color',
+                        l10n.pickAColor,
                         style: const TextStyle(
                           color: CupertinoColors.label,
                           fontWeight: FontWeight.w600,
@@ -2573,13 +2596,13 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
             const SizedBox(height: 16),
             _formField(
               _nameController,
-              'Name & Surname',
+              l10n.nameAndSurname,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 10),
             _formField(
               _phoneController,
-              'Phone',
+              l10n.phone,
               textAlign: TextAlign.center,
               keyboardType: TextInputType.phone,
             ),
@@ -2589,7 +2612,10 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
               onPressed: _showBirthdayPicker,
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 13,
+                ),
                 decoration: BoxDecoration(
                   color: CupertinoColors.systemGrey6.resolveFrom(context),
                   borderRadius: BorderRadius.circular(12),
@@ -2605,8 +2631,10 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
                     Expanded(
                       child: Text(
                         _selectedBirthday == null
-                            ? 'Add Birthday'
-                            : 'Birthday: ${_formatDate(_selectedBirthday!)}',
+                            ? l10n.addBirthday
+                            : l10n.birthdayColon(
+                                _formatBirthdayDisplay(_selectedBirthday!),
+                              ),
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: CupertinoColors.systemOrange,
@@ -2633,9 +2661,9 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
               ),
               child: Row(
                 children: <Widget>[
-                  const Text(
-                    'Lesson Cost:',
-                    style: TextStyle(
+                  Text(
+                    l10n.lessonCostColon,
+                    style: const TextStyle(
                       color: CupertinoColors.systemPurple,
                       fontWeight: FontWeight.w600,
                     ),
@@ -2663,12 +2691,7 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
               ),
             ),
             const SizedBox(height: 16),
-            _formField(
-              _notesController,
-              'Notes',
-              maxLines: 5,
-              minLines: 4,
-            ),
+            _formField(_notesController, l10n.notes, maxLines: 5, minLines: 4),
           ],
         ),
       ),
@@ -2701,7 +2724,7 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
 
   Future<void> _submit() async {
     if (_nameController.text.trim().isEmpty) {
-      await _showErrorDialog('Name is required.');
+      await _showErrorDialog(context.l10n.nameRequired);
       return;
     }
     setState(() {
@@ -2757,6 +2780,11 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
     return '$year-$month-$day';
   }
 
+  String _formatBirthdayDisplay(DateTime date) {
+    final Locale locale = Localizations.localeOf(context);
+    return DateFormat.yMMMMd(locale.toLanguageTag()).format(date);
+  }
+
   Color get _selectedAvatarColor => Color.fromARGB(255, _red, _green, _blue);
 
   String _hexFromColor(Color color) {
@@ -2765,6 +2793,7 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
   }
 
   Future<void> _showAdvancedColorPicker() async {
+    final AppLocalizations l10n = context.l10n;
     Color tempColor = _selectedAvatarColor;
 
     await showCupertinoModalPopup<void>(
@@ -2786,13 +2815,13 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
                         CupertinoButton(
                           padding: EdgeInsets.zero,
                           onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('Cancel'),
+                          child: Text(l10n.cancel),
                         ),
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            'Avatar Color',
+                            l10n.color,
                             textAlign: TextAlign.center,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
                             ),
@@ -2808,7 +2837,7 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
                             });
                             Navigator.of(context).pop();
                           },
-                          child: const Text('Apply'),
+                          child: Text(l10n.done),
                         ),
                       ],
                     ),
@@ -2856,8 +2885,9 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
                               // Remove material dropdown that needs localizations.
                               labelTypes: const <ColorLabelType>[],
                               pickerAreaHeightPercent: 0.58,
-                              pickerAreaBorderRadius:
-                                  const BorderRadius.all(Radius.circular(10)),
+                              pickerAreaBorderRadius: const BorderRadius.all(
+                                Radius.circular(10),
+                              ),
                               displayThumbColor: true,
                             ),
                           ),
@@ -2875,12 +2905,13 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
   }
 
   Future<void> _showErrorDialog(String message) {
+    final AppLocalizations l10n = context.l10n;
     return showAppAlert<void>(
       context: context,
-      title: 'Students',
+      title: l10n.students,
       message: message,
-      actions: const <AppAlertAction>[
-        AppAlertAction(label: 'OK', style: AppAlertStyle.primary),
+      actions: <AppAlertAction>[
+        AppAlertAction(label: l10n.ok, style: AppAlertStyle.primary),
       ],
     );
   }

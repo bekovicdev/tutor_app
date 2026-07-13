@@ -1,14 +1,13 @@
 import 'package:flutter/cupertino.dart';
+import 'package:intl/intl.dart' as intl;
+import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/create_lesson_page.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
 
 class SchedulePage extends StatefulWidget {
-  const SchedulePage({
-    required this.token,
-    super.key,
-  });
+  const SchedulePage({required this.token, super.key});
 
   final String token;
 
@@ -50,10 +49,8 @@ class _SchedulePageState extends State<SchedulePage> {
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
-  List<DateTime> get _weekDays => List<DateTime>.generate(
-        7,
-        (int i) => _weekStart.add(Duration(days: i)),
-      );
+  List<DateTime> get _weekDays =>
+      List<DateTime>.generate(7, (int i) => _weekStart.add(Duration(days: i)));
 
   List<Lesson> _lessonsForDay(DateTime day) {
     final String key = _formatDate(day);
@@ -127,9 +124,10 @@ class _SchedulePageState extends State<SchedulePage> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: const Text('Schedule'),
+        middle: Text(l10n.schedule),
         border: appNavigationBarBorder,
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -142,7 +140,7 @@ class _SchedulePageState extends State<SchedulePage> {
             CupertinoButton(
               padding: EdgeInsets.zero,
               onPressed: _goToToday,
-              child: const Text('Today'),
+              child: Text(l10n.today),
             ),
           ],
         ),
@@ -174,10 +172,7 @@ class _SchedulePageState extends State<SchedulePage> {
             child: Text(
               '${_shortMonthDay(_weekStart)} – ${_shortMonthDay(weekEnd)}',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             ),
           ),
           CupertinoButton(
@@ -191,33 +186,13 @@ class _SchedulePageState extends State<SchedulePage> {
   }
 
   String _shortMonthDay(DateTime date) {
-    const List<String> months = <String>[
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[date.month - 1]} ${date.day}';
+    final String locale = Localizations.localeOf(context).toLanguageTag();
+    return intl.DateFormat.MMMd(locale).format(date);
   }
 
   Widget _buildDayHeader() {
-    const List<String> labels = <String>[
-      'Mon',
-      'Tue',
-      'Wed',
-      'Thu',
-      'Fri',
-      'Sat',
-      'Sun',
-    ];
+    final String locale = Localizations.localeOf(context).toLanguageTag();
+    final intl.DateFormat weekdayFormat = intl.DateFormat.E(locale);
     final DateTime today = DateTime.now();
 
     return Padding(
@@ -241,14 +216,15 @@ class _SchedulePageState extends State<SchedulePage> {
                 child: Column(
                   children: <Widget>[
                     Text(
-                      labels[index],
+                      weekdayFormat.format(day),
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
                         color: isToday
                             ? CupertinoColors.activeBlue
-                            : CupertinoColors.secondaryLabel
-                                .resolveFrom(context),
+                            : CupertinoColors.secondaryLabel.resolveFrom(
+                                context,
+                              ),
                       ),
                     ),
                     Text(
@@ -283,7 +259,7 @@ class _SchedulePageState extends State<SchedulePage> {
             Text(_errorMessage!),
             CupertinoButton(
               onPressed: _loadWeek,
-              child: const Text('Retry'),
+              child: Text(context.l10n.retry),
             ),
           ],
         ),
@@ -312,8 +288,9 @@ class _SchedulePageState extends State<SchedulePage> {
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
-                          color: CupertinoColors.secondaryLabel
-                              .resolveFrom(context),
+                          color: CupertinoColors.secondaryLabel.resolveFrom(
+                            context,
+                          ),
                         ),
                       ),
                     ),
@@ -369,10 +346,10 @@ class _SchedulePageState extends State<SchedulePage> {
       context: context,
       title: lesson.displayTitle,
       message:
-          '${lesson.date} · ${lesson.startAt} · ${lesson.durationMinutes} min\n'
+          '${lesson.date} · ${lesson.startAt} · ${context.l10n.minutes(lesson.durationMinutes)}\n'
           '${lesson.displaySubtitle}\n'
-          'Status: ${lesson.status}',
-      cancelLabel: 'Close',
+          '${context.l10n.status}: ${lesson.status}',
+      cancelLabel: context.l10n.close,
       actions: const <AppSheetAction>[],
     );
   }
@@ -398,15 +375,14 @@ class _DayColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double height = hoursInDay * hourHeight;
-    final Color line =
-        CupertinoColors.separator.resolveFrom(context).withOpacity(0.55);
+    final Color line = CupertinoColors.separator
+        .resolveFrom(context)
+        .withOpacity(0.55);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 1),
       decoration: BoxDecoration(
-        border: Border(
-          left: BorderSide(color: line, width: 0.5),
-        ),
+        border: Border(left: BorderSide(color: line, width: 0.5)),
       ),
       child: SizedBox(
         height: height,
@@ -417,9 +393,7 @@ class _DayColumn extends StatelessWidget {
                 return Container(
                   height: hourHeight,
                   decoration: BoxDecoration(
-                    border: Border(
-                      top: BorderSide(color: line, width: 0.5),
-                    ),
+                    border: Border(top: BorderSide(color: line, width: 0.5)),
                   ),
                 );
               }),
@@ -431,8 +405,8 @@ class _DayColumn extends StatelessWidget {
                 return const SizedBox.shrink();
               }
               final double top = start / 60 * hourHeight;
-              final double blockHeight =
-                  ((end - start) / 60 * hourHeight).clamp(16.0, height);
+              final double blockHeight = ((end - start) / 60 * hourHeight)
+                  .clamp(16.0, height);
 
               final Color accent = parseColor(lesson.accentColor);
               final bool cancelled = lesson.status == 'cancelled';
@@ -455,9 +429,7 @@ class _DayColumn extends StatelessWidget {
                           : accent.withOpacity(0.22),
                       borderRadius: BorderRadius.circular(4),
                       border: Border.all(
-                        color: cancelled
-                            ? CupertinoColors.systemGrey3
-                            : accent,
+                        color: cancelled ? CupertinoColors.systemGrey3 : accent,
                         width: 0.8,
                       ),
                     ),

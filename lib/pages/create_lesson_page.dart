@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:tutor_app/groups/group_service.dart';
+import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/students/student_service.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
@@ -102,25 +103,27 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     });
   }
 
-  String get _pageTitle =>
-      widget.source == LessonSource.schedule ? 'Add Schedule' : 'Add Lesson';
+  String get _pageTitle => widget.source == LessonSource.schedule
+      ? context.l10n.addSchedule
+      : context.l10n.addLesson;
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: Text(_pageTitle),
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: _isSubmitting ? null : _submit,
           child: _isSubmitting
               ? const CupertinoActivityIndicator()
-              : const Text('Save'),
+              : Text(l10n.save),
         ),
       ),
       child: SafeArea(
@@ -129,17 +132,23 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
             : ListView(
                 padding: const EdgeInsets.all(16),
                 children: <Widget>[
-                  _sectionTitle('Target'),
+                  _sectionTitle(l10n.target),
                   CupertinoSlidingSegmentedControl<bool>(
                     groupValue: _isGroup,
-                    children: const <bool, Widget>{
+                    children: <bool, Widget>{
                       false: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                        child: Text('Student'),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 6,
+                        ),
+                        child: Text(l10n.student),
                       ),
                       true: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                        child: Text('Group'),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 6,
+                        ),
+                        child: Text(l10n.group),
                       ),
                     },
                     onValueChanged: (bool? value) {
@@ -154,58 +163,58 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                   const SizedBox(height: 12),
                   if (_isGroup)
                     _pickerButton(
-                      label: _selectedGroup?.name ?? 'Select group',
+                      label: _selectedGroup?.name ?? l10n.selectGroup,
                       onPressed: _groups.isEmpty ? null : _pickGroup,
                     )
                   else
                     _pickerButton(
-                      label: _selectedStudent?.name ?? 'Select student',
+                      label: _selectedStudent?.name ?? l10n.selectStudent,
                       onPressed: _students.isEmpty ? null : _pickStudent,
                     ),
                   const SizedBox(height: 16),
-                  _sectionTitle('Date'),
+                  _sectionTitle(l10n.date),
                   _pickerButton(
                     label: _formatDate(_date),
                     onPressed: _pickDate,
                   ),
                   const SizedBox(height: 16),
-                  _sectionTitle('Start time'),
+                  _sectionTitle(l10n.startTime),
                   _pickerButton(
                     label: _formatTime(_startTime),
                     onPressed: _pickTime,
                   ),
                   const SizedBox(height: 16),
-                  _sectionTitle('Duration'),
+                  _sectionTitle(l10n.duration),
                   _pickerButton(
-                    label: '$_durationMinutes min',
+                    label: l10n.minutes(_durationMinutes),
                     onPressed: _pickDuration,
                   ),
                   if (widget.source == LessonSource.journal) ...<Widget>[
                     const SizedBox(height: 16),
-                    _sectionTitle('Status'),
+                    _sectionTitle(l10n.status),
                     CupertinoSlidingSegmentedControl<String>(
                       groupValue: _status,
-                      children: const <String, Widget>{
+                      children: <String, Widget>{
                         'scheduled': Padding(
-                          padding: EdgeInsets.symmetric(
+                          padding: const EdgeInsets.symmetric(
                             horizontal: 6,
                             vertical: 6,
                           ),
-                          child: Text('Scheduled'),
+                          child: Text(l10n.scheduled),
                         ),
                         'completed': Padding(
-                          padding: EdgeInsets.symmetric(
+                          padding: const EdgeInsets.symmetric(
                             horizontal: 6,
                             vertical: 6,
                           ),
-                          child: Text('Completed'),
+                          child: Text(l10n.completed),
                         ),
                         'cancelled': Padding(
-                          padding: EdgeInsets.symmetric(
+                          padding: const EdgeInsets.symmetric(
                             horizontal: 6,
                             vertical: 6,
                           ),
-                          child: Text('Cancelled'),
+                          child: Text(l10n.cancelled),
                         ),
                       },
                       onValueChanged: (String? value) {
@@ -219,17 +228,17 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                     ),
                   ],
                   const SizedBox(height: 16),
-                  _sectionTitle('Title (optional)'),
+                  _sectionTitle(l10n.titleOptional),
                   CupertinoTextField(
                     controller: _titleController,
-                    placeholder: 'Math tutoring',
+                    placeholder: l10n.mathTutoringPlaceholder,
                     padding: const EdgeInsets.all(12),
                     decoration: _fieldDecoration(context),
                   ),
                   const SizedBox(height: 16),
                   Row(
                     children: <Widget>[
-                      const Expanded(child: Text('Free lesson')),
+                      Expanded(child: Text(l10n.freeLesson)),
                       CupertinoSwitch(
                         value: _isFree,
                         onChanged: (bool value) {
@@ -242,21 +251,22 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                   ),
                   if (!_isFree) ...<Widget>[
                     const SizedBox(height: 12),
-                    _sectionTitle('Price'),
+                    _sectionTitle(l10n.price),
                     CupertinoTextField(
                       controller: _priceController,
                       placeholder: '500',
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       padding: const EdgeInsets.all(12),
                       decoration: _fieldDecoration(context),
                     ),
                   ],
                   const SizedBox(height: 16),
-                  _sectionTitle('Notes'),
+                  _sectionTitle(l10n.notes),
                   CupertinoTextField(
                     controller: _notesController,
-                    placeholder: 'Optional notes',
+                    placeholder: l10n.optionalNotes,
                     minLines: 2,
                     maxLines: 4,
                     padding: const EdgeInsets.all(12),
@@ -314,8 +324,9 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
 
   BoxDecoration _fieldDecoration(BuildContext context) {
     return BoxDecoration(
-      color: CupertinoColors.secondarySystemGroupedBackground
-          .resolveFrom(context),
+      color: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(
+        context,
+      ),
       borderRadius: BorderRadius.circular(10),
       border: Border.all(color: CupertinoColors.systemGrey4),
     );
@@ -324,7 +335,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
   Future<void> _pickStudent() async {
     await showAppActionSheet<void>(
       context: context,
-      title: 'Select Student',
+      title: context.l10n.selectStudentTitle,
       actions: _students.map((Student student) {
         return AppSheetAction(
           label: student.name,
@@ -347,7 +358,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
   Future<void> _pickGroup() async {
     await showAppActionSheet<void>(
       context: context,
-      title: 'Select Group',
+      title: context.l10n.selectGroupTitle,
       actions: _groups.map((TutorGroup group) {
         return AppSheetAction(
           label: group.name,
@@ -390,7 +401,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                   children: <Widget>[
                     CupertinoButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(context.l10n.cancel),
                     ),
                     CupertinoButton(
                       onPressed: () {
@@ -399,7 +410,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                         });
                         Navigator.of(context).pop();
                       },
-                      child: const Text('Done'),
+                      child: Text(context.l10n.done),
                     ),
                   ],
                 ),
@@ -414,7 +425,10 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                     selectedIndex = index;
                   },
                   children: options
-                      .map((int minutes) => Center(child: Text('$minutes min')))
+                      .map(
+                        (int minutes) =>
+                            Center(child: Text(context.l10n.minutes(minutes))),
+                      )
                       .toList(),
                 ),
               ),
@@ -442,7 +456,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                   children: <Widget>[
                     CupertinoButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(context.l10n.cancel),
                     ),
                     CupertinoButton(
                       onPressed: () {
@@ -451,7 +465,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                         });
                         Navigator.of(context).pop();
                       },
-                      child: const Text('Done'),
+                      child: Text(context.l10n.done),
                     ),
                   ],
                 ),
@@ -495,7 +509,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                   children: <Widget>[
                     CupertinoButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(context.l10n.cancel),
                     ),
                     CupertinoButton(
                       onPressed: () {
@@ -507,7 +521,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                         });
                         Navigator.of(context).pop();
                       },
-                      child: const Text('Done'),
+                      child: Text(context.l10n.done),
                     ),
                   ],
                 ),
@@ -532,11 +546,11 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
 
   Future<void> _submit() async {
     if (_isGroup && _selectedGroup == null) {
-      await _showMessage('Select a group.');
+      await _showMessage(context.l10n.selectAGroup);
       return;
     }
     if (!_isGroup && _selectedStudent == null) {
-      await _showMessage('Select a student.');
+      await _showMessage(context.l10n.selectAStudent);
       return;
     }
 
@@ -546,7 +560,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
       if (raw.isNotEmpty) {
         final num? parsed = num.tryParse(raw.replaceAll(',', '.'));
         if (parsed == null || parsed < 0) {
-          await _showMessage('Enter a valid price.');
+          await _showMessage(context.l10n.enterValidPrice);
           return;
         }
         price = raw.replaceAll(',', '.');
@@ -593,8 +607,8 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
       context: context,
       title: _pageTitle,
       message: message,
-      actions: const <AppAlertAction>[
-        AppAlertAction(label: 'OK', style: AppAlertStyle.primary),
+      actions: <AppAlertAction>[
+        AppAlertAction(label: context.l10n.ok, style: AppAlertStyle.primary),
       ],
     );
   }

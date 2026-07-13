@@ -2,6 +2,8 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/cupertino.dart';
+import 'package:intl/intl.dart' as intl;
+import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/create_payment_page.dart';
 import 'package:tutor_app/payments/payment_service.dart';
@@ -12,10 +14,7 @@ import 'package:tutor_app/theme/ios26_theme.dart';
 enum _PaymentTab { overview, monthly, receivables, prepaid, payments }
 
 class PaymentPage extends StatefulWidget {
-  const PaymentPage({
-    required this.token,
-    super.key,
-  });
+  const PaymentPage({required this.token, super.key});
 
   final String token;
 
@@ -70,20 +69,34 @@ class _PaymentPageState extends State<PaymentPage> {
     List<Payment> payments = <Payment>[];
 
     try {
-      final List<Object?> results = await Future.wait<Object?>(<Future<Object?>>[
-        _loadSafely('overview', _paymentService.overview, recordError),
-        _loadSafely('monthly analytics', () => _paymentService.monthly(months: 6), recordError),
-        _loadSafely('receivables', _paymentService.receivables, recordError),
-        _loadSafely('prepaid analytics', _paymentService.prepaidAnalytics, recordError),
-        _loadSafely('payments', () => _paymentService.listPayments(perPage: 50), recordError),
-      ]);
+      final List<Object?> results = await Future.wait<Object?>(
+        <Future<Object?>>[
+          _loadSafely('overview', _paymentService.overview, recordError),
+          _loadSafely(
+            'monthly analytics',
+            () => _paymentService.monthly(months: 6),
+            recordError,
+          ),
+          _loadSafely('receivables', _paymentService.receivables, recordError),
+          _loadSafely(
+            'prepaid analytics',
+            _paymentService.prepaidAnalytics,
+            recordError,
+          ),
+          _loadSafely(
+            'payments',
+            () => _paymentService.listPayments(perPage: 50),
+            recordError,
+          ),
+        ],
+      );
       overview = results[0] as PaymentsOverview?;
-      monthly = (results[1] as List<MonthlyAnalyticsPoint>?) ??
+      monthly =
+          (results[1] as List<MonthlyAnalyticsPoint>?) ??
           <MonthlyAnalyticsPoint>[];
       receivables = results[2] as ReceivablesAnalytics?;
       prepaid = results[3] as PrepaidAnalytics?;
-      payments =
-          (results[4] as List<Payment>?) ?? <Payment>[];
+      payments = (results[4] as List<Payment>?) ?? <Payment>[];
     } finally {
       if (mounted) {
         setState(() {
@@ -111,7 +124,7 @@ class _PaymentPageState extends State<PaymentPage> {
       recordError(error.message);
       return null;
     } catch (error) {
-      recordError('Failed to load $label: $error');
+      recordError(context.l10n.failedToLoad(label, error.toString()));
       return null;
     }
   }
@@ -189,7 +202,7 @@ class _PaymentPageState extends State<PaymentPage> {
       setState(() {
         _dailyPoints = _emptyDays(end.day);
         _isLoadingDaily = false;
-        _dailyError = 'Failed to load daily chart.';
+        _dailyError = context.l10n.failedToLoadDailyChart;
       });
     }
   }
@@ -222,11 +235,13 @@ class _PaymentPageState extends State<PaymentPage> {
         case PaymentStatus.paid:
           days[day - 1] = point.copyWith(paidAmount: point.paidAmount + amount);
         case PaymentStatus.prepaid:
-          days[day - 1] =
-              point.copyWith(prepaidAmount: point.prepaidAmount + amount);
+          days[day - 1] = point.copyWith(
+            prepaidAmount: point.prepaidAmount + amount,
+          );
         default:
-          days[day - 1] =
-              point.copyWith(unpaidAmount: point.unpaidAmount + amount);
+          days[day - 1] = point.copyWith(
+            unpaidAmount: point.unpaidAmount + amount,
+          );
       }
     }
 
@@ -241,11 +256,13 @@ class _PaymentPageState extends State<PaymentPage> {
       }
       final _DailyChartPoint point = days[day - 1];
       if (payment.kind == PaymentKind.refund) {
-        days[day - 1] =
-            point.copyWith(refunded: point.refunded + payment.amount);
+        days[day - 1] = point.copyWith(
+          refunded: point.refunded + payment.amount,
+        );
       } else {
-        days[day - 1] =
-            point.copyWith(collected: point.collected + payment.amount);
+        days[day - 1] = point.copyWith(
+          collected: point.collected + payment.amount,
+        );
       }
     }
 
@@ -305,18 +322,16 @@ class _PaymentPageState extends State<PaymentPage> {
   Future<void> _deletePayment(Payment payment) async {
     final bool? confirmed = await showAppAlert<bool>(
       context: context,
-      title: 'Delete Payment',
-      message:
-          'Remove ${_formatNum(payment.amount)} payment? '
-          'Linked lesson may return to unpaid.',
+      title: context.l10n.deletePayment,
+      message: context.l10n.deletePaymentConfirm(_formatNum(payment.amount)),
       actions: <AppAlertAction>[
         AppAlertAction(
-          label: 'Cancel',
+          label: context.l10n.cancel,
           style: AppAlertStyle.cancel,
           onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(false),
         ),
         AppAlertAction(
-          label: 'Delete',
+          label: context.l10n.delete,
           style: AppAlertStyle.destructive,
           onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(true),
         ),
@@ -354,10 +369,10 @@ class _PaymentPageState extends State<PaymentPage> {
   Future<void> _showMessage(String message) {
     return showAppAlert<void>(
       context: context,
-      title: 'Payment',
+      title: context.l10n.payment,
       message: message,
-      actions: const <AppAlertAction>[
-        AppAlertAction(label: 'OK', style: AppAlertStyle.primary),
+      actions: <AppAlertAction>[
+        AppAlertAction(label: context.l10n.ok, style: AppAlertStyle.primary),
       ],
     );
   }
@@ -366,7 +381,7 @@ class _PaymentPageState extends State<PaymentPage> {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: const Text('Payment'),
+        middle: Text(context.l10n.payment),
         border: appNavigationBarBorder,
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -412,12 +427,13 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Widget _buildTabBar() {
-    const List<(_PaymentTab, String)> tabs = <(_PaymentTab, String)>[
-      (_PaymentTab.overview, 'Overview'),
-      (_PaymentTab.monthly, 'Monthly'),
-      (_PaymentTab.receivables, 'Receivables'),
-      (_PaymentTab.prepaid, 'Prepaid'),
-      (_PaymentTab.payments, 'Payments'),
+    final AppLocalizations l10n = context.l10n;
+    final List<(_PaymentTab, String)> tabs = <(_PaymentTab, String)>[
+      (_PaymentTab.overview, l10n.overview),
+      (_PaymentTab.monthly, l10n.monthly),
+      (_PaymentTab.receivables, l10n.receivables),
+      (_PaymentTab.prepaid, l10n.prepaid),
+      (_PaymentTab.payments, l10n.payments),
     ];
 
     return Padding(
@@ -476,9 +492,10 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Widget _buildOverviewTab() {
+    final AppLocalizations l10n = context.l10n;
     final PaymentsOverview? overview = _overview;
     if (overview == null) {
-      return const Center(child: Text('No overview data.'));
+      return Center(child: Text(l10n.noOverviewData));
     }
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -487,16 +504,16 @@ class _PaymentPageState extends State<PaymentPage> {
           children: <Widget>[
             Expanded(
               child: _metricCard(
-                label: 'Receivables',
+                label: l10n.receivables,
                 value: _money(overview.receivablesAmount, overview.currency),
-                subtitle: '${overview.receivablesLessonCount} lessons',
+                subtitle: l10n.lessonsCount(overview.receivablesLessonCount),
                 color: CupertinoColors.systemOrange,
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: _metricCard(
-                label: 'Settled',
+                label: l10n.settled,
                 value: _money(overview.settledAmount, overview.currency),
                 subtitle:
                     '${overview.collectionRatePercent.toStringAsFixed(0)}% rate',
@@ -510,19 +527,21 @@ class _PaymentPageState extends State<PaymentPage> {
           children: <Widget>[
             Expanded(
               child: _metricCard(
-                label: 'Cash net',
+                label: l10n.net,
                 value: _money(overview.cashNet, overview.currency),
-                subtitle:
-                    '+${_formatNum(overview.cashCollected)} / -${_formatNum(overview.cashRefunded)}',
+                subtitle: l10n.cashLine(
+                  _formatNum(overview.cashCollected),
+                  _formatNum(overview.cashRefunded),
+                ),
                 color: CupertinoColors.activeBlue,
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: _metricCard(
-                label: 'Prepaid',
+                label: l10n.prepaid,
                 value: _money(overview.prepaidAmount, overview.currency),
-                subtitle: '${overview.prepaidLessonCount} lessons',
+                subtitle: l10n.lessonsCount(overview.prepaidLessonCount),
                 color: CupertinoColors.systemPurple,
               ),
             ),
@@ -533,9 +552,9 @@ class _PaymentPageState extends State<PaymentPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              const Text(
-                'Lesson settlement',
-                style: TextStyle(fontWeight: FontWeight.w700),
+              Text(
+                l10n.lessonSettlement,
+                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 10),
               Text(
@@ -546,9 +565,9 @@ class _PaymentPageState extends State<PaymentPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: <Widget>[
-                  _statusChip('Unpaid', overview.unpaid),
-                  _statusChip('Paid', overview.paid),
-                  _statusChip('Prepaid', overview.prepaid),
+                  _statusChip(l10n.unpaid, overview.unpaid),
+                  _statusChip(l10n.paid, overview.paid),
+                  _statusChip(l10n.prepaid, overview.prepaid),
                 ],
               ),
             ],
@@ -559,14 +578,22 @@ class _PaymentPageState extends State<PaymentPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              const Text(
-                'Earned',
-                style: TextStyle(fontWeight: FontWeight.w700),
+              Text(
+                l10n.earned,
+                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
-              _rowMetric('Paid', overview.paidAmount, overview.currency),
-              _rowMetric('Prepaid', overview.prepaidEarnedAmount, overview.currency),
-              _rowMetric('Settled', overview.settledAmount, overview.currency),
+              _rowMetric(l10n.paid, overview.paidAmount, overview.currency),
+              _rowMetric(
+                l10n.prepaid,
+                overview.prepaidEarnedAmount,
+                overview.currency,
+              ),
+              _rowMetric(
+                l10n.settled,
+                overview.settledAmount,
+                overview.currency,
+              ),
             ],
           ),
         ),
@@ -575,8 +602,10 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Widget _buildMonthlyTab() {
+    final AppLocalizations l10n = context.l10n;
     final DateTime now = DateTime.now();
-    final bool canGoNext = _chartMonth.year < now.year ||
+    final bool canGoNext =
+        _chartMonth.year < now.year ||
         (_chartMonth.year == now.year && _chartMonth.month < now.month);
     final MonthlyAnalyticsPoint? summary = _selectedMonthSummary;
     _DailyChartPoint? selectedDayPoint;
@@ -599,10 +628,14 @@ class _PaymentPageState extends State<PaymentPage> {
     }
 
     final DateTime monthStart = _chartMonth;
-    final DateTime monthEnd =
-        DateTime(_chartMonth.year, _chartMonth.month + 1, 0);
+    final DateTime monthEnd = DateTime(
+      _chartMonth.year,
+      _chartMonth.month + 1,
+      0,
+    );
     final String rangeLabel =
         '${_shortMonthDay(monthStart)} – ${_shortMonthDay(monthEnd)}';
+    final String monthLabel = _monthTitle(_chartMonthKey);
     final Color chartColor = CupertinoTheme.of(context).primaryColor;
 
     return ListView(
@@ -623,8 +656,9 @@ class _PaymentPageState extends State<PaymentPage> {
                   CupertinoButton(
                     padding: const EdgeInsets.all(4),
                     minimumSize: Size.zero,
-                    onPressed:
-                        _isLoadingDaily ? null : () => _shiftChartMonth(-1),
+                    onPressed: _isLoadingDaily
+                        ? null
+                        : () => _shiftChartMonth(-1),
                     child: const Icon(
                       CupertinoIcons.chevron_left,
                       color: Color(0xFFB0B3BA),
@@ -633,7 +667,7 @@ class _PaymentPageState extends State<PaymentPage> {
                   ),
                   Expanded(
                     child: Text(
-                      _monthTitle(_chartMonthKey),
+                      monthLabel,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
@@ -669,7 +703,7 @@ class _PaymentPageState extends State<PaymentPage> {
               ),
               const SizedBox(height: 4),
               Text(
-                'TRY ${_formatGrouped(monthCollected)} Collected',
+                l10n.collectedLabel(_formatGrouped(monthCollected)),
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
@@ -700,49 +734,51 @@ class _PaymentPageState extends State<PaymentPage> {
                   child: LayoutBuilder(
                     builder:
                         (BuildContext context, BoxConstraints constraints) {
-                      return GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTapDown: (TapDownDetails details) {
-                          if (_dailyPoints.isEmpty) {
-                            return;
-                          }
-                          final double chartWidth =
-                              constraints.maxWidth - 44; // y-axis gutter
-                          final double x = details.localPosition.dx;
-                          if (x > chartWidth || x < 0) {
-                            return;
-                          }
-                          final int index = _dailyPoints.length == 1
-                              ? 0
-                              : ((x / chartWidth) * (_dailyPoints.length - 1))
-                                  .round()
-                                  .clamp(0, _dailyPoints.length - 1);
-                          setState(() {
-                            _selectedDay = _dailyPoints[index].day;
-                          });
+                          return GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTapDown: (TapDownDetails details) {
+                              if (_dailyPoints.isEmpty) {
+                                return;
+                              }
+                              final double chartWidth =
+                                  constraints.maxWidth - 44; // y-axis gutter
+                              final double x = details.localPosition.dx;
+                              if (x > chartWidth || x < 0) {
+                                return;
+                              }
+                              final int index = _dailyPoints.length == 1
+                                  ? 0
+                                  : ((x / chartWidth) *
+                                            (_dailyPoints.length - 1))
+                                        .round()
+                                        .clamp(0, _dailyPoints.length - 1);
+                              setState(() {
+                                _selectedDay = _dailyPoints[index].day;
+                              });
+                            },
+                            child: CustomPaint(
+                              size: Size(constraints.maxWidth, 230),
+                              painter: _RevenueAreaChartPainter(
+                                points: _dailyPoints
+                                    .map(
+                                      (_DailyChartPoint p) =>
+                                          p.collected.toDouble(),
+                                    )
+                                    .toList(),
+                                maxValue: maxCollected.toDouble(),
+                                selectedIndex: (_selectedDay ?? 1) - 1,
+                                lineColor: chartColor,
+                                xLabels: _chartXLabels(_dailyPoints.length),
+                                yLabels: <String>[
+                                  _compactNum(maxCollected),
+                                  _compactNum(maxCollected * 2 / 3),
+                                  _compactNum(maxCollected / 3),
+                                  '0',
+                                ],
+                              ),
+                            ),
+                          );
                         },
-                        child: CustomPaint(
-                          size: Size(constraints.maxWidth, 230),
-                          painter: _RevenueAreaChartPainter(
-                            points: _dailyPoints
-                                .map(
-                                  (_DailyChartPoint p) => p.collected.toDouble(),
-                                )
-                                .toList(),
-                            maxValue: maxCollected.toDouble(),
-                            selectedIndex: (_selectedDay ?? 1) - 1,
-                            lineColor: chartColor,
-                            xLabels: _chartXLabels(_dailyPoints.length),
-                            yLabels: <String>[
-                              _compactNum(maxCollected),
-                              _compactNum(maxCollected * 2 / 3),
-                              _compactNum(maxCollected / 3),
-                              '0',
-                            ],
-                          ),
-                        ),
-                      );
-                    },
                   ),
                 ),
             ],
@@ -755,7 +791,7 @@ class _PaymentPageState extends State<PaymentPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  '${selectedDayPoint.day} ${_monthTitle(_chartMonthKey).split(' ').first}',
+                  _dayMonthLabel(selectedDayPoint.day),
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 16,
@@ -763,20 +799,24 @@ class _PaymentPageState extends State<PaymentPage> {
                 ),
                 const SizedBox(height: 12),
                 _rowMetricColored(
-                  'Collected',
+                  l10n.collected,
                   selectedDayPoint.collected,
                   'TRY',
                   chartColor,
                 ),
-                _rowMetric('Paid lessons', selectedDayPoint.paidAmount, 'TRY'),
                 _rowMetric(
-                  'Prepaid lessons',
+                  l10n.paidLessons,
+                  selectedDayPoint.paidAmount,
+                  'TRY',
+                ),
+                _rowMetric(
+                  l10n.prepaidLessons,
                   selectedDayPoint.prepaidAmount,
                   'TRY',
                 ),
-                _rowMetric('Unpaid', selectedDayPoint.unpaidAmount, 'TRY'),
+                _rowMetric(l10n.unpaid, selectedDayPoint.unpaidAmount, 'TRY'),
                 if (selectedDayPoint.refunded > 0)
-                  _rowMetric('Refunded', selectedDayPoint.refunded, 'TRY'),
+                  _rowMetric(l10n.refunded, selectedDayPoint.refunded, 'TRY'),
               ],
             ),
           ),
@@ -787,20 +827,24 @@ class _PaymentPageState extends State<PaymentPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  '${_monthTitle(_chartMonthKey)} totals',
+                  l10n.monthTotals(monthLabel),
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
                   ),
                 ),
                 const SizedBox(height: 10),
-                _rowMetric('Paid', summary.paidAmount, 'TRY'),
-                _rowMetric('Prepaid', summary.prepaidAmount, 'TRY'),
-                _rowMetric('Unpaid', summary.unpaidAmount, 'TRY'),
-                _rowMetric('Settled', summary.settledAmount, 'TRY'),
+                _rowMetric(l10n.paid, summary.paidAmount, 'TRY'),
+                _rowMetric(l10n.prepaid, summary.prepaidAmount, 'TRY'),
+                _rowMetric(l10n.unpaid, summary.unpaidAmount, 'TRY'),
+                _rowMetric(l10n.settled, summary.settledAmount, 'TRY'),
                 const SizedBox(height: 8),
                 Text(
-                  'Cash +${_formatNum(summary.collected)} / -${_formatNum(summary.refunded)} · Net ${_formatNum(summary.net)}',
+                  l10n.cashNetLine(
+                    _formatNum(summary.collected),
+                    _formatNum(summary.refunded),
+                    _formatNum(summary.net),
+                  ),
                   style: const TextStyle(
                     fontSize: 13,
                     color: CupertinoColors.systemGrey,
@@ -827,36 +871,24 @@ class _PaymentPageState extends State<PaymentPage> {
       ((days - 1) / 2).round(),
       ((days - 1) * 3 / 4).round(),
       days - 1,
-    }.toList()
-      ..sort();
+    }.toList()..sort();
     return ticks
         .map(
-          (int index) =>
-              '${index + 1} ${_shortMonthName(_chartMonth.month)}',
+          (int index) => '${index + 1} ${_shortMonthName(_chartMonth.month)}',
         )
         .toList();
   }
 
   String _shortMonthDay(DateTime date) {
-    return '${date.day} ${_shortMonthName(date.month)}';
+    final String locale = Localizations.localeOf(context).toLanguageTag();
+    return intl.DateFormat.MMMd(locale).format(date);
   }
 
   String _shortMonthName(int month) {
-    const List<String> names = <String>[
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return names[month - 1];
+    final String locale = Localizations.localeOf(context).toLanguageTag();
+    return intl.DateFormat.MMM(
+      locale,
+    ).format(DateTime(_chartMonth.year, month));
   }
 
   String _formatGrouped(num value) {
@@ -890,17 +922,11 @@ class _PaymentPageState extends State<PaymentPage> {
         children: <Widget>[
           Text(
             label,
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w700, color: color),
           ),
           Text(
             _money(amount, currency),
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w700, color: color),
           ),
         ],
       ),
@@ -908,28 +934,24 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   String _monthTitle(String month) {
-    const List<String> names = <String>[
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
     if (month.length >= 7) {
       final int? m = int.tryParse(month.substring(5, 7));
-      final String year = month.substring(0, 4);
+      final int? year = int.tryParse(month.substring(0, 4));
       if (m != null && m >= 1 && m <= 12) {
-        return '${names[m - 1]} $year';
+        final String locale = Localizations.localeOf(context).toLanguageTag();
+        return intl.DateFormat.yMMMM(
+          locale,
+        ).format(DateTime(year ?? _chartMonth.year, m));
       }
     }
     return month;
+  }
+
+  String _dayMonthLabel(int day) {
+    final String locale = Localizations.localeOf(context).toLanguageTag();
+    return intl.DateFormat.MMMd(
+      locale,
+    ).format(DateTime(_chartMonth.year, _chartMonth.month, day));
   }
 
   String _compactNum(num value) {
@@ -943,33 +965,34 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Widget _buildReceivablesTab() {
+    final AppLocalizations l10n = context.l10n;
     final ReceivablesAnalytics? data = _receivables;
     if (data == null) {
-      return const Center(child: Text('No receivables data.'));
+      return Center(child: Text(l10n.noReceivablesData));
     }
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       children: <Widget>[
         _metricCard(
-          label: 'Total receivables',
+          label: '${l10n.total} ${l10n.receivables.toLowerCase()}',
           value: _money(data.totalAmount, 'TRY'),
-          subtitle: '${data.lessonCount} unpaid lessons',
+          subtitle: l10n.unpaidLessonsCount(data.lessonCount),
           color: CupertinoColors.systemOrange,
         ),
         const SizedBox(height: 12),
-        _sectionHeader('By student'),
+        _sectionHeader(l10n.byStudent),
         ...data.byStudent.map(_breakdownTile),
         const SizedBox(height: 12),
-        _sectionHeader('By group'),
+        _sectionHeader(l10n.byGroup),
         if (data.byGroup.isEmpty)
-          const Text(
-            'No group receivables.',
-            style: TextStyle(color: CupertinoColors.systemGrey),
+          Text(
+            l10n.noGroupReceivables,
+            style: const TextStyle(color: CupertinoColors.systemGrey),
           )
         else
           ...data.byGroup.map(_breakdownTile),
         const SizedBox(height: 12),
-        _sectionHeader('Unpaid lessons'),
+        _sectionHeader(l10n.unpaidLessons),
         ...data.lessons.map((ReceivableLesson lesson) {
           return _card(
             child: Row(
@@ -1000,7 +1023,7 @@ class _PaymentPageState extends State<PaymentPage> {
                 CupertinoButton(
                   padding: const EdgeInsets.only(left: 8),
                   onPressed: () => _markLessonPaid(lesson),
-                  child: const Text('Mark paid'),
+                  child: Text(l10n.markPaid),
                 ),
               ],
             ),
@@ -1011,9 +1034,10 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Widget _buildPrepaidTab() {
+    final AppLocalizations l10n = context.l10n;
     final PrepaidAnalytics? data = _prepaid;
     if (data == null) {
-      return const Center(child: Text('No prepaid data.'));
+      return Center(child: Text(l10n.noPrepaidData));
     }
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -1022,29 +1046,29 @@ class _PaymentPageState extends State<PaymentPage> {
           children: <Widget>[
             Expanded(
               child: _metricCard(
-                label: 'Scheduled',
+                label: l10n.scheduled,
                 value: '${data.scheduledCount}',
-                subtitle: 'prepaid lessons',
+                subtitle: l10n.prepaidLessons,
                 color: CupertinoColors.systemPurple,
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: _metricCard(
-                label: 'Completed',
+                label: l10n.completed,
                 value: '${data.completedCount}',
-                subtitle: 'prepaid lessons',
+                subtitle: l10n.prepaidLessons,
                 color: CupertinoColors.activeGreen,
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        _sectionHeader('Unallocated credits'),
+        _sectionHeader(l10n.unallocatedCredits),
         if (data.unallocatedCredits.isEmpty)
-          const Text(
-            'No unallocated prepaid credits.',
-            style: TextStyle(color: CupertinoColors.systemGrey),
+          Text(
+            l10n.noUnallocatedPrepaid,
+            style: const TextStyle(color: CupertinoColors.systemGrey),
           )
         else
           ...data.unallocatedCredits.map(_paymentTile),
@@ -1058,13 +1082,13 @@ class _PaymentPageState extends State<PaymentPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const Text(
-              'No payments yet.',
-              style: TextStyle(color: CupertinoColors.systemGrey),
+            Text(
+              context.l10n.noPaymentsYet,
+              style: const TextStyle(color: CupertinoColors.systemGrey),
             ),
             CupertinoButton(
               onPressed: _openCreatePayment,
-              child: const Text('Record payment'),
+              child: Text(context.l10n.recordPayment),
             ),
           ],
         ),
@@ -1086,7 +1110,10 @@ class _PaymentPageState extends State<PaymentPage> {
               color: CupertinoColors.systemRed,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(CupertinoIcons.delete, color: CupertinoColors.white),
+            child: const Icon(
+              CupertinoIcons.delete,
+              color: CupertinoColors.white,
+            ),
           ),
           confirmDismiss: (_) async {
             await _deletePayment(payment);
@@ -1099,6 +1126,10 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Widget _breakdownTile(ReceivablesBreakdownItem item) {
+    final AppLocalizations l10n = context.l10n;
+    final String subtitle = item.oldestLessonDate != null
+        ? l10n.lessonsOldest(item.lessonCount, item.oldestLessonDate!)
+        : l10n.lessonsCount(item.lessonCount);
     return _card(
       child: Row(
         children: <Widget>[
@@ -1111,8 +1142,7 @@ class _PaymentPageState extends State<PaymentPage> {
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 Text(
-                  '${item.lessonCount} lessons'
-                  '${item.oldestLessonDate != null ? ' · oldest ${item.oldestLessonDate}' : ''}',
+                  subtitle,
                   style: const TextStyle(
                     fontSize: 12,
                     color: CupertinoColors.systemGrey,
@@ -1135,10 +1165,7 @@ class _PaymentPageState extends State<PaymentPage> {
       padding: const EdgeInsets.only(bottom: 8, top: 4),
       child: Text(
         title,
-        style: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w700,
-        ),
+        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -1210,10 +1237,26 @@ class _PaymentPageState extends State<PaymentPage> {
   Widget _statusChip(String label, StatusAmountBucket bucket) {
     return Column(
       children: <Widget>[
-        Text(label, style: const TextStyle(fontSize: 11, color: CupertinoColors.systemGrey, fontWeight: FontWeight.w600)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: CupertinoColors.systemGrey,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(height: 4),
-        Text('${bucket.count}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-        Text(_formatNum(bucket.amount), style: const TextStyle(fontSize: 11, color: CupertinoColors.systemGrey)),
+        Text(
+          '${bucket.count}',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        ),
+        Text(
+          _formatNum(bucket.amount),
+          style: const TextStyle(
+            fontSize: 11,
+            color: CupertinoColors.systemGrey,
+          ),
+        ),
       ],
     );
   }
@@ -1223,8 +1266,8 @@ class _PaymentPageState extends State<PaymentPage> {
     final String title = payment.student?.name.isNotEmpty == true
         ? payment.student!.name
         : (payment.group?.name.isNotEmpty == true
-            ? payment.group!.name
-            : payment.kind);
+              ? payment.group!.name
+              : _paymentKindLabel(payment.kind));
 
     return _card(
       child: Row(
@@ -1243,19 +1286,31 @@ class _PaymentPageState extends State<PaymentPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
                 Text(
-                  '${payment.kind}'
-                  '${payment.method != null ? ' · ${payment.method}' : ''}'
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
+                ),
+                Text(
+                  '${_paymentKindLabel(payment.kind)}'
+                  '${payment.method != null ? ' · ${_paymentMethodLabel(payment.method!)}' : ''}'
                   '${payment.paidAt != null ? ' · ${_shortDate(payment.paidAt!)}' : ''}',
-                  style: const TextStyle(fontSize: 12, color: CupertinoColors.systemGrey),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: CupertinoColors.systemGrey,
+                  ),
                 ),
                 if (payment.notes != null && payment.notes!.isNotEmpty)
                   Text(
                     payment.notes!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 11, color: CupertinoColors.systemGrey2),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: CupertinoColors.systemGrey2,
+                    ),
                   ),
               ],
             ),
@@ -1276,9 +1331,12 @@ class _PaymentPageState extends State<PaymentPage> {
                 padding: EdgeInsets.zero,
                 minSize: 0,
                 onPressed: () => _deletePayment(payment),
-                child: const Text(
-                  'Delete',
-                  style: TextStyle(fontSize: 12, color: CupertinoColors.systemRed),
+                child: Text(
+                  context.l10n.delete,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: CupertinoColors.systemRed,
+                  ),
                 ),
               ),
             ],
@@ -1299,6 +1357,30 @@ class _PaymentPageState extends State<PaymentPage> {
     }
   }
 
+  String _paymentKindLabel(String kind) {
+    switch (kind) {
+      case PaymentKind.prepaid:
+        return context.l10n.kindPrepaid;
+      case PaymentKind.refund:
+        return context.l10n.kindRefund;
+      default:
+        return context.l10n.kindLesson;
+    }
+  }
+
+  String _paymentMethodLabel(String method) {
+    switch (method) {
+      case PaymentMethod.transfer:
+        return context.l10n.methodTransfer;
+      case PaymentMethod.card:
+        return context.l10n.methodCard;
+      case PaymentMethod.other:
+        return context.l10n.methodOther;
+      default:
+        return context.l10n.methodCash;
+    }
+  }
+
   IconData _kindIcon(String kind) {
     switch (kind) {
       case PaymentKind.prepaid:
@@ -1310,7 +1392,8 @@ class _PaymentPageState extends State<PaymentPage> {
     }
   }
 
-  String _money(num amount, String currency) => '${_formatNum(amount)} $currency';
+  String _money(num amount, String currency) =>
+      '${_formatNum(amount)} $currency';
 
   String _formatNum(num value) {
     if (value == value.roundToDouble()) {
@@ -1367,7 +1450,8 @@ class _RevenueAreaChartPainter extends CustomPainter {
           ? chartRect.left + chartRect.width / 2
           : chartRect.left + (i / (points.length - 1)) * chartRect.width;
       final double y =
-          chartRect.bottom - (points[i] / maxValue).clamp(0.0, 1.0) * chartRect.height;
+          chartRect.bottom -
+          (points[i] / maxValue).clamp(0.0, 1.0) * chartRect.height;
       coords.add(Offset(x, y));
       if (i == 0) {
         linePath.moveTo(x, y);
@@ -1416,11 +1500,7 @@ class _RevenueAreaChartPainter extends CustomPainter {
       vLinePaint,
     );
 
-    canvas.drawCircle(
-      selected,
-      5.5,
-      Paint()..color = const Color(0xFF111214),
-    );
+    canvas.drawCircle(selected, 5.5, Paint()..color = const Color(0xFF111214));
     canvas.drawCircle(selected, 4, Paint()..color = lineColor);
   }
 
@@ -1470,10 +1550,7 @@ class _RevenueAreaChartPainter extends CustomPainter {
         ),
       );
       tp.layout();
-      tp.paint(
-        canvas,
-        Offset(size.width - tp.width, y - tp.height / 2),
-      );
+      tp.paint(canvas, Offset(size.width - tp.width, y - tp.height / 2));
     }
   }
 
@@ -1497,10 +1574,7 @@ class _RevenueAreaChartPainter extends CustomPainter {
         ),
       );
       tp.layout();
-      tp.paint(
-        canvas,
-        Offset(x - tp.width / 2, chartRect.bottom + 8),
-      );
+      tp.paint(canvas, Offset(x - tp.width / 2, chartRect.bottom + 8));
     }
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:tutor_app/groups/group_service.dart';
+import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/students/student_service.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
 
@@ -41,7 +42,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () => Navigator.of(context).pop(_changed),
-          child: const Text('Back'),
+          child: Text(context.l10n.back),
         ),
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
@@ -88,10 +89,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       return Center(child: Text(_errorMessage!));
     }
     if (_members.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
-          'No students in this group.',
-          style: TextStyle(color: CupertinoColors.systemGrey),
+          context.l10n.noStudentsInGroup,
+          style: const TextStyle(color: CupertinoColors.systemGrey),
         ),
       );
     }
@@ -167,9 +168,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                       ),
                       if (item.pivotStatus == 0) ...<Widget>[
                         const SizedBox(height: 4),
-                        const Text(
-                          'Inactive in group',
-                          style: TextStyle(
+                        Text(
+                          context.l10n.inactiveInGroup,
+                          style: const TextStyle(
                             color: CupertinoColors.systemOrange,
                             fontSize: 13,
                           ),
@@ -201,8 +202,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       _errorMessage = null;
     });
     try {
-      final List<GroupStudent> members =
-          await widget.groupService.listGroupStudents(_group.id);
+      final List<GroupStudent> members = await widget.groupService
+          .listGroupStudents(_group.id);
       if (!mounted) {
         return;
       }
@@ -237,21 +238,22 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       return;
     }
 
-    final Set<int> existingIds =
-        _members.map((GroupStudent m) => m.student.id).toSet();
+    final Set<int> existingIds = _members
+        .map((GroupStudent m) => m.student.id)
+        .toSet();
     final List<Student> candidates = allStudents
         .where((Student s) => !existingIds.contains(s.id))
         .toList();
 
     if (candidates.isEmpty) {
-      await _showMessage('All students are already in this group.');
+      await _showMessage(context.l10n.allStudentsAlreadyInGroup);
       return;
     }
 
     await showAppActionSheet<void>(
       context: context,
-      title: 'Add to ${_group.name}',
-      message: 'Choose a student to add to this group.',
+      title: context.l10n.addToGroup(_group.name),
+      message: context.l10n.chooseStudentToAdd,
       actions: candidates
           .map(
             (Student student) => AppSheetAction(
@@ -282,16 +284,16 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   Future<bool> _confirmRemove(Student student) async {
     final bool? shouldRemove = await showAppAlert<bool>(
       context: context,
-      title: 'Remove from Group',
-      message: 'Remove ${student.name} from ${_group.name}?',
+      title: context.l10n.removeFromGroup,
+      message: context.l10n.removeStudentFromGroup(student.name, _group.name),
       actions: <AppAlertAction>[
         AppAlertAction(
-          label: 'Cancel',
+          label: context.l10n.cancel,
           style: AppAlertStyle.cancel,
           onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(false),
         ),
         AppAlertAction(
-          label: 'Remove',
+          label: context.l10n.remove,
           style: AppAlertStyle.destructive,
           onPressed: (BuildContext ctx) async {
             try {
@@ -323,14 +325,14 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       title: _group.name,
       actions: <AppSheetAction>[
         AppSheetAction(
-          label: 'Edit Group',
+          label: context.l10n.editGroup,
           onPressed: (BuildContext ctx) {
             Navigator.of(ctx).pop();
             _showEditGroupSheet();
           },
         ),
         AppSheetAction(
-          label: 'Delete Group',
+          label: context.l10n.deleteGroup,
           isDestructive: true,
           onPressed: (BuildContext ctx) {
             Navigator.of(ctx).pop();
@@ -342,37 +344,40 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   Future<void> _showEditGroupSheet() async {
-    final TextEditingController nameController =
-        TextEditingController(text: _group.name);
-    final TextEditingController colorController =
-        TextEditingController(text: _group.color ?? '');
+    final AppLocalizations l10n = context.l10n;
+    final TextEditingController nameController = TextEditingController(
+      text: _group.name,
+    );
+    final TextEditingController colorController = TextEditingController(
+      text: _group.color ?? '',
+    );
 
     final bool? saved = await showAppAlert<bool>(
       context: context,
-      title: 'Edit Group',
+      title: l10n.editGroup,
       content: Column(
         children: <Widget>[
           CupertinoTextField(
             controller: nameController,
-            placeholder: 'Group name',
+            placeholder: l10n.groupName,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           ),
           const SizedBox(height: 8),
           CupertinoTextField(
             controller: colorController,
-            placeholder: 'Color (#33FF57)',
+            placeholder: l10n.colorHint,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           ),
         ],
       ),
       actions: <AppAlertAction>[
         AppAlertAction(
-          label: 'Cancel',
+          label: l10n.cancel,
           style: AppAlertStyle.cancel,
           onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(false),
         ),
         AppAlertAction(
-          label: 'Save',
+          label: l10n.save,
           style: AppAlertStyle.primary,
           onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(true),
         ),
@@ -391,17 +396,14 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     colorController.dispose();
 
     if (name.isEmpty) {
-      await _showMessage('Name is required.');
+      await _showMessage(l10n.nameRequired);
       return;
     }
 
     try {
       await widget.groupService.updateGroup(
         id: _group.id,
-        request: GroupCreateRequest(
-          name: name,
-          color: color,
-        ),
+        request: GroupCreateRequest(name: name, color: color),
       );
       if (!mounted) {
         return;
@@ -423,16 +425,16 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   Future<void> _confirmDeleteGroup() async {
     final bool? confirmed = await showAppAlert<bool>(
       context: context,
-      title: 'Delete Group',
-      message: 'Delete ${_group.name}? This will set status to inactive.',
+      title: context.l10n.deleteGroup,
+      message: context.l10n.deleteGroupConfirm(_group.name),
       actions: <AppAlertAction>[
         AppAlertAction(
-          label: 'Cancel',
+          label: context.l10n.cancel,
           style: AppAlertStyle.cancel,
           onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(false),
         ),
         AppAlertAction(
-          label: 'Delete',
+          label: context.l10n.delete,
           style: AppAlertStyle.destructive,
           onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(true),
         ),
@@ -475,20 +477,17 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   Future<void> _showMessage(String message) {
     return showAppAlert<void>(
       context: context,
-      title: 'Group',
+      title: context.l10n.group,
       message: message,
-      actions: const <AppAlertAction>[
-        AppAlertAction(label: 'OK', style: AppAlertStyle.primary),
+      actions: <AppAlertAction>[
+        AppAlertAction(label: context.l10n.ok, style: AppAlertStyle.primary),
       ],
     );
   }
 }
 
 class CreateGroupPage extends StatefulWidget {
-  const CreateGroupPage({
-    required this.groupService,
-    super.key,
-  });
+  const CreateGroupPage({required this.groupService, super.key});
 
   final GroupService groupService;
 
@@ -520,18 +519,18 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: const Text('Add Group'),
+        middle: Text(context.l10n.addGroupTitle),
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.cancel),
         ),
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: _isSubmitting ? null : _submit,
           child: _isSubmitting
               ? const CupertinoActivityIndicator()
-              : const Text('Save'),
+              : Text(context.l10n.save),
         ),
       ),
       child: SafeArea(
@@ -558,7 +557,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
             const SizedBox(height: 16),
             CupertinoTextField(
               controller: _nameController,
-              placeholder: 'Group name',
+              placeholder: context.l10n.groupName,
               textAlign: TextAlign.center,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
               decoration: BoxDecoration(
@@ -569,7 +568,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Color',
+              context.l10n.color,
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 color: CupertinoColors.secondaryLabel.resolveFrom(context),
@@ -599,7 +598,10 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
       children: <Widget>[
         SizedBox(
           width: 24,
-          child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+          child: Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
         ),
         Expanded(
           child: CupertinoSlider(
@@ -609,17 +611,14 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
             onChanged: (double v) => onChanged(v.round()),
           ),
         ),
-        SizedBox(
-          width: 36,
-          child: Text('$value', textAlign: TextAlign.end),
-        ),
+        SizedBox(width: 36, child: Text('$value', textAlign: TextAlign.end)),
       ],
     );
   }
 
   Future<void> _submit() async {
     if (_nameController.text.trim().isEmpty) {
-      await _showMessage('Name is required.');
+      await _showMessage(context.l10n.nameRequired);
       return;
     }
     setState(() {
@@ -651,10 +650,10 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   Future<void> _showMessage(String message) {
     return showAppAlert<void>(
       context: context,
-      title: 'Group',
+      title: context.l10n.group,
       message: message,
-      actions: const <AppAlertAction>[
-        AppAlertAction(label: 'OK', style: AppAlertStyle.primary),
+      actions: <AppAlertAction>[
+        AppAlertAction(label: context.l10n.ok, style: AppAlertStyle.primary),
       ],
     );
   }

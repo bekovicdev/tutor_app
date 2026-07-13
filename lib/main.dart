@@ -5,9 +5,11 @@ import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:tutor_app/auth/auth_page.dart';
 import 'package:tutor_app/auth/auth_service.dart';
 import 'package:tutor_app/auth/auth_storage.dart';
+import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/pages/journal_page.dart';
 import 'package:tutor_app/pages/payment_page.dart';
 import 'package:tutor_app/pages/schedule_page.dart';
@@ -32,11 +34,31 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CupertinoApp(
-      title: 'Tutor App',
+      onGenerateTitle: (BuildContext context) => context.l10n.appTitle,
       navigatorObservers: supportsLiquidGlass
           ? <NavigatorObserver>[CNTabBarRouteObserver()]
           : const <NavigatorObserver>[],
       theme: buildAppCupertinoTheme(Brightness.light),
+      localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+        AppLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      // Device language; unsupported → English. Add Locale('ru') when Russian lands.
+      localeResolutionCallback:
+          (Locale? locale, Iterable<Locale> supportedLocales) {
+        if (locale == null) {
+          return const Locale('en');
+        }
+        for (final Locale supported in supportedLocales) {
+          if (supported.languageCode == locale.languageCode) {
+            return supported;
+          }
+        }
+        return const Locale('en');
+      },
       home: const AppRoot(),
     );
   }
@@ -115,7 +137,10 @@ class _AppRootState extends State<AppRoot> {
     } on AuthException catch (authError) {
       await _showAuthErrorDialog(authError.message);
     } catch (_) {
-      await _showAuthErrorDialog('OAuth login failed.');
+      if (!mounted) {
+        return;
+      }
+      await _showAuthErrorDialog(context.l10n.oauthLoginFailed);
     }
   }
 
@@ -200,10 +225,10 @@ class _AppRootState extends State<AppRoot> {
       }
       await showAppAlert<void>(
         context: context,
-        title: 'OAuth Error',
+        title: context.l10n.oauthError,
         message: message,
-        actions: const <AppAlertAction>[
-          AppAlertAction(label: 'OK', style: AppAlertStyle.primary),
+        actions: <AppAlertAction>[
+          AppAlertAction(label: context.l10n.ok, style: AppAlertStyle.primary),
         ],
       );
     });
@@ -267,27 +292,27 @@ class _AppShellState extends State<AppShell> {
         ),
       ];
 
-  static const List<BottomNavigationBarItem> _classicTabItems =
+  List<BottomNavigationBarItem> _classicTabItems(AppLocalizations l10n) =>
       <BottomNavigationBarItem>[
     BottomNavigationBarItem(
-      icon: Icon(CupertinoIcons.person_2),
-      label: 'Students',
+      icon: const Icon(CupertinoIcons.person_2),
+      label: l10n.tabStudents,
     ),
     BottomNavigationBarItem(
-      icon: Icon(CupertinoIcons.calendar),
-      label: 'Schedule',
+      icon: const Icon(CupertinoIcons.calendar),
+      label: l10n.tabSchedule,
     ),
     BottomNavigationBarItem(
-      icon: Icon(CupertinoIcons.book),
-      label: 'Journal',
+      icon: const Icon(CupertinoIcons.book),
+      label: l10n.tabJournal,
     ),
     BottomNavigationBarItem(
-      icon: Icon(CupertinoIcons.money_dollar),
-      label: 'Payment',
+      icon: const Icon(CupertinoIcons.money_dollar),
+      label: l10n.tabPayment,
     ),
     BottomNavigationBarItem(
-      icon: Icon(CupertinoIcons.settings),
-      label: 'Settings',
+      icon: const Icon(CupertinoIcons.settings),
+      label: l10n.tabSettings,
     ),
   ];
 
@@ -302,13 +327,14 @@ class _AppShellState extends State<AppShell> {
   Widget _buildClassicShell() {
     final List<Widget> pages = _pages();
     return CupertinoTabScaffold(
-      tabBar: CupertinoTabBar(items: _classicTabItems),
+      tabBar: CupertinoTabBar(items: _classicTabItems(context.l10n)),
       tabBuilder: (BuildContext context, int index) => pages[index],
     );
   }
 
   Widget _buildLiquidGlassShell() {
     final List<Widget> pages = _pages();
+    final AppLocalizations l10n = context.l10n;
     return CupertinoPageScaffold(
       backgroundColor: CupertinoTheme.of(context).scaffoldBackgroundColor,
       child: Column(
@@ -336,37 +362,37 @@ class _AppShellState extends State<AppShell> {
                 },
                 iconSize: 22,
                 height: 54,
-                items: const <CNTabBarItem>[
+                items: <CNTabBarItem>[
                   CNTabBarItem(
-                    label: 'Students',
-                    icon: CNSymbol('person.2'),
-                    activeIcon: CNSymbol('person.2.fill'),
+                    label: l10n.tabStudents,
+                    icon: const CNSymbol('person.2'),
+                    activeIcon: const CNSymbol('person.2.fill'),
                     customIcon: CupertinoIcons.person_2,
                     activeCustomIcon: CupertinoIcons.person_2_fill,
                   ),
                   CNTabBarItem(
-                    label: 'Schedule',
-                    icon: CNSymbol('calendar'),
+                    label: l10n.tabSchedule,
+                    icon: const CNSymbol('calendar'),
                     customIcon: CupertinoIcons.calendar,
                   ),
                   CNTabBarItem(
-                    label: 'Journal',
-                    icon: CNSymbol('book'),
-                    activeIcon: CNSymbol('book.fill'),
+                    label: l10n.tabJournal,
+                    icon: const CNSymbol('book'),
+                    activeIcon: const CNSymbol('book.fill'),
                     customIcon: CupertinoIcons.book,
                     activeCustomIcon: CupertinoIcons.book_fill,
                   ),
                   CNTabBarItem(
-                    label: 'Payment',
-                    icon: CNSymbol('dollarsign.circle'),
-                    activeIcon: CNSymbol('dollarsign.circle.fill'),
+                    label: l10n.tabPayment,
+                    icon: const CNSymbol('dollarsign.circle'),
+                    activeIcon: const CNSymbol('dollarsign.circle.fill'),
                     customIcon: CupertinoIcons.money_dollar_circle,
                     activeCustomIcon: CupertinoIcons.money_dollar_circle_fill,
                   ),
                   CNTabBarItem(
-                    label: 'Settings',
-                    icon: CNSymbol('gearshape'),
-                    activeIcon: CNSymbol('gearshape.fill'),
+                    label: l10n.tabSettings,
+                    icon: const CNSymbol('gearshape'),
+                    activeIcon: const CNSymbol('gearshape.fill'),
                     customIcon: CupertinoIcons.settings,
                   ),
                 ],

@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show Material, MaterialType;
+import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
 
 enum AppAlertStyle { normal, destructive, cancel, primary }
@@ -47,7 +48,7 @@ Future<T?> showAppAlert<T>({
   return showGeneralDialog<T>(
     context: context,
     barrierDismissible: barrierDismissible,
-    barrierLabel: 'Dismiss',
+    barrierLabel: context.l10n.dismiss,
     barrierColor: const Color(0x99000000),
     transitionDuration: const Duration(milliseconds: 280),
     pageBuilder: (
@@ -101,7 +102,7 @@ Future<T?> showAppActionSheet<T>({
   String? title,
   String? message,
   required List<AppSheetAction> actions,
-  String cancelLabel = 'Cancel',
+  String? cancelLabel,
 }) {
   return showCupertinoModalPopup<T>(
     context: context,
@@ -111,7 +112,7 @@ Future<T?> showAppActionSheet<T>({
         title: title,
         message: message,
         actions: actions,
-        cancelLabel: cancelLabel,
+        cancelLabel: cancelLabel ?? context.l10n.cancel,
       );
     },
   );

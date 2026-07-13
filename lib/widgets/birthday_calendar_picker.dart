@@ -1,30 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show Material, MaterialType;
-
-const List<String> _turkishMonths = <String>[
-  'Ocak',
-  'Şubat',
-  'Mart',
-  'Nisan',
-  'Mayıs',
-  'Haziran',
-  'Temmuz',
-  'Ağustos',
-  'Eylül',
-  'Ekim',
-  'Kasım',
-  'Aralık',
-];
-
-const List<String> _weekdayLabels = <String>[
-  'Pt',
-  'Sa',
-  'Ça',
-  'Pe',
-  'Cu',
-  'Ct',
-  'Pz',
-];
+import 'package:intl/intl.dart';
+import 'package:tutor_app/l10n/l10n_ext.dart';
 
 /// Compact month calendar for picking a birthday.
 Future<DateTime?> showBirthdayCalendar({
@@ -47,7 +24,7 @@ Future<DateTime?> showBirthdayCalendar({
   return showGeneralDialog<DateTime>(
     context: context,
     barrierDismissible: true,
-    barrierLabel: 'Dismiss',
+    barrierLabel: context.l10n.dismiss,
     barrierColor: const Color(0x66000000),
     transitionDuration: const Duration(milliseconds: 200),
     pageBuilder: (
@@ -174,9 +151,17 @@ class _BirthdayCalendarDialogState extends State<_BirthdayCalendarDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
+    final String locale = Localizations.localeOf(context).toString();
     final List<DateTime?> cells = _daysInGrid();
     final String title =
-        '${_turkishMonths[_visibleMonth.month - 1]} ${_visibleMonth.year}';
+        DateFormat.yMMMM(locale).format(_visibleMonth);
+    final List<String> weekdayLabels = List<String>.generate(7, (int i) {
+      // Monday-based week to match grid.
+      final DateTime day =
+          DateTime(2024, 1, 1).add(Duration(days: i)); // Mon Jan 1 2024
+      return DateFormat.E(locale).format(day);
+    });
 
     return Material(
       type: MaterialType.transparency,
@@ -206,10 +191,10 @@ class _BirthdayCalendarDialogState extends State<_BirthdayCalendarDialog> {
                     color: Color(0xFFFF2D55),
                   ),
                   const SizedBox(width: 8),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Doğum günü',
-                      style: TextStyle(
+                      l10n.birthday,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
@@ -268,7 +253,7 @@ class _BirthdayCalendarDialogState extends State<_BirthdayCalendarDialog> {
               ),
               const SizedBox(height: 4),
               Row(
-                children: _weekdayLabels
+                children: weekdayLabels
                     .map(
                       (String label) => Expanded(
                         child: Text(
@@ -345,7 +330,7 @@ class _BirthdayCalendarDialogState extends State<_BirthdayCalendarDialog> {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       onPressed: () => Navigator.of(context).pop(),
                       child: Text(
-                        'Vazgeç',
+                        l10n.cancel,
                         style: TextStyle(
                           color: CupertinoColors.secondaryLabel
                               .resolveFrom(context),
@@ -360,7 +345,7 @@ class _BirthdayCalendarDialogState extends State<_BirthdayCalendarDialog> {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       borderRadius: BorderRadius.circular(12),
                       onPressed: () => Navigator.of(context).pop(_selected),
-                      child: const Text('Seç'),
+                      child: Text(l10n.select),
                     ),
                   ),
                 ],

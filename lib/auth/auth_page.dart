@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:tutor_app/notifications/fcm_service.dart';
 import 'package:tutor_app/auth/auth_service.dart';
+import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -35,7 +36,8 @@ class _AuthPageState extends State<AuthPage> {
   final TextEditingController _passwordConfirmationController =
       TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _individualCostController = TextEditingController();
+  final TextEditingController _individualCostController =
+      TextEditingController();
   final TextEditingController _groupCostController = TextEditingController();
 
   @override
@@ -59,30 +61,35 @@ class _AuthPageState extends State<AuthPage> {
   @override
   Widget build(BuildContext context) {
     final CupertinoThemeData theme = CupertinoTheme.of(context);
+    final AppLocalizations l10n = context.l10n;
     final bool isRegister = _mode == AuthMode.register;
 
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text('Tutor App'),
-      ),
+      navigationBar: CupertinoNavigationBar(middle: Text(l10n.appTitle)),
       child: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: <Widget>[
             const SizedBox(height: 8),
             Text(
-              isRegister ? 'Create your account' : 'Welcome to Tutor App',
+              isRegister ? l10n.createAccountTitle : l10n.welcomeTitle,
               style: theme.textTheme.navLargeTitleTextStyle.copyWith(
                 fontSize: 30,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'Plan lessons, track notes, and manage your tutoring workflow.',
-              style: TextStyle(color: CupertinoColors.systemGrey, fontSize: 15),
+            Text(
+              l10n.authSubtitle,
+              style: const TextStyle(
+                color: CupertinoColors.systemGrey,
+                fontSize: 15,
+              ),
             ),
             const SizedBox(height: 16),
-            if (isRegister) _buildRegisterStepCard(context) else _buildLoginCard(context),
+            if (isRegister)
+              _buildRegisterStepCard(context)
+            else
+              _buildLoginCard(context),
             const SizedBox(height: 18),
             if (!isRegister)
               SizedBox(
@@ -94,7 +101,7 @@ class _AuthPageState extends State<AuthPage> {
                       ? const CupertinoActivityIndicator(
                           color: CupertinoColors.white,
                         )
-                      : const Text('Login'),
+                      : Text(l10n.login),
                 ),
               ),
             if (isRegister) _buildRegisterActions(),
@@ -103,11 +110,11 @@ class _AuthPageState extends State<AuthPage> {
               Row(
                 children: <Widget>[
                   Expanded(child: _separatorLine(context)),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: Text(
-                      'or continue with',
-                      style: TextStyle(color: CupertinoColors.systemGrey),
+                      l10n.orContinueWith,
+                      style: const TextStyle(color: CupertinoColors.systemGrey),
                     ),
                   ),
                   Expanded(child: _separatorLine(context)),
@@ -117,7 +124,7 @@ class _AuthPageState extends State<AuthPage> {
               _oauthButton(
                 context: context,
                 icon: FontAwesomeIcons.google,
-                label: 'Continue with Google',
+                label: l10n.continueWithGoogle,
                 backgroundColor: CupertinoColors.white,
                 foregroundColor: CupertinoColors.black,
                 onPressed: _isLoading ? null : () => _startOAuth('google'),
@@ -126,7 +133,7 @@ class _AuthPageState extends State<AuthPage> {
               _oauthButton(
                 context: context,
                 icon: FontAwesomeIcons.apple,
-                label: 'Continue with Apple',
+                label: l10n.continueWithApple,
                 backgroundColor: CupertinoColors.black,
                 foregroundColor: CupertinoColors.white,
                 onPressed: _isLoading ? null : () => _startOAuth('apple'),
@@ -137,9 +144,9 @@ class _AuthPageState extends State<AuthPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  const Text(
-                    "Don't have an account?",
-                    style: TextStyle(color: CupertinoColors.systemGrey),
+                  Text(
+                    l10n.dontHaveAccount,
+                    style: const TextStyle(color: CupertinoColors.systemGrey),
                   ),
                   CupertinoButton(
                     padding: const EdgeInsets.only(left: 6, right: 0),
@@ -157,7 +164,7 @@ class _AuthPageState extends State<AuthPage> {
                               ),
                             );
                           },
-                    child: const Text('Register'),
+                    child: Text(l10n.register),
                   ),
                 ],
               ),
@@ -165,15 +172,17 @@ class _AuthPageState extends State<AuthPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  const Text(
-                    'Already have an account?',
-                    style: TextStyle(color: CupertinoColors.systemGrey),
+                  Text(
+                    l10n.alreadyHaveAccount,
+                    style: const TextStyle(color: CupertinoColors.systemGrey),
                   ),
                   CupertinoButton(
                     padding: const EdgeInsets.only(left: 6, right: 0),
                     minSize: 0,
-                    onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-                    child: const Text('Login'),
+                    onPressed: _isLoading
+                        ? null
+                        : () => Navigator.of(context).pop(),
+                    child: Text(l10n.login),
                   ),
                 ],
               ),
@@ -184,12 +193,13 @@ class _AuthPageState extends State<AuthPage> {
   }
 
   Widget _buildLoginCard(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     return _authCard(
       context,
       children: <Widget>[
         _field(
           controller: _emailController,
-          placeholder: 'Email',
+          placeholder: l10n.email,
           prefixIcon: CupertinoIcons.mail,
           keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.next,
@@ -197,7 +207,7 @@ class _AuthPageState extends State<AuthPage> {
         const SizedBox(height: 12),
         _field(
           controller: _passwordController,
-          placeholder: 'Password',
+          placeholder: l10n.password,
           prefixIcon: CupertinoIcons.lock,
           obscureText: true,
           textInputAction: TextInputAction.next,
@@ -207,21 +217,22 @@ class _AuthPageState extends State<AuthPage> {
   }
 
   Widget _buildRegisterStepCard(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     if (_registerStep == 0) {
       return _authCard(
         context,
-        title: 'Step 1 of 3',
+        title: l10n.stepOf(1, 3),
         children: <Widget>[
           _field(
             controller: _nameController,
-            placeholder: 'Name',
+            placeholder: l10n.name,
             prefixIcon: CupertinoIcons.person,
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: 12),
           _field(
             controller: _emailController,
-            placeholder: 'Email',
+            placeholder: l10n.email,
             prefixIcon: CupertinoIcons.mail,
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
@@ -229,7 +240,7 @@ class _AuthPageState extends State<AuthPage> {
           const SizedBox(height: 12),
           _field(
             controller: _phoneController,
-            placeholder: 'Phone',
+            placeholder: l10n.phone,
             prefixIcon: CupertinoIcons.phone,
             keyboardType: TextInputType.phone,
             textInputAction: TextInputAction.next,
@@ -241,11 +252,11 @@ class _AuthPageState extends State<AuthPage> {
     if (_registerStep == 1) {
       return _authCard(
         context,
-        title: 'Step 2 of 3',
+        title: l10n.stepOf(2, 3),
         children: <Widget>[
           _field(
             controller: _passwordController,
-            placeholder: 'Password',
+            placeholder: l10n.password,
             prefixIcon: CupertinoIcons.lock,
             obscureText: true,
             textInputAction: TextInputAction.next,
@@ -253,7 +264,7 @@ class _AuthPageState extends State<AuthPage> {
           const SizedBox(height: 12),
           _field(
             controller: _passwordConfirmationController,
-            placeholder: 'Password Confirmation',
+            placeholder: l10n.passwordConfirmation,
             prefixIcon: CupertinoIcons.lock_shield,
             obscureText: true,
             textInputAction: TextInputAction.done,
@@ -264,11 +275,11 @@ class _AuthPageState extends State<AuthPage> {
 
     return _authCard(
       context,
-      title: 'Step 3 of 3',
+      title: l10n.stepOf(3, 3),
       children: <Widget>[
         _field(
           controller: _individualCostController,
-          placeholder: 'Individual Lesson Cost (optional)',
+          placeholder: l10n.individualLessonCostOptional,
           prefixIcon: CupertinoIcons.money_dollar_circle,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           textInputAction: TextInputAction.next,
@@ -276,7 +287,7 @@ class _AuthPageState extends State<AuthPage> {
         const SizedBox(height: 12),
         _field(
           controller: _groupCostController,
-          placeholder: 'Group Lesson Cost (optional)',
+          placeholder: l10n.groupLessonCostOptional,
           prefixIcon: CupertinoIcons.money_dollar_circle_fill,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           textInputAction: TextInputAction.done,
@@ -286,6 +297,7 @@ class _AuthPageState extends State<AuthPage> {
   }
 
   Widget _buildRegisterActions() {
+    final AppLocalizations l10n = context.l10n;
     final bool isLastStep = _registerStep == 2;
     return Row(
       children: <Widget>[
@@ -303,7 +315,7 @@ class _AuthPageState extends State<AuthPage> {
                           _registerStep -= 1;
                         });
                       },
-                child: const Text('Back'),
+                child: Text(l10n.back),
               ),
             ),
           ),
@@ -323,8 +335,10 @@ class _AuthPageState extends State<AuthPage> {
                       _goToNextRegisterStep();
                     },
               child: _isLoading
-                  ? const CupertinoActivityIndicator(color: CupertinoColors.white)
-                  : Text(isLastStep ? 'Create Account' : 'Next'),
+                  ? const CupertinoActivityIndicator(
+                      color: CupertinoColors.white,
+                    )
+                  : Text(isLastStep ? l10n.createAccount : l10n.next),
             ),
           ),
         ),
@@ -438,11 +452,7 @@ class _AuthPageState extends State<AuthPage> {
       placeholder: placeholder,
       prefix: Padding(
         padding: const EdgeInsets.only(left: 12, right: 8),
-        child: Icon(
-          prefixIcon,
-          size: 18,
-          color: CupertinoColors.systemGrey,
-        ),
+        child: Icon(prefixIcon, size: 18, color: CupertinoColors.systemGrey),
       ),
       keyboardType: keyboardType,
       obscureText: obscureText,
@@ -462,20 +472,20 @@ class _AuthPageState extends State<AuthPage> {
 
     if (_mode == AuthMode.login) {
       if (email.isEmpty || password.isEmpty) {
-        await _showMessage('Email and password are required.');
+        await _showMessage(context.l10n.emailPasswordRequired);
         return;
       }
     } else {
       if (_nameController.text.trim().isEmpty) {
-        await _showMessage('Name is required.');
+        await _showMessage(context.l10n.nameRequired);
         return;
       }
       if (_passwordConfirmationController.text.isEmpty) {
-        await _showMessage('Password confirmation is required.');
+        await _showMessage(context.l10n.passwordConfirmationRequired);
         return;
       }
       if (email.isEmpty || password.isEmpty) {
-        await _showMessage('Email and password are required.');
+        await _showMessage(context.l10n.emailPasswordRequired);
         return;
       }
     }
@@ -500,7 +510,9 @@ class _AuthPageState extends State<AuthPage> {
             password: password,
             passwordConfirmation: _passwordConfirmationController.text,
             phone: _phoneController.text.trim(),
-            individualLessonCost: _toDoubleOrNull(_individualCostController.text),
+            individualLessonCost: _toDoubleOrNull(
+              _individualCostController.text,
+            ),
             groupLessonCost: _toDoubleOrNull(_groupCostController.text),
             fcmToken: fcmToken,
           ),
@@ -513,7 +525,9 @@ class _AuthPageState extends State<AuthPage> {
       if (!mounted) {
         return;
       }
-      Navigator.of(context, rootNavigator: true).popUntil((Route<dynamic> route) {
+      Navigator.of(context, rootNavigator: true).popUntil((
+        Route<dynamic> route,
+      ) {
         return route.isFirst;
       });
     } on AuthException catch (error) {
@@ -542,7 +556,7 @@ class _AuthPageState extends State<AuthPage> {
         mode: LaunchMode.externalApplication,
       );
       if (!launched && mounted) {
-        await _showMessage('Could not open OAuth page.');
+        await _showMessage(context.l10n.couldNotOpenOAuth);
       }
     } on AuthException catch (error) {
       if (!mounted) {
@@ -553,7 +567,7 @@ class _AuthPageState extends State<AuthPage> {
       if (!mounted) {
         return;
       }
-      await _showMessage('OAuth flow could not be started.');
+      await _showMessage(context.l10n.oauthCouldNotStart);
     } finally {
       if (mounted) {
         setState(() {
@@ -574,22 +588,22 @@ class _AuthPageState extends State<AuthPage> {
   Future<void> _goToNextRegisterStep() async {
     if (_registerStep == 0) {
       if (_nameController.text.trim().isEmpty) {
-        await _showMessage('Name is required.');
+        await _showMessage(context.l10n.nameRequired);
         return;
       }
       if (_emailController.text.trim().isEmpty) {
-        await _showMessage('Email is required.');
+        await _showMessage(context.l10n.emailRequired);
         return;
       }
     }
 
     if (_registerStep == 1) {
       if (_passwordController.text.isEmpty) {
-        await _showMessage('Password is required.');
+        await _showMessage(context.l10n.passwordRequired);
         return;
       }
       if (_passwordConfirmationController.text.isEmpty) {
-        await _showMessage('Password confirmation is required.');
+        await _showMessage(context.l10n.passwordConfirmationRequired);
         return;
       }
     }
@@ -605,10 +619,10 @@ class _AuthPageState extends State<AuthPage> {
   Future<void> _showMessage(String message) {
     return showAppAlert<void>(
       context: context,
-      title: 'Auth',
+      title: context.l10n.authTitle,
       message: message,
-      actions: const <AppAlertAction>[
-        AppAlertAction(label: 'OK', style: AppAlertStyle.primary),
+      actions: <AppAlertAction>[
+        AppAlertAction(label: context.l10n.ok, style: AppAlertStyle.primary),
       ],
     );
   }

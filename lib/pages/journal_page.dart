@@ -1,16 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
+import 'package:intl/intl.dart' as intl;
+import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/create_lesson_page.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
 
 class JournalPage extends StatefulWidget {
-  const JournalPage({
-    required this.token,
-    super.key,
-  });
+  const JournalPage({required this.token, super.key});
 
   final String token;
 
@@ -73,17 +72,18 @@ class _JournalPageState extends State<JournalPage> {
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
-  List<DateTime> get _weekDays => List<DateTime>.generate(
-        7,
-        (int i) => _weekStart.add(Duration(days: i)),
-      );
+  List<DateTime> get _weekDays =>
+      List<DateTime>.generate(7, (int i) => _weekStart.add(Duration(days: i)));
 
   List<Lesson> get _selectedDayLessons {
     final String key = _formatDate(_selectedDay);
-    final List<Lesson> lessons = _weekLessons
-        .where((Lesson lesson) => lesson.date.startsWith(key))
-        .toList()
-      ..sort((Lesson a, Lesson b) => a.startMinutes.compareTo(b.startMinutes));
+    final List<Lesson> lessons =
+        _weekLessons
+            .where((Lesson lesson) => lesson.date.startsWith(key))
+            .toList()
+          ..sort(
+            (Lesson a, Lesson b) => a.startMinutes.compareTo(b.startMinutes),
+          );
     return lessons;
   }
 
@@ -155,9 +155,10 @@ class _JournalPageState extends State<JournalPage> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: const Text('Journal'),
+        middle: Text(l10n.journal),
         border: appNavigationBarBorder,
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -170,7 +171,7 @@ class _JournalPageState extends State<JournalPage> {
             CupertinoButton(
               padding: EdgeInsets.zero,
               onPressed: _goToToday,
-              child: const Text('Today'),
+              child: Text(l10n.today),
             ),
           ],
         ),
@@ -204,10 +205,7 @@ class _JournalPageState extends State<JournalPage> {
             child: Text(
               label,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
           CupertinoButton(
@@ -221,33 +219,13 @@ class _JournalPageState extends State<JournalPage> {
   }
 
   String _shortMonthDay(DateTime date) {
-    const List<String> months = <String>[
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[date.month - 1]} ${date.day}';
+    final String locale = Localizations.localeOf(context).toLanguageTag();
+    return intl.DateFormat.MMMd(locale).format(date);
   }
 
   Widget _buildWeekRow() {
-    const List<String> labels = <String>[
-      'Mon',
-      'Tue',
-      'Wed',
-      'Thu',
-      'Fri',
-      'Sat',
-      'Sun',
-    ];
+    final String locale = Localizations.localeOf(context).toLanguageTag();
+    final intl.DateFormat weekdayFormat = intl.DateFormat.E(locale);
     final DateTime today = DateTime.now();
 
     return Padding(
@@ -276,7 +254,7 @@ class _JournalPageState extends State<JournalPage> {
                   color: selected
                       ? CupertinoColors.activeBlue
                       : CupertinoColors.secondarySystemGroupedBackground
-                          .resolveFrom(context),
+                            .resolveFrom(context),
                   borderRadius: BorderRadius.circular(12),
                   border: isToday && !selected
                       ? Border.all(
@@ -288,14 +266,15 @@ class _JournalPageState extends State<JournalPage> {
                 child: Column(
                   children: <Widget>[
                     Text(
-                      labels[index],
+                      weekdayFormat.format(day),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: selected
                             ? CupertinoColors.white
-                            : CupertinoColors.secondaryLabel
-                                .resolveFrom(context),
+                            : CupertinoColors.secondaryLabel.resolveFrom(
+                                context,
+                              ),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -317,8 +296,8 @@ class _JournalPageState extends State<JournalPage> {
                         shape: BoxShape.circle,
                         color: lessonCount > 0
                             ? (selected
-                                ? CupertinoColors.white
-                                : CupertinoColors.activeBlue)
+                                  ? CupertinoColors.white
+                                  : CupertinoColors.activeBlue)
                             : CupertinoColors.transparent,
                       ),
                     ),
@@ -351,7 +330,7 @@ class _JournalPageState extends State<JournalPage> {
               const SizedBox(height: 12),
               CupertinoButton(
                 onPressed: _loadWeek,
-                child: const Text('Retry'),
+                child: Text(context.l10n.retry),
               ),
             ],
           ),
@@ -363,9 +342,7 @@ class _JournalPageState extends State<JournalPage> {
     final double timelineHeight = totalHours * _hourHeight;
     final List<Lesson> lessons = _selectedDayLessons;
     final int gridStartMinutes = _startHour * 60;
-    final Widget? nowLine = _buildNowLine(
-      gridStartMinutes: gridStartMinutes,
-    );
+    final Widget? nowLine = _buildNowLine(gridStartMinutes: gridStartMinutes);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(0, 0, 12, 24),
@@ -391,8 +368,9 @@ class _JournalPageState extends State<JournalPage> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: CupertinoColors.secondaryLabel
-                                  .resolveFrom(context),
+                              color: CupertinoColors.secondaryLabel.resolveFrom(
+                                context,
+                              ),
                             ),
                           ),
                         ),
@@ -404,14 +382,17 @@ class _JournalPageState extends State<JournalPage> {
                   child: Stack(
                     children: <Widget>[
                       Column(
-                        children: List<Widget>.generate(totalHours, (int index) {
+                        children: List<Widget>.generate(totalHours, (
+                          int index,
+                        ) {
                           return Container(
                             height: _hourHeight,
                             decoration: BoxDecoration(
                               border: Border(
                                 top: BorderSide(
-                                  color: CupertinoColors.separator
-                                      .resolveFrom(context),
+                                  color: CupertinoColors.separator.resolveFrom(
+                                    context,
+                                  ),
                                   width: 0.5,
                                 ),
                               ),
@@ -438,9 +419,7 @@ class _JournalPageState extends State<JournalPage> {
     );
   }
 
-  Widget? _buildNowLine({
-    required int gridStartMinutes,
-  }) {
+  Widget? _buildNowLine({required int gridStartMinutes}) {
     if (!_isSameDay(_selectedDay, _now)) {
       return null;
     }
@@ -451,8 +430,7 @@ class _JournalPageState extends State<JournalPage> {
       return null;
     }
 
-    final double top =
-        (nowMinutes - gridStartMinutes) / 60 * _hourHeight;
+    final double top = (nowMinutes - gridStartMinutes) / 60 * _hourHeight;
     const Color nowColor = Color(0xFFFF3B30);
     final String label =
         '${_now.hour.toString().padLeft(2, '0')}:${_now.minute.toString().padLeft(2, '0')}';
@@ -470,8 +448,10 @@ class _JournalPageState extends State<JournalPage> {
               child: Align(
                 alignment: Alignment.centerRight,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: nowColor,
                     borderRadius: BorderRadius.circular(8),
@@ -509,10 +489,7 @@ class _JournalPageState extends State<JournalPage> {
                 height: 2,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: <Color>[
-                      nowColor,
-                      nowColor.withValues(alpha: 0.55),
-                    ],
+                    colors: <Color>[nowColor, nowColor.withValues(alpha: 0.55)],
                   ),
                   boxShadow: <BoxShadow>[
                     BoxShadow(
@@ -544,8 +521,8 @@ class _JournalPageState extends State<JournalPage> {
     }
 
     final double top = clippedStart / 60 * _hourHeight;
-    final double height =
-        ((clippedEnd - clippedStart) / 60 * _hourHeight).clamp(28.0, timelineHeight);
+    final double height = ((clippedEnd - clippedStart) / 60 * _hourHeight)
+        .clamp(28.0, timelineHeight);
 
     final Color accent = _parseHexColor(lesson.accentColor);
     final Color bg = accent.withValues(alpha: 0.18);
@@ -587,8 +564,7 @@ class _JournalPageState extends State<JournalPage> {
                     color: cancelled
                         ? CupertinoColors.systemGrey
                         : CupertinoColors.label.resolveFrom(context),
-                    decoration:
-                        cancelled ? TextDecoration.lineThrough : null,
+                    decoration: cancelled ? TextDecoration.lineThrough : null,
                   ),
                 ),
               ];
@@ -596,9 +572,9 @@ class _JournalPageState extends State<JournalPage> {
                 lines.add(const SizedBox(height: 2));
                 lines.add(
                   Text(
-                    '${lesson.startAt} · ${lesson.durationMinutes}m'
-                    '${completed ? ' · done' : ''}'
-                    '${lesson.isGroup ? ' · group' : ''}',
+                    '${lesson.startAt} · ${context.l10n.minutes(lesson.durationMinutes)}'
+                    '${completed ? ' · ${context.l10n.done.toLowerCase()}' : ''}'
+                    '${lesson.isGroup ? ' · ${context.l10n.group.toLowerCase()}' : ''}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -671,15 +647,15 @@ class _JournalPageState extends State<JournalPage> {
       context: context,
       title: lesson.displayTitle,
       message:
-          '${lesson.date} · ${lesson.startAt} · ${lesson.durationMinutes} min\n'
+          '${lesson.date} · ${lesson.startAt} · ${context.l10n.minutes(lesson.durationMinutes)}\n'
           '${lesson.displaySubtitle}\n'
-          'Status: ${lesson.status}'
+          '${context.l10n.status}: ${lesson.status}'
           '${lesson.notes != null && lesson.notes!.isNotEmpty ? '\n${lesson.notes}' : ''}',
-      cancelLabel: 'Close',
+      cancelLabel: context.l10n.close,
       actions: <AppSheetAction>[
         if (lesson.status == 'scheduled')
           AppSheetAction(
-            label: 'Mark Completed',
+            label: context.l10n.markCompleted,
             onPressed: (BuildContext ctx) async {
               Navigator.of(ctx).pop();
               await _updateStatus(lesson, 'completed');
@@ -687,7 +663,7 @@ class _JournalPageState extends State<JournalPage> {
           ),
         if (lesson.status != 'cancelled')
           AppSheetAction(
-            label: 'Cancel Lesson',
+            label: context.l10n.cancelLesson,
             isDestructive: true,
             onPressed: (BuildContext ctx) async {
               Navigator.of(ctx).pop();
@@ -695,7 +671,7 @@ class _JournalPageState extends State<JournalPage> {
             },
           ),
         AppSheetAction(
-          label: 'Delete',
+          label: context.l10n.delete,
           isDestructive: true,
           onPressed: (BuildContext ctx) async {
             Navigator.of(ctx).pop();
@@ -721,16 +697,16 @@ class _JournalPageState extends State<JournalPage> {
   Future<void> _confirmDelete(Lesson lesson) async {
     final bool? confirmed = await showAppAlert<bool>(
       context: context,
-      title: 'Delete Lesson',
-      message: 'Delete "${lesson.displayTitle}" permanently?',
+      title: context.l10n.deleteLesson,
+      message: context.l10n.deleteLessonConfirm(lesson.displayTitle),
       actions: <AppAlertAction>[
         AppAlertAction(
-          label: 'Cancel',
+          label: context.l10n.cancel,
           style: AppAlertStyle.cancel,
           onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(false),
         ),
         AppAlertAction(
-          label: 'Delete',
+          label: context.l10n.delete,
           style: AppAlertStyle.destructive,
           onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(true),
         ),
@@ -750,10 +726,10 @@ class _JournalPageState extends State<JournalPage> {
   Future<void> _showError(String message) {
     return showAppAlert<void>(
       context: context,
-      title: 'Journal',
+      title: context.l10n.journal,
       message: message,
-      actions: const <AppAlertAction>[
-        AppAlertAction(label: 'OK', style: AppAlertStyle.primary),
+      actions: <AppAlertAction>[
+        AppAlertAction(label: context.l10n.ok, style: AppAlertStyle.primary),
       ],
     );
   }

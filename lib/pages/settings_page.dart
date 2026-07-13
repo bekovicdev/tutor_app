@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -13,9 +14,10 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: const Text('Settings'),
+        middle: Text(l10n.settings),
         border: appNavigationBarBorder,
       ),
       child: SafeArea(
@@ -25,7 +27,7 @@ class SettingsPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               Text(
-                'Signed in as $userName',
+                l10n.signedInAs(userName),
                 style: const TextStyle(
                   color: CupertinoColors.systemGrey,
                 ),
@@ -33,7 +35,7 @@ class SettingsPage extends StatelessWidget {
               const SizedBox(height: 12),
               CupertinoButton.filled(
                 onPressed: onLogout,
-                child: const Text('Logout'),
+                child: Text(l10n.logout),
               ),
             ],
           ),
