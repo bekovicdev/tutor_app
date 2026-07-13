@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
+import 'package:tutor_app/pages/lesson_calendar_picker_page.dart';
 import 'package:tutor_app/payments/payment_service.dart';
 import 'package:tutor_app/students/student_service.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
@@ -12,6 +13,7 @@ class CreatePaymentPage extends StatefulWidget {
     required this.lessonService,
     this.initialStudent,
     this.lockStudent = false,
+    this.initialKind,
     super.key,
   });
 
@@ -24,6 +26,9 @@ class CreatePaymentPage extends StatefulWidget {
 
   /// When true (and [initialStudent] is set), student cannot be changed.
   final bool lockStudent;
+
+  /// Prefill payment kind (e.g. prepaid for package load).
+  final String? initialKind;
 
   @override
   State<CreatePaymentPage> createState() => _CreatePaymentPageState();
@@ -38,7 +43,6 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
   Student? _selectedStudent;
   Lesson? _selectedLesson;
   List<Student> _students = <Student>[];
-  List<Lesson> _lessons = <Lesson>[];
   bool _applyToLesson = true;
   bool _isLoading = true;
   bool _isSubmitting = false;
@@ -46,6 +50,10 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
   @override
   void initState() {
     super.initState();
+    final String? initialKind = widget.initialKind;
+    if (initialKind != null && initialKind.isNotEmpty) {
+      _kind = initialKind;
+    }
     _load();
   }
 
@@ -62,29 +70,10 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
     });
 
     List<Student> students = <Student>[];
-    List<Lesson> lessons = <Lesson>[];
 
     try {
       students = await widget.studentService.listStudents();
     } on StudentServiceException {
-      // Form can still open.
-    }
-
-    try {
-      final DateTime now = DateTime.now();
-      final DateTime from = now.subtract(const Duration(days: 120));
-      final DateTime to = now.add(const Duration(days: 30));
-      lessons = await widget.lessonService.listLessons(
-        startDate: _ymd(from),
-        endDate: _ymd(to),
-        source: LessonSource.journal,
-        sortBy: 'date',
-        sortDirection: 'desc',
-      );
-      lessons = lessons
-          .where((Lesson lesson) => lesson.status != 'cancelled')
-          .toList();
-    } on LessonServiceException {
       // Form can still open.
     }
 
@@ -107,36 +96,9 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
 
     setState(() {
       _students = students;
-      _lessons = lessons;
       _selectedStudent = selected;
       _isLoading = false;
     });
-  }
-
-  List<Lesson> get _selectableLessons {
-    Iterable<Lesson> lessons = _lessons;
-    if (_selectedStudent != null) {
-      final int studentId = _selectedStudent!.id;
-      final List<Lesson> forStudent = lessons
-          .where((Lesson lesson) => lesson.studentId == studentId)
-          .toList();
-      if (forStudent.isNotEmpty) {
-        lessons = forStudent;
-      }
-    }
-    if (_kind == PaymentKind.lesson) {
-      final List<Lesson> unpaid = lessons
-          .where(
-            (Lesson lesson) =>
-                lesson.isFree != true &&
-                lesson.resolvedPaymentStatus == PaymentStatus.unpaid,
-          )
-          .toList();
-      if (unpaid.isNotEmpty) {
-        return unpaid;
-      }
-    }
-    return lessons.toList();
   }
 
   @override
@@ -164,7 +126,31 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
             : ListView(
                 padding: const EdgeInsets.all(16),
                 children: <Widget>[
-                  _sectionTitle(l10n.amount),
+                  if (_kind == PaymentKind.prepaid) ...<Widget>[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: CupertinoColors.systemPurple.withValues(
+                          alpha: 0.12,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        l10n.loadPackageHint,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  _sectionTitle(
+                    _kind == PaymentKind.prepaid
+                        ? l10n.loadPackage
+                        : l10n.amount,
+                  ),
                   CupertinoTextField(
                     controller: _amountController,
                     placeholder: '500',
@@ -191,7 +177,7 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
                           horizontal: 8,
                           vertical: 6,
                         ),
-                        child: Text(l10n.kindPrepaid),
+                        child: Text(l10n.loadPackage),
                       ),
                       PaymentKind.refund: Padding(
                         padding: const EdgeInsets.symmetric(
@@ -207,8 +193,7 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
                       }
                       setState(() {
                         _kind = value;
-                        if (_selectedLesson != null &&
-                            !_selectableLessons.contains(_selectedLesson)) {
+                        if (value == PaymentKind.prepaid) {
                           _selectedLesson = null;
                         }
                       });
@@ -274,29 +259,49 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
                       label: _selectedStudent?.name ?? l10n.selectStudent,
                       onPressed: _pickStudent,
                     ),
-                  const SizedBox(height: 16),
-                  _sectionTitle(l10n.lessonOptional),
-                  _pickerButton(
-                    label: _selectedLesson == null
-                        ? l10n.selectLesson
-                        : _lessonLabel(_selectedLesson!),
-                    onPressed: _pickLesson,
-                  ),
-                  if (_selectedLesson != null) ...<Widget>[
-                    const SizedBox(height: 12),
-                    Row(
-                      children: <Widget>[
-                        Expanded(child: Text(l10n.applyToLessonStatus)),
-                        CupertinoSwitch(
-                          value: _applyToLesson,
-                          onChanged: (bool value) {
+                  if (_kind != PaymentKind.prepaid) ...<Widget>[
+                    const SizedBox(height: 16),
+                    _sectionTitle(l10n.lessonOptional),
+                    _pickerButton(
+                      label: _selectedLesson == null
+                          ? l10n.pickLessonFromCalendar
+                          : _lessonLabel(_selectedLesson!),
+                      onPressed: _openLessonCalendar,
+                      trailing: CupertinoIcons.calendar,
+                    ),
+                    if (_selectedLesson != null) ...<Widget>[
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: CupertinoButton(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          onPressed: () {
                             setState(() {
-                              _applyToLesson = value;
+                              _selectedLesson = null;
                             });
                           },
+                          child: Text(
+                            l10n.clearLesson,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: CupertinoColors.systemRed,
+                            ),
+                          ),
                         ),
-                      ],
-                    ),
+                      ),
+                      Row(
+                        children: <Widget>[
+                          Expanded(child: Text(l10n.applyToLessonStatus)),
+                          CupertinoSwitch(
+                            value: _applyToLesson,
+                            onChanged: (bool value) {
+                              setState(() {
+                                _applyToLesson = value;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                   const SizedBox(height: 16),
                   _sectionTitle(l10n.notes),
@@ -317,6 +322,7 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
   Widget _pickerButton({
     required String label,
     required VoidCallback onPressed,
+    IconData trailing = CupertinoIcons.chevron_down,
   }) {
     return CupertinoButton(
       padding: EdgeInsets.zero,
@@ -333,8 +339,8 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
                 style: const TextStyle(color: CupertinoColors.label),
               ),
             ),
-            const Icon(
-              CupertinoIcons.chevron_down,
+            Icon(
+              trailing,
               size: 16,
               color: CupertinoColors.systemGrey,
             ),
@@ -404,33 +410,20 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
     );
   }
 
-  Future<void> _pickLesson() async {
-    final List<Lesson> lessons = _selectableLessons;
-    await showAppActionSheet<void>(
-      context: context,
-      title: context.l10n.selectLessonTitle,
-      message: lessons.isEmpty ? context.l10n.noLessonsFound : null,
-      actions: <AppSheetAction>[
-        AppSheetAction(
-          label: context.l10n.noLesson,
-          onPressed: (BuildContext ctx) {
-            setState(() {
-              _selectedLesson = null;
-            });
-            Navigator.of(ctx).pop();
-          },
+  Future<void> _openLessonCalendar() async {
+    final Lesson? picked = await Navigator.of(context).push<Lesson>(
+      CupertinoPageRoute<Lesson>(
+        builder: (BuildContext context) => LessonCalendarPickerPage(
+          lessonService: widget.lessonService,
+          studentId: _selectedStudent?.id,
+          unpaidOnly: _kind == PaymentKind.lesson,
         ),
-        ...lessons.map((Lesson lesson) {
-          return AppSheetAction(
-            label: _lessonLabel(lesson),
-            onPressed: (BuildContext ctx) {
-              _applyLessonSelection(lesson);
-              Navigator.of(ctx).pop();
-            },
-          );
-        }),
-      ],
+      ),
     );
+    if (picked == null || !mounted) {
+      return;
+    }
+    _applyLessonSelection(picked);
   }
 
   void _applyLessonSelection(Lesson lesson) {
@@ -474,16 +467,18 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
       _isSubmitting = true;
     });
     try {
+      final bool isPackageLoad = _kind == PaymentKind.prepaid;
       await widget.paymentService.createPayment(
         PaymentCreateRequest(
           amount: amount,
           kind: _kind,
           studentId: _selectedStudent?.id ?? _selectedLesson?.studentId,
-          groupId: _selectedLesson?.groupId,
-          lessonId: _selectedLesson?.id,
+          groupId: isPackageLoad ? null : _selectedLesson?.groupId,
+          lessonId: isPackageLoad ? null : _selectedLesson?.id,
           method: _method,
           notes: _notesController.text.trim(),
-          applyToLesson: _selectedLesson != null && _applyToLesson,
+          applyToLesson:
+              !isPackageLoad && _selectedLesson != null && _applyToLesson,
           paidAt: DateTime.now().toIso8601String(),
         ),
       );
@@ -511,11 +506,5 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
         AppAlertAction(label: context.l10n.ok, style: AppAlertStyle.primary),
       ],
     );
-  }
-
-  String _ymd(DateTime date) {
-    final String m = date.month.toString().padLeft(2, '0');
-    final String d = date.day.toString().padLeft(2, '0');
-    return '${date.year}-$m-$d';
   }
 }

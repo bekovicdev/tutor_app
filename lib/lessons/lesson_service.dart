@@ -102,7 +102,11 @@ class Lesson {
   bool get isIndividual => studentId != null;
 
   String get resolvedSource {
-    if (source == LessonSource.schedule) {
+    final String? raw = source;
+    // Legacy rows often have null source. Treat them as schedule so that
+    // completing one lesson (which sets source=journal) does not hide the
+    // rest of the week when client-side source filtering kicks in.
+    if (raw == null || raw.isEmpty || raw == LessonSource.schedule) {
       return LessonSource.schedule;
     }
     return LessonSource.journal;
@@ -381,6 +385,108 @@ class LessonService {
   Future<void> deleteLesson(int id) async {
     final Uri uri = Uri.parse('$_baseUrl/lessons/$id');
     await _request(method: 'DELETE', uri: uri);
+  }
+
+  /// Moves a schedule slot into the journal as a completed lesson.
+  Future<Lesson> completeFromSchedule(int id) async {
+    return updateLesson(
+      id: id,
+      body: <String, dynamic>{
+        'source': LessonSource.journal,
+        'status': 'completed',
+      },
+    );
+  }
+
+  Future<List<LessonStudentNote>> listStudentNotes(int lessonId) async {
+    final Uri uri = Uri.parse('$_baseUrl/lessons/$lessonId/student-notes');
+    final Map<String, dynamic> json = await _request(method: 'GET', uri: uri);
+    final dynamic data = json['data'];
+    if (data is! List<dynamic>) {
+      return <LessonStudentNote>[];
+    }
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(LessonStudentNote.fromJson)
+        .toList();
+  }
+
+  Future<LessonStudentNote> createStudentNote({
+    required int lessonId,
+    required int studentId,
+    required String notes,
+  }) async {
+    final Uri uri = Uri.parse('$_baseUrl/lessons/$lessonId/student-notes');
+    final Map<String, dynamic> json = await _request(
+      method: 'POST',
+      uri: uri,
+      body: <String, dynamic>{
+        'student_id': studentId,
+        'notes': notes,
+      },
+    );
+    final dynamic data = json['data'];
+    if (data is Map<String, dynamic>) {
+      return LessonStudentNote.fromJson(data);
+    }
+    throw const LessonServiceException('Student note data is missing.');
+  }
+
+  Future<LessonStudentNote> updateStudentNote({
+    required int lessonId,
+    required int studentId,
+    required String notes,
+  }) async {
+    final Uri uri =
+        Uri.parse('$_baseUrl/lessons/$lessonId/student-notes/$studentId');
+    final Map<String, dynamic> json = await _request(
+      method: 'PUT',
+      uri: uri,
+      body: <String, dynamic>{'notes': notes},
+    );
+    final dynamic data = json['data'];
+    if (data is Map<String, dynamic>) {
+      return LessonStudentNote.fromJson(data);
+    }
+    throw const LessonServiceException('Student note data is missing.');
+  }
+
+  Future<void> deleteStudentNote({
+    required int lessonId,
+    required int studentId,
+  }) async {
+    final Uri uri =
+        Uri.parse('$_baseUrl/lessons/$lessonId/student-notes/$studentId');
+    await _request(method: 'DELETE', uri: uri);
+  }
+
+  /// Creates or updates a per-student note for a group lesson.
+  Future<LessonStudentNote> upsertStudentNote({
+    required int lessonId,
+    required int studentId,
+    required String notes,
+    bool alreadyExists = false,
+  }) async {
+    if (alreadyExists) {
+      return updateStudentNote(
+        lessonId: lessonId,
+        studentId: studentId,
+        notes: notes,
+      );
+    }
+    try {
+      return await createStudentNote(
+        lessonId: lessonId,
+        studentId: studentId,
+        notes: notes,
+      );
+    } on LessonServiceException {
+      return updateStudentNote(
+        lessonId: lessonId,
+        studentId: studentId,
+        notes: notes,
+      );
+    }
   }
 
   List<Lesson> _filterBySource(List<Lesson> lessons, String? source) {

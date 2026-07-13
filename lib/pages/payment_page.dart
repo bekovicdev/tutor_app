@@ -1064,9 +1064,28 @@ class _PaymentPageState extends State<PaymentPage> {
     if (data == null) {
       return Center(child: Text(l10n.noPrepaidData));
     }
+    final num unallocatedTotal = data.unallocatedCredits.fold<num>(
+      0,
+      (num sum, Payment payment) => sum + payment.amount,
+    );
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       children: <Widget>[
+        Text(
+          l10n.prepaidWalletHint,
+          style: const TextStyle(
+            fontSize: 13,
+            color: CupertinoColors.systemGrey,
+          ),
+        ),
+        const SizedBox(height: 12),
+        _metricCard(
+          label: l10n.unallocatedCreditTotal,
+          value: _formatNum(unallocatedTotal),
+          subtitle: 'TRY',
+          color: CupertinoColors.systemPurple,
+        ),
+        const SizedBox(height: 12),
         Row(
           children: <Widget>[
             Expanded(
@@ -1096,9 +1115,88 @@ class _PaymentPageState extends State<PaymentPage> {
             style: const TextStyle(color: CupertinoColors.systemGrey),
           )
         else
-          ...data.unallocatedCredits.map(_paymentTile),
+          ...data.unallocatedCredits.map(
+            (Payment payment) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: GestureDetector(
+                onTap: () => _applyCreditPayment(payment),
+                child: _paymentTile(payment),
+              ),
+            ),
+          ),
       ],
     );
+  }
+
+  Future<void> _applyCreditPayment(Payment credit) async {
+    final AppLocalizations l10n = context.l10n;
+    final int? studentId = credit.studentId ?? credit.student?.id;
+    if (studentId == null) {
+      await _showMessage(l10n.selectStudentOrLesson);
+      return;
+    }
+
+    List<Lesson> unpaid = <Lesson>[];
+    try {
+      unpaid = await _lessonService.listLessons(
+        studentId: studentId,
+        source: LessonSource.journal,
+        paymentStatus: PaymentStatus.unpaid,
+        sortBy: 'date',
+        sortDirection: 'asc',
+      );
+      unpaid = unpaid
+          .where(
+            (Lesson lesson) =>
+                lesson.isFree != true &&
+                lesson.status != 'cancelled' &&
+                lesson.resolvedPaymentStatus == PaymentStatus.unpaid,
+          )
+          .toList();
+    } on LessonServiceException catch (error) {
+      await _showMessage(error.message);
+      return;
+    }
+
+    if (unpaid.isEmpty) {
+      await _showMessage(l10n.noUnpaidLessons);
+      return;
+    }
+
+    final Lesson? selected = await showAppActionSheet<Lesson>(
+      context: context,
+      title: l10n.applyCreditToLesson,
+      cancelLabel: l10n.cancel,
+      actions: unpaid
+          .map(
+            (Lesson lesson) => AppSheetAction(
+              label:
+                  '${lesson.date} · ${lesson.startAt} · ${lesson.displayTitle}',
+              onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(lesson),
+            ),
+          )
+          .toList(),
+    );
+    if (selected == null) {
+      return;
+    }
+
+    try {
+      await _paymentService.markLessonPayment(
+        lessonId: selected.id,
+        request: LessonPaymentRequest(
+          paymentStatus: PaymentStatus.prepaid,
+          amount: num.tryParse(selected.price?.replaceAll(',', '.') ?? '') ??
+              credit.amount,
+          // Credit was already cashed in as an unallocated prepaid payment.
+          recordPayment: false,
+        ),
+      );
+      await _showMessage(l10n.creditApplied);
+      await _load();
+    } on PaymentServiceException catch (error) {
+      await _showMessage(error.message);
+    }
   }
 
   Widget _buildPaymentsTab() {

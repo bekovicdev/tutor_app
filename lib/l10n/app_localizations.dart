@@ -1621,6 +1621,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{date} · {time}'**
   String selectedSlot(String date, String time);
+
+  /// No description provided for @markLessonDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as done'**
+  String get markLessonDone;
+
+  /// No description provided for @movedToJournal.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved to journal as completed.'**
+  String get movedToJournal;
+
+  /// No description provided for @settlePaymentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment for this lesson'**
+  String get settlePaymentTitle;
+
+  /// No description provided for @leaveUnpaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave unpaid'**
+  String get leaveUnpaid;
+
+  /// No description provided for @markPaidNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as paid'**
+  String get markPaidNow;
+
+  /// No description provided for @applyPrepaidCredit.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply prepaid credit'**
+  String get applyPrepaidCredit;
+
+  /// No description provided for @editLessonAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit lesson'**
+  String get editLessonAction;
+
+  /// No description provided for @studentNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Student notes'**
+  String get studentNotes;
+
+  /// No description provided for @studentNotePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Note for {name}'**
+  String studentNotePlaceholder(String name);
+
+  /// No description provided for @noGroupMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'This group has no members yet.'**
+  String get noGroupMembers;
+
+  /// No description provided for @packageCredit.
+  ///
+  /// In en, this message translates to:
+  /// **'Package credit'**
+  String get packageCredit;
+
+  /// No description provided for @approxLessonsLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'~{count} lessons left'**
+  String approxLessonsLeft(int count);
+
+  /// No description provided for @applyCredit.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply credit'**
+  String get applyCredit;
+
+  /// No description provided for @applyCreditToLesson.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply credit to a lesson'**
+  String get applyCreditToLesson;
+
+  /// No description provided for @noUnpaidLessons.
+  ///
+  /// In en, this message translates to:
+  /// **'No unpaid lessons for this student.'**
+  String get noUnpaidLessons;
+
+  /// No description provided for @creditApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepaid credit applied.'**
+  String get creditApplied;
+
+  /// No description provided for @loadPackage.
+  ///
+  /// In en, this message translates to:
+  /// **'Load package'**
+  String get loadPackage;
+
+  /// No description provided for @loadPackageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Record advance payment as package credit for a student.'**
+  String get loadPackageHint;
+
+  /// No description provided for @unallocatedCreditTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Unallocated credit'**
+  String get unallocatedCreditTotal;
+
+  /// No description provided for @prepaidWalletHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Credits waiting to be applied to lessons.'**
+  String get prepaidWalletHint;
+
+  /// No description provided for @selectUnpaidLesson.
+  ///
+  /// In en, this message translates to:
+  /// **'Select unpaid lesson'**
+  String get selectUnpaidLesson;
+
+  /// No description provided for @lessonNotesSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get lessonNotesSummary;
+
+  /// No description provided for @pickLessonFromCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a lesson'**
+  String get pickLessonFromCalendar;
+
+  /// No description provided for @pickUnpaidLessonHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap an unpaid journal lesson on the week grid.'**
+  String get pickUnpaidLessonHint;
+
+  /// No description provided for @pickLessonHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a journal lesson on the week grid.'**
+  String get pickLessonHint;
+
+  /// No description provided for @noLessonsThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching lessons this week. Try another week.'**
+  String get noLessonsThisWeek;
+
+  /// No description provided for @clearLesson.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get clearLesson;
 }
 
 class _AppLocalizationsDelegate

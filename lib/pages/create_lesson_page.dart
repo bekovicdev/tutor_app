@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:tutor_app/groups/group_service.dart';
 import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
+import 'package:tutor_app/payments/payment_service.dart';
 import 'package:tutor_app/students/student_service.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
 
@@ -37,10 +38,14 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
   late final LessonService _lessonService;
   late final StudentService _studentService;
   late final GroupService _groupService;
+  late final PaymentService _paymentService;
 
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
+  final Map<int, TextEditingController> _studentNoteControllers =
+      <int, TextEditingController>{};
+  final Set<int> _existingStudentNoteIds = <int>{};
 
   DateTime _date = DateTime.now();
   Duration _startTime = const Duration(hours: 10);
@@ -52,6 +57,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
   TutorGroup? _selectedGroup;
   List<Student> _students = <Student>[];
   List<TutorGroup> _groups = <TutorGroup>[];
+  List<Student> _groupMembers = <Student>[];
   bool _isLoading = true;
   bool _isSubmitting = false;
 
@@ -61,6 +67,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     _lessonService = LessonService(token: widget.token);
     _studentService = StudentService(token: widget.token);
     _groupService = GroupService(token: widget.token);
+    _paymentService = PaymentService(token: widget.token);
 
     final DateTime? initial = widget.initialDate;
     if (initial != null) {
@@ -109,7 +116,69 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     _titleController.dispose();
     _priceController.dispose();
     _notesController.dispose();
+    for (final TextEditingController controller
+        in _studentNoteControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
+  }
+
+  void _disposeStudentNoteControllers() {
+    for (final TextEditingController controller
+        in _studentNoteControllers.values) {
+      controller.dispose();
+    }
+    _studentNoteControllers.clear();
+    _existingStudentNoteIds.clear();
+  }
+
+  Future<void> _loadGroupMembersAndNotes(TutorGroup? group) async {
+    _disposeStudentNoteControllers();
+    if (group == null) {
+      setState(() {
+        _groupMembers = <Student>[];
+      });
+      return;
+    }
+    List<Student> members = <Student>[];
+    try {
+      final List<GroupStudent> rows =
+          await _groupService.listGroupStudents(group.id);
+      members = rows.map((GroupStudent row) => row.student).toList();
+    } on GroupServiceException {
+      members = <Student>[];
+    }
+
+    final Map<int, String> existingNotes = <int, String>{};
+    final Lesson? lesson = widget.lesson;
+    if (lesson != null && lesson.isGroup) {
+      try {
+        final List<LessonStudentNote> notes =
+            await _lessonService.listStudentNotes(lesson.id);
+        for (final LessonStudentNote note in notes) {
+          existingNotes[note.studentId] = note.notes;
+          _existingStudentNoteIds.add(note.studentId);
+        }
+      } on LessonServiceException {
+        for (final LessonStudentNote note in lesson.studentNotes) {
+          existingNotes[note.studentId] = note.notes;
+          _existingStudentNoteIds.add(note.studentId);
+        }
+      }
+    }
+
+    for (final Student member in members) {
+      _studentNoteControllers[member.id] = TextEditingController(
+        text: existingNotes[member.id] ?? '',
+      );
+    }
+
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _groupMembers = members;
+    });
   }
 
   Future<void> _loadLookups() async {
@@ -165,6 +234,9 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
       }
       _isLoading = false;
     });
+    if (_isGroup && _selectedGroup != null) {
+      await _loadGroupMembersAndNotes(_selectedGroup);
+    }
   }
 
   String get _pageTitle {
@@ -230,6 +302,9 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                       setState(() {
                         _isGroup = value;
                       });
+                      if (value && _selectedGroup != null) {
+                        _loadGroupMembersAndNotes(_selectedGroup);
+                      }
                     },
                   ),
                   const SizedBox(height: 12),
@@ -371,17 +446,78 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                     ),
                   ],
                   const SizedBox(height: 16),
-                  _sectionTitle(l10n.notes),
-                  CupertinoTextField(
-                    controller: _notesController,
-                    placeholder: l10n.optionalNotes,
-                    minLines: 2,
-                    maxLines: 4,
-                    padding: const EdgeInsets.all(12),
-                    decoration: _fieldDecoration(context),
-                  ),
+                  if (_isGroup) ...<Widget>[
+                    _sectionTitle(l10n.studentNotes),
+                    if (_groupMembers.isEmpty)
+                      Text(
+                        l10n.noGroupMembers,
+                        style: const TextStyle(
+                          color: CupertinoColors.systemGrey,
+                          fontSize: 13,
+                        ),
+                      )
+                    else
+                      ..._groupMembers.map((Student member) {
+                        final TextEditingController controller =
+                            _studentNoteControllers.putIfAbsent(
+                          member.id,
+                          TextEditingController.new,
+                        );
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: CupertinoTextField(
+                            controller: controller,
+                            placeholder:
+                                l10n.studentNotePlaceholder(member.name),
+                            minLines: 1,
+                            maxLines: 3,
+                            padding: const EdgeInsets.all(12),
+                            decoration: _fieldDecoration(context),
+                            prefix: Padding(
+                              padding: const EdgeInsets.only(left: 10),
+                              child: Text(
+                                member.name.split(' ').first,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                  color: CupertinoColors.systemGrey,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                    const SizedBox(height: 8),
+                    _sectionTitle(l10n.notes),
+                    CupertinoTextField(
+                      controller: _notesController,
+                      placeholder: l10n.optionalNotes,
+                      minLines: 2,
+                      maxLines: 4,
+                      padding: const EdgeInsets.all(12),
+                      decoration: _fieldDecoration(context),
+                    ),
+                  ] else ...<Widget>[
+                    _sectionTitle(l10n.notes),
+                    CupertinoTextField(
+                      controller: _notesController,
+                      placeholder: l10n.optionalNotes,
+                      minLines: 2,
+                      maxLines: 4,
+                      padding: const EdgeInsets.all(12),
+                      decoration: _fieldDecoration(context),
+                    ),
+                  ],
+                  if (widget.isEditing &&
+                      widget.source == LessonSource.schedule) ...<Widget>[
+                    const SizedBox(height: 20),
+                    CupertinoButton.filled(
+                      onPressed: _isSubmitting ? null : _markLessonDone,
+                      child: Text(l10n.markLessonDone),
+                    ),
+                  ],
                   if (widget.isEditing) ...<Widget>[
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 12),
                     CupertinoButton(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       onPressed: _isSubmitting ? null : _confirmDelete,
@@ -489,6 +625,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
               _selectedGroup = group;
             });
             Navigator.of(ctx).pop();
+            _loadGroupMembersAndNotes(group);
           },
         );
       }).toList(),
@@ -684,8 +821,9 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     });
     try {
       final Lesson? existing = widget.lesson;
+      late final Lesson saved;
       if (existing != null) {
-        await _lessonService.updateLesson(
+        saved = await _lessonService.updateLesson(
           id: existing.id,
           body: <String, dynamic>{
             'date': _formatDate(_date),
@@ -701,7 +839,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
           },
         );
       } else {
-        await _lessonService.createLesson(
+        saved = await _lessonService.createLesson(
           LessonCreateRequest(
             date: _formatDate(_date),
             startAt: _formatTime(_startTime),
@@ -718,11 +856,103 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
           ),
         );
       }
+      if (_isGroup) {
+        await _persistStudentNotes(saved.id);
+      }
       if (!mounted) {
         return;
       }
       Navigator.of(context).pop(true);
     } on LessonServiceException catch (error) {
+      await _showMessage(error.message);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _persistStudentNotes(int lessonId) async {
+    for (final MapEntry<int, TextEditingController> entry
+        in _studentNoteControllers.entries) {
+      final String text = entry.value.text.trim();
+      final bool exists = _existingStudentNoteIds.contains(entry.key);
+      if (text.isEmpty) {
+        if (exists) {
+          await _lessonService.deleteStudentNote(
+            lessonId: lessonId,
+            studentId: entry.key,
+          );
+          _existingStudentNoteIds.remove(entry.key);
+        }
+        continue;
+      }
+      await _lessonService.upsertStudentNote(
+        lessonId: lessonId,
+        studentId: entry.key,
+        notes: text,
+        alreadyExists: exists,
+      );
+      _existingStudentNoteIds.add(entry.key);
+    }
+  }
+
+  Future<void> _markLessonDone() async {
+    final Lesson? existing = widget.lesson;
+    if (existing == null) {
+      return;
+    }
+    final AppLocalizations l10n = context.l10n;
+    String paymentChoice = 'unpaid';
+    if (!_isFree) {
+      final String? picked = await showAppActionSheet<String>(
+        context: context,
+        title: l10n.settlePaymentTitle,
+        cancelLabel: l10n.cancel,
+        actions: <AppSheetAction>[
+          AppSheetAction(
+            label: l10n.leaveUnpaid,
+            onPressed: (BuildContext ctx) => Navigator.of(ctx).pop('unpaid'),
+          ),
+          AppSheetAction(
+            label: l10n.markPaidNow,
+            onPressed: (BuildContext ctx) => Navigator.of(ctx).pop('paid'),
+          ),
+          AppSheetAction(
+            label: l10n.applyPrepaidCredit,
+            onPressed: (BuildContext ctx) => Navigator.of(ctx).pop('prepaid'),
+          ),
+        ],
+      );
+      if (picked == null) {
+        return;
+      }
+      paymentChoice = picked;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+    try {
+      if (_isGroup) {
+        await _persistStudentNotes(existing.id);
+      }
+      await _lessonService.completeFromSchedule(existing.id);
+      if (paymentChoice != 'unpaid' && !_isFree) {
+        await _paymentService.markLessonPayment(
+          lessonId: existing.id,
+          request: LessonPaymentRequest(paymentStatus: paymentChoice),
+        );
+      }
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pop(true);
+    } on LessonServiceException catch (error) {
+      await _showMessage(error.message);
+    } on PaymentServiceException catch (error) {
       await _showMessage(error.message);
     } finally {
       if (mounted) {

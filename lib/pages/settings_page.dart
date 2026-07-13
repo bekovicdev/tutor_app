@@ -9,24 +9,30 @@ import 'package:tutor_app/theme/ios26_theme.dart';
 class SettingsPage extends StatefulWidget {
   const SettingsPage({
     required this.user,
+    required this.token,
     required this.onLogout,
     required this.themePreference,
     required this.onThemePreferenceChanged,
+    this.onUserUpdated,
     super.key,
   });
 
   final AuthUser user;
+  final String token;
   final Future<void> Function() onLogout;
   final AppThemePreference themePreference;
   final ValueChanged<AppThemePreference> onThemePreferenceChanged;
+  final ValueChanged<AuthUser>? onUserUpdated;
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  final AuthService _authService = AuthService();
   bool _notificationsEnabled = true;
   bool _loadingPrefs = true;
+  bool _savingCosts = false;
   final TextEditingController _individualCostController =
       TextEditingController();
   final TextEditingController _groupCostController = TextEditingController();
@@ -46,15 +52,34 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _loadPrefs() async {
     final bool notifications = await AppSettings.notificationsEnabled();
-    final String? individual = await AppSettings.individualLessonCost();
-    final String? group = await AppSettings.groupLessonCost();
+    String individual = widget.user.individualLessonCost ?? '';
+    String group = widget.user.groupLessonCost ?? '';
+
+    try {
+      final AuthUser fresh = await _authService.me(widget.token);
+      individual = fresh.individualLessonCost ?? individual;
+      group = fresh.groupLessonCost ?? group;
+      await AppSettings.setIndividualLessonCost(individual);
+      await AppSettings.setGroupLessonCost(group);
+      widget.onUserUpdated?.call(fresh);
+    } on AuthException {
+      final String? localIndividual = await AppSettings.individualLessonCost();
+      final String? localGroup = await AppSettings.groupLessonCost();
+      if (individual.isEmpty && localIndividual != null) {
+        individual = localIndividual;
+      }
+      if (group.isEmpty && localGroup != null) {
+        group = localGroup;
+      }
+    }
+
     if (!mounted) {
       return;
     }
     setState(() {
       _notificationsEnabled = notifications;
-      _individualCostController.text = individual ?? '';
-      _groupCostController.text = group ?? '';
+      _individualCostController.text = individual;
+      _groupCostController.text = group;
       _loadingPrefs = false;
     });
   }
@@ -67,8 +92,77 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _saveCosts() async {
-    await AppSettings.setIndividualLessonCost(_individualCostController.text);
-    await AppSettings.setGroupLessonCost(_groupCostController.text);
+    if (_savingCosts) {
+      return;
+    }
+    final AppLocalizations l10n = context.l10n;
+    final String individualRaw = _individualCostController.text.trim();
+    final String groupRaw = _groupCostController.text.trim();
+
+    num? individual;
+    num? group;
+    if (individualRaw.isNotEmpty) {
+      individual = num.tryParse(individualRaw.replaceAll(',', '.'));
+      if (individual == null || individual < 0) {
+        await showAppAlert<void>(
+          context: context,
+          title: l10n.teaching,
+          message: l10n.enterValidPrice,
+          actions: <AppAlertAction>[
+            AppAlertAction(label: l10n.ok, style: AppAlertStyle.primary),
+          ],
+        );
+        return;
+      }
+    }
+    if (groupRaw.isNotEmpty) {
+      group = num.tryParse(groupRaw.replaceAll(',', '.'));
+      if (group == null || group < 0) {
+        await showAppAlert<void>(
+          context: context,
+          title: l10n.teaching,
+          message: l10n.enterValidPrice,
+          actions: <AppAlertAction>[
+            AppAlertAction(label: l10n.ok, style: AppAlertStyle.primary),
+          ],
+        );
+        return;
+      }
+    }
+
+    setState(() {
+      _savingCosts = true;
+    });
+    try {
+      final AuthUser updated = await _authService.updateProfile(
+        token: widget.token,
+        individualLessonCost: individual,
+        groupLessonCost: group,
+        clearIndividualLessonCost: individualRaw.isEmpty,
+        clearGroupLessonCost: groupRaw.isEmpty,
+      );
+      await AppSettings.setIndividualLessonCost(individualRaw);
+      await AppSettings.setGroupLessonCost(groupRaw);
+      widget.onUserUpdated?.call(updated);
+    } on AuthException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      await showAppAlert<void>(
+        context: context,
+        title: l10n.teaching,
+        message: error.message,
+        actions: <AppAlertAction>[
+          AppAlertAction(label: l10n.ok, style: AppAlertStyle.primary),
+        ],
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _savingCosts = false;
+        });
+      }
+    }
   }
 
   Future<void> _confirmLogout() async {

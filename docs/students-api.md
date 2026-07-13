@@ -127,6 +127,6 @@ Student list/detail payloads may include `profile_picture` and `profile_picture_
 
 Returns paid / prepaid / unpaid lesson totals and cashflow.
 
-**Response fields:** `student_id`, `student_name`, `currency`, `total_amount`, `paid_amount`, `prepaid_amount`, `unpaid_amount`, `settled_amount`, `cash_collected`, `cash_refunded`, `cash_net`.
+**Response fields:** `student_id`, `student_name`, `currency`, `total_amount`, `paid_amount`, `prepaid_amount` (lessons marked prepaid), `package_credit` (remaining prepaid wallet), `unpaid_amount`, `settled_amount`, `cash_collected`, `cash_refunded`, `cash_net`.
 
 See Payments API for full payment and analytics endpoints.

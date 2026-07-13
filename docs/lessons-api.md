@@ -14,9 +14,27 @@ Lessons are scoped to a UI surface via `source`:
 | Value | Meaning |
 |-------|---------|
 | `schedule` | Recurring/plan slots shown only on Schedule |
-| `journal` | Regular lesson records shown only on Journal (default) |
+| `journal` | Regular lesson records shown only on Journal (default on create when omitted server-side) |
 
 Schedule and Journal stay independent: each page only lists and creates lessons for its own `source`.
+
+**Client note:** Lessons with missing/`null` `source` are treated as `schedule` in the app. This keeps legacy rows visible on Schedule after another lesson is moved to Journal (`source=journal`). New creates should always send an explicit `source`.
+
+**App flow — complete from schedule:** Updating a schedule lesson with `source=journal` and `status=completed` moves it to the Journal (no duplicate record). Optional settlement via [Payments API](./payments-api.md) `POST /lessons/{id}/payment`.
+
+### Group lesson student notes
+
+Per-member notes for group lessons (not for individual lessons — use lesson `notes` instead).
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/lessons/{lessonId}/student-notes` |
+| POST | `/api/lessons/{lessonId}/student-notes` body: `student_id`, `notes` |
+| GET | `/api/lessons/{lessonId}/student-notes/{studentId}` |
+| PUT | `/api/lessons/{lessonId}/student-notes/{studentId}` body: `notes` |
+| DELETE | `/api/lessons/{lessonId}/student-notes/{studentId}` |
+
+Lesson payloads may also include nested `student_notes`. See backend `docs/lesson-student-notes.md` for full examples.
 
 ---
 

@@ -79,6 +79,16 @@ Get profile for the authenticated user.
 
 **Endpoint:** `GET /api/me`
 
+Includes `individual_lesson_cost` and `group_lesson_cost` when set.
+
+### Update Profile
+
+**Endpoint:** `PUT /api/user`
+
+Optional fields: `name`, `email`, `phone`, `individual_lesson_cost`, `group_lesson_cost`, `fcm_token`, `status`.
+
+Settings default lesson fees are saved here (not only on device).
+
 ### Logout
 
 Invalidate current token for authenticated user.

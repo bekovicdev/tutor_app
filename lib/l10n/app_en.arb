@@ -381,5 +381,42 @@
       "date": {"type": "String"},
       "time": {"type": "String"}
     }
-  }
+  },
+  "markLessonDone": "Mark as done",
+  "movedToJournal": "Moved to journal as completed.",
+  "settlePaymentTitle": "Payment for this lesson",
+  "leaveUnpaid": "Leave unpaid",
+  "markPaidNow": "Mark as paid",
+  "applyPrepaidCredit": "Apply prepaid credit",
+  "editLessonAction": "Edit lesson",
+  "studentNotes": "Student notes",
+  "studentNotePlaceholder": "Note for {name}",
+  "@studentNotePlaceholder": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "noGroupMembers": "This group has no members yet.",
+  "packageCredit": "Package credit",
+  "approxLessonsLeft": "~{count} lessons left",
+  "@approxLessonsLeft": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "applyCredit": "Apply credit",
+  "applyCreditToLesson": "Apply credit to a lesson",
+  "noUnpaidLessons": "No unpaid lessons for this student.",
+  "creditApplied": "Prepaid credit applied.",
+  "loadPackage": "Load package",
+  "loadPackageHint": "Record advance payment as package credit for a student.",
+  "unallocatedCreditTotal": "Unallocated credit",
+  "prepaidWalletHint": "Credits waiting to be applied to lessons.",
+  "selectUnpaidLesson": "Select unpaid lesson",
+  "lessonNotesSummary": "Notes",
+  "pickLessonFromCalendar": "Pick a lesson",
+  "pickUnpaidLessonHint": "Tap an unpaid journal lesson on the week grid.",
+  "pickLessonHint": "Tap a journal lesson on the week grid.",
+  "noLessonsThisWeek": "No matching lessons this week. Try another week.",
+  "clearLesson": "Clear"
 }

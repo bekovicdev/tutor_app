@@ -22,6 +22,8 @@ class AuthUser {
     this.isAdmin,
     this.socialProvider,
     this.socialId,
+    this.individualLessonCost,
+    this.groupLessonCost,
   });
 
   final int id;
@@ -31,6 +33,8 @@ class AuthUser {
   final bool? isAdmin;
   final String? socialProvider;
   final String? socialId;
+  final String? individualLessonCost;
+  final String? groupLessonCost;
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
     return AuthUser(
@@ -41,6 +45,27 @@ class AuthUser {
       isAdmin: json['is_admin'] as bool?,
       socialProvider: json['social_provider'] as String?,
       socialId: json['social_id'] as String?,
+      individualLessonCost: json['individual_lesson_cost']?.toString(),
+      groupLessonCost: json['group_lesson_cost']?.toString(),
+    );
+  }
+
+  AuthUser copyWith({
+    String? name,
+    String? email,
+    String? individualLessonCost,
+    String? groupLessonCost,
+  }) {
+    return AuthUser(
+      id: id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      status: status,
+      isAdmin: isAdmin,
+      socialProvider: socialProvider,
+      socialId: socialId,
+      individualLessonCost: individualLessonCost ?? this.individualLessonCost,
+      groupLessonCost: groupLessonCost ?? this.groupLessonCost,
     );
   }
 }
@@ -134,6 +159,49 @@ class AuthService {
     return AuthUser.fromJson(data);
   }
 
+  Future<AuthUser> updateProfile({
+    required String token,
+    String? name,
+    String? email,
+    String? phone,
+    num? individualLessonCost,
+    num? groupLessonCost,
+    bool clearIndividualLessonCost = false,
+    bool clearGroupLessonCost = false,
+  }) async {
+    final Map<String, dynamic> body = <String, dynamic>{};
+    if (name != null) {
+      body['name'] = name;
+    }
+    if (email != null) {
+      body['email'] = email;
+    }
+    if (phone != null) {
+      body['phone'] = phone;
+    }
+    if (clearIndividualLessonCost) {
+      body['individual_lesson_cost'] = null;
+    } else if (individualLessonCost != null) {
+      body['individual_lesson_cost'] = individualLessonCost;
+    }
+    if (clearGroupLessonCost) {
+      body['group_lesson_cost'] = null;
+    } else if (groupLessonCost != null) {
+      body['group_lesson_cost'] = groupLessonCost;
+    }
+    final Map<String, dynamic> json = await _request(
+      method: 'PUT',
+      endpoint: '/user',
+      token: token,
+      body: body,
+    );
+    final Map<String, dynamic>? data = json['data'] as Map<String, dynamic>?;
+    if (data == null) {
+      throw const AuthException('User data is missing in response.');
+    }
+    return AuthUser.fromJson(data);
+  }
+
   Future<void> logout(String token) async {
     await _request(
       method: 'POST',
@@ -194,6 +262,8 @@ class AuthService {
         request = await client.getUrl(uri);
       } else if (method == 'POST') {
         request = await client.postUrl(uri);
+      } else if (method == 'PUT') {
+        request = await client.putUrl(uri);
       } else {
         throw const AuthException('Unsupported request method.');
       }

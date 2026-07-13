@@ -827,4 +827,92 @@ class AppLocalizationsTr extends AppLocalizations {
   String selectedSlot(String date, String time) {
     return '$date · $time';
   }
+
+  @override
+  String get markLessonDone => 'Dersi yaptım';
+
+  @override
+  String get movedToJournal => 'Tamamlandı olarak günlüğe taşındı.';
+
+  @override
+  String get settlePaymentTitle => 'Bu dersin ödemesi';
+
+  @override
+  String get leaveUnpaid => 'Ödenmedi bırak';
+
+  @override
+  String get markPaidNow => 'Ödendi olarak işaretle';
+
+  @override
+  String get applyPrepaidCredit => 'Ön ödeme kredisi uygula';
+
+  @override
+  String get editLessonAction => 'Dersi düzenle';
+
+  @override
+  String get studentNotes => 'Öğrenci notları';
+
+  @override
+  String studentNotePlaceholder(String name) {
+    return '$name için not';
+  }
+
+  @override
+  String get noGroupMembers => 'Bu grupta henüz üye yok.';
+
+  @override
+  String get packageCredit => 'Paket kredisi';
+
+  @override
+  String approxLessonsLeft(int count) {
+    return '~$count ders kaldı';
+  }
+
+  @override
+  String get applyCredit => 'Krediyi uygula';
+
+  @override
+  String get applyCreditToLesson => 'Krediyi bir derse uygula';
+
+  @override
+  String get noUnpaidLessons => 'Bu öğrenci için ödenmemiş ders yok.';
+
+  @override
+  String get creditApplied => 'Ön ödeme kredisi uygulandı.';
+
+  @override
+  String get loadPackage => 'Paket yükle';
+
+  @override
+  String get loadPackageHint =>
+      'Öğrenci için peşin ödemeyi paket kredisi olarak kaydet.';
+
+  @override
+  String get unallocatedCreditTotal => 'Dağıtılmamış kredi';
+
+  @override
+  String get prepaidWalletHint => 'Derslere uygulanmayı bekleyen krediler.';
+
+  @override
+  String get selectUnpaidLesson => 'Ödenmemiş ders seç';
+
+  @override
+  String get lessonNotesSummary => 'Notlar';
+
+  @override
+  String get pickLessonFromCalendar => 'Ders seç';
+
+  @override
+  String get pickUnpaidLessonHint =>
+      'Haftalık takvimde ödenmemiş bir günlük dersine dokun.';
+
+  @override
+  String get pickLessonHint => 'Haftalık takvimde bir günlük dersine dokun.';
+
+  @override
+  String get noLessonsThisWeek =>
+      'Bu hafta uygun ders yok. Başka bir haftayı dene.';
+
+  @override
+  String get clearLesson => 'Temizle';
 }

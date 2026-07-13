@@ -1796,6 +1796,8 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
               ),
             ),
           ),
+        _buildPackageCreditStrip(balance, currency),
+        const SizedBox(height: 12),
         Row(
           children: <Widget>[
             Expanded(
@@ -1837,6 +1839,225 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
         ),
       ],
     );
+  }
+
+  Widget _buildPackageCreditStrip(StudentBalance balance, String currency) {
+    final AppLocalizations l10n = context.l10n;
+    final num credit = balance.packageCredit;
+    final num lessonCost =
+        num.tryParse(_lessonCostController.text.replaceAll(',', '.')) ?? 0;
+    final int? approxLessons = lessonCost > 0
+        ? (credit / lessonCost).floor()
+        : null;
+
+    return AppGlassCard(
+      padding: const EdgeInsets.all(14),
+      borderRadius: AppGlassTokens.radiusSmall,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            l10n.packageCredit,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: CupertinoColors.systemGrey,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            _money(credit, currency),
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: CupertinoColors.systemPurple,
+            ),
+          ),
+          if (approxLessons != null && credit > 0) ...<Widget>[
+            const SizedBox(height: 4),
+            Text(
+              l10n.approxLessonsLeft(approxLessons),
+              style: const TextStyle(
+                fontSize: 13,
+                color: CupertinoColors.systemGrey,
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: CupertinoButton(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  color: CupertinoColors.systemPurple.withValues(alpha: 0.15),
+                  onPressed: credit > 0 && balance.unpaidAmount > 0
+                      ? _applyCreditToUnpaidLesson
+                      : null,
+                  child: Text(
+                    l10n.applyCredit,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: credit > 0 && balance.unpaidAmount > 0
+                          ? CupertinoColors.systemPurple
+                          : CupertinoColors.systemGrey,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: CupertinoButton(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  color: CupertinoColors.activeBlue.withValues(alpha: 0.12),
+                  onPressed: _openLoadPackage,
+                  child: Text(
+                    l10n.loadPackage,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: CupertinoColors.activeBlue,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openLoadPackage() async {
+    final AppLocalizations l10n = context.l10n;
+    final Student student = Student(
+      id: widget.studentId,
+      name: _nameController.text.trim().isEmpty
+          ? l10n.student
+          : _nameController.text.trim(),
+      phone: _phoneController.text.trim().isEmpty
+          ? null
+          : _phoneController.text.trim(),
+      lessonCost: _lessonCostController.text.trim().isEmpty
+          ? null
+          : _lessonCostController.text.trim(),
+      color: _colorController.text.trim().isEmpty
+          ? null
+          : _colorController.text.trim(),
+    );
+
+    final bool? created = await Navigator.of(context).push<bool>(
+      CupertinoPageRoute<bool>(
+        builder: (BuildContext context) => CreatePaymentPage(
+          paymentService: _paymentService,
+          studentService: widget.studentService,
+          lessonService: _lessonService,
+          initialStudent: student,
+          lockStudent: true,
+          initialKind: PaymentKind.prepaid,
+        ),
+      ),
+    );
+    if (created == true && mounted) {
+      await _reloadBalance();
+    }
+  }
+
+  Future<void> _applyCreditToUnpaidLesson() async {
+    final AppLocalizations l10n = context.l10n;
+    List<Lesson> unpaid = <Lesson>[];
+    try {
+      unpaid = await _lessonService.listLessons(
+        studentId: widget.studentId,
+        source: LessonSource.journal,
+        paymentStatus: PaymentStatus.unpaid,
+        sortBy: 'date',
+        sortDirection: 'asc',
+      );
+      unpaid = unpaid
+          .where(
+            (Lesson lesson) =>
+                lesson.isFree != true &&
+                lesson.status != 'cancelled' &&
+                lesson.resolvedPaymentStatus == PaymentStatus.unpaid,
+          )
+          .toList();
+    } on LessonServiceException catch (error) {
+      await showAppAlert<void>(
+        context: context,
+        title: l10n.payments,
+        message: error.message,
+        actions: <AppAlertAction>[
+          AppAlertAction(label: l10n.ok, style: AppAlertStyle.primary),
+        ],
+      );
+      return;
+    }
+
+    if (unpaid.isEmpty) {
+      await showAppAlert<void>(
+        context: context,
+        title: l10n.applyCredit,
+        message: l10n.noUnpaidLessons,
+        actions: <AppAlertAction>[
+          AppAlertAction(label: l10n.ok, style: AppAlertStyle.primary),
+        ],
+      );
+      return;
+    }
+
+    final Lesson? selected = await showAppActionSheet<Lesson>(
+      context: context,
+      title: l10n.selectUnpaidLesson,
+      cancelLabel: l10n.cancel,
+      actions: unpaid
+          .map(
+            (Lesson lesson) => AppSheetAction(
+              label:
+                  '${lesson.date} · ${lesson.startAt} · ${lesson.displayTitle}'
+                  '${lesson.price != null ? ' · ${lesson.price}' : ''}',
+              onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(lesson),
+            ),
+          )
+          .toList(),
+    );
+    if (selected == null) {
+      return;
+    }
+
+    try {
+      await _paymentService.markLessonPayment(
+        lessonId: selected.id,
+        request: LessonPaymentRequest(
+          paymentStatus: PaymentStatus.prepaid,
+          amount: num.tryParse(selected.price?.replaceAll(',', '.') ?? ''),
+          // Cash was already recorded when the package was loaded.
+          recordPayment: false,
+        ),
+      );
+      if (!mounted) {
+        return;
+      }
+      await showAppAlert<void>(
+        context: context,
+        title: l10n.applyCredit,
+        message: l10n.creditApplied,
+        actions: <AppAlertAction>[
+          AppAlertAction(label: l10n.ok, style: AppAlertStyle.primary),
+        ],
+      );
+      await _reloadBalance();
+    } on PaymentServiceException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      await showAppAlert<void>(
+        context: context,
+        title: l10n.payments,
+        message: error.message,
+        actions: <AppAlertAction>[
+          AppAlertAction(label: l10n.ok, style: AppAlertStyle.primary),
+        ],
+      );
+    }
   }
 
   Widget _metricTile({

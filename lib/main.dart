@@ -253,6 +253,8 @@ class _AppRootState extends State<AppRoot> {
   Future<void> _authenticateWithToken(String token) async {
     final AuthUser user = await _authService.me(token);
     await _authStorage.saveToken(token);
+    await AppSettings.setIndividualLessonCost(user.individualLessonCost);
+    await AppSettings.setGroupLessonCost(user.groupLessonCost);
     if (!mounted) {
       return;
     }
@@ -327,6 +329,19 @@ class _AppRootState extends State<AppRoot> {
         onLogout: _logout,
         themePreference: widget.themePreference,
         onThemePreferenceChanged: widget.onThemePreferenceChanged,
+        onUserUpdated: (AuthUser user) {
+          final AuthSession? current = _session;
+          if (current == null) {
+            return;
+          }
+          setState(() {
+            _session = AuthSession(
+              token: current.token,
+              user: user,
+              message: current.message,
+            );
+          });
+        },
       );
     }
 
@@ -340,6 +355,7 @@ class AppShell extends StatefulWidget {
     required this.onLogout,
     required this.themePreference,
     required this.onThemePreferenceChanged,
+    this.onUserUpdated,
     super.key,
   });
 
@@ -347,6 +363,7 @@ class AppShell extends StatefulWidget {
   final Future<void> Function() onLogout;
   final AppThemePreference themePreference;
   final ValueChanged<AppThemePreference> onThemePreferenceChanged;
+  final ValueChanged<AuthUser>? onUserUpdated;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -362,9 +379,11 @@ class _AppShellState extends State<AppShell> {
         PaymentPage(token: widget.session.token),
         SettingsPage(
           user: widget.session.user,
+          token: widget.session.token,
           onLogout: widget.onLogout,
           themePreference: widget.themePreference,
           onThemePreferenceChanged: widget.onThemePreferenceChanged,
+          onUserUpdated: widget.onUserUpdated,
         ),
       ];
 

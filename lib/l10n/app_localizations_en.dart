@@ -826,4 +826,92 @@ class AppLocalizationsEn extends AppLocalizations {
   String selectedSlot(String date, String time) {
     return '$date · $time';
   }
+
+  @override
+  String get markLessonDone => 'Mark as done';
+
+  @override
+  String get movedToJournal => 'Moved to journal as completed.';
+
+  @override
+  String get settlePaymentTitle => 'Payment for this lesson';
+
+  @override
+  String get leaveUnpaid => 'Leave unpaid';
+
+  @override
+  String get markPaidNow => 'Mark as paid';
+
+  @override
+  String get applyPrepaidCredit => 'Apply prepaid credit';
+
+  @override
+  String get editLessonAction => 'Edit lesson';
+
+  @override
+  String get studentNotes => 'Student notes';
+
+  @override
+  String studentNotePlaceholder(String name) {
+    return 'Note for $name';
+  }
+
+  @override
+  String get noGroupMembers => 'This group has no members yet.';
+
+  @override
+  String get packageCredit => 'Package credit';
+
+  @override
+  String approxLessonsLeft(int count) {
+    return '~$count lessons left';
+  }
+
+  @override
+  String get applyCredit => 'Apply credit';
+
+  @override
+  String get applyCreditToLesson => 'Apply credit to a lesson';
+
+  @override
+  String get noUnpaidLessons => 'No unpaid lessons for this student.';
+
+  @override
+  String get creditApplied => 'Prepaid credit applied.';
+
+  @override
+  String get loadPackage => 'Load package';
+
+  @override
+  String get loadPackageHint =>
+      'Record advance payment as package credit for a student.';
+
+  @override
+  String get unallocatedCreditTotal => 'Unallocated credit';
+
+  @override
+  String get prepaidWalletHint => 'Credits waiting to be applied to lessons.';
+
+  @override
+  String get selectUnpaidLesson => 'Select unpaid lesson';
+
+  @override
+  String get lessonNotesSummary => 'Notes';
+
+  @override
+  String get pickLessonFromCalendar => 'Pick a lesson';
+
+  @override
+  String get pickUnpaidLessonHint =>
+      'Tap an unpaid journal lesson on the week grid.';
+
+  @override
+  String get pickLessonHint => 'Tap a journal lesson on the week grid.';
+
+  @override
+  String get noLessonsThisWeek =>
+      'No matching lessons this week. Try another week.';
+
+  @override
+  String get clearLesson => 'Clear';
 }

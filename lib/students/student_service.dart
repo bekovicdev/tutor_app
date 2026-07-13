@@ -410,6 +410,7 @@ class StudentBalance {
     required this.totalAmount,
     required this.paidAmount,
     required this.prepaidAmount,
+    required this.packageCredit,
     required this.unpaidAmount,
     required this.settledAmount,
     required this.cashCollected,
@@ -422,7 +423,12 @@ class StudentBalance {
   final String currency;
   final num totalAmount;
   final num paidAmount;
+
+  /// Sum of lesson prices with payment_status=prepaid (already applied).
   final num prepaidAmount;
+
+  /// Remaining package wallet: prepaid cash payments minus applied prepaid lessons.
+  final num packageCredit;
   final num unpaidAmount;
   final num settledAmount;
   final num cashCollected;
@@ -430,13 +436,17 @@ class StudentBalance {
   final num cashNet;
 
   factory StudentBalance.fromJson(Map<String, dynamic> json) {
+    final num prepaidAmount = (json['prepaid_amount'] as num?) ?? 0;
+    final num? packageCredit = json['package_credit'] as num?;
     return StudentBalance(
       studentId: (json['student_id'] as num?)?.toInt() ?? 0,
       studentName: (json['student_name'] as String?) ?? '',
       currency: (json['currency'] as String?) ?? '',
       totalAmount: (json['total_amount'] as num?) ?? 0,
       paidAmount: (json['paid_amount'] as num?) ?? 0,
-      prepaidAmount: (json['prepaid_amount'] as num?) ?? 0,
+      prepaidAmount: prepaidAmount,
+      // Older APIs omit package_credit; fall back to prepaid_amount.
+      packageCredit: packageCredit ?? prepaidAmount,
       unpaidAmount: (json['unpaid_amount'] as num?) ?? 0,
       settledAmount: (json['settled_amount'] as num?) ?? 0,
       cashCollected: (json['cash_collected'] as num?) ?? 0,

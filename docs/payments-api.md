@@ -107,6 +107,8 @@ Free lessons (`is_free=true`) cannot be marked.
 - `GET /api/payments/analytics/receivables` — unpaid billable lessons
 - `GET /api/payments/analytics/prepaid` — prepaid lessons + unallocated prepaid credits
 
+**App UX — package credit:** Student balance `package_credit` is remaining wallet credit (`prepaid` cash payments − lessons already marked `prepaid`). Estimate: `floor(package_credit / lesson_cost)`. Load package with `POST /api/payments` `kind=prepaid` (no lesson). Apply with `POST /api/lessons/{id}/payment` `payment_status=prepaid` and `record_payment=false` so cash is not double-counted.
+
 ---
 
 ## Related Endpoints

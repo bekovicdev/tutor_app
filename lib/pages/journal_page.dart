@@ -670,6 +670,25 @@ class _JournalPageState extends State<JournalPage> {
                                 ),
                               ),
                             ],
+                            if (constraints.maxHeight >= 62 &&
+                                lesson.isGroup &&
+                                lesson.studentNotes.any(
+                                  (LessonStudentNote n) =>
+                                      n.notes.trim().isNotEmpty,
+                                )) ...<Widget>[
+                              const SizedBox(height: 2),
+                              Text(
+                                '${l10n.lessonNotesSummary}: ${lesson.studentNotes.where((LessonStudentNote n) => n.notes.trim().isNotEmpty).length}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  height: 1.1,
+                                  color: CupertinoColors.tertiaryLabel
+                                      .resolveFrom(context),
+                                ),
+                              ),
+                            ],
                           ],
                         );
                       },
@@ -747,19 +766,53 @@ class _JournalPageState extends State<JournalPage> {
   }
 
   Future<void> _showLessonDetails(Lesson lesson) async {
+    final AppLocalizations l10n = context.l10n;
+    final StringBuffer message = StringBuffer()
+      ..writeln(
+        '${lesson.date} · ${lesson.startAt} · ${l10n.minutes(lesson.durationMinutes)}',
+      )
+      ..writeln(lesson.displaySubtitle)
+      ..write('${l10n.status}: ${_statusLabel(l10n, lesson.status)}');
+    if (lesson.notes != null && lesson.notes!.isNotEmpty) {
+      message.write('\n${lesson.notes}');
+    }
+    if (lesson.isGroup && lesson.studentNotes.isNotEmpty) {
+      message.write('\n\n${l10n.lessonNotesSummary}:');
+      for (final LessonStudentNote note in lesson.studentNotes) {
+        final String name = note.studentName ?? '#${note.studentId}';
+        if (note.notes.trim().isEmpty) {
+          continue;
+        }
+        message.write('\n· $name: ${note.notes}');
+      }
+    }
     await showAppActionSheet<void>(
       context: context,
       title: lesson.displayTitle,
-      message:
-          '${lesson.date} · ${lesson.startAt} · ${context.l10n.minutes(lesson.durationMinutes)}\n'
-          '${lesson.displaySubtitle}\n'
-          '${context.l10n.status}: ${_statusLabel(context.l10n, lesson.status)}'
-          '${lesson.notes != null && lesson.notes!.isNotEmpty ? '\n${lesson.notes}' : ''}',
-      cancelLabel: context.l10n.close,
+      message: message.toString(),
+      cancelLabel: l10n.close,
       actions: <AppSheetAction>[
+        AppSheetAction(
+          label: l10n.editLessonAction,
+          onPressed: (BuildContext ctx) async {
+            Navigator.of(ctx).pop();
+            final bool? changed = await Navigator.of(context).push<bool>(
+              CupertinoPageRoute<bool>(
+                builder: (BuildContext context) => CreateLessonPage(
+                  token: widget.token,
+                  source: LessonSource.journal,
+                  lesson: lesson,
+                ),
+              ),
+            );
+            if (changed == true) {
+              await _loadWeek();
+            }
+          },
+        ),
         if (lesson.status == 'scheduled')
           AppSheetAction(
-            label: context.l10n.markCompleted,
+            label: l10n.markCompleted,
             onPressed: (BuildContext ctx) async {
               Navigator.of(ctx).pop();
               await _updateStatus(lesson, 'completed');
@@ -767,7 +820,7 @@ class _JournalPageState extends State<JournalPage> {
           ),
         if (lesson.status != 'cancelled')
           AppSheetAction(
-            label: context.l10n.cancelLesson,
+            label: l10n.cancelLesson,
             isDestructive: true,
             onPressed: (BuildContext ctx) async {
               Navigator.of(ctx).pop();
@@ -775,7 +828,7 @@ class _JournalPageState extends State<JournalPage> {
             },
           ),
         AppSheetAction(
-          label: context.l10n.delete,
+          label: l10n.delete,
           isDestructive: true,
           onPressed: (BuildContext ctx) async {
             Navigator.of(ctx).pop();
