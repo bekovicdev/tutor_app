@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show Icons, Material, MaterialType;
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:tutor_app/groups/group_service.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/create_payment_page.dart';
@@ -476,6 +479,7 @@ class _StudentsPageState extends State<StudentsPage> {
               _avatarBubble(
                 accent: accent,
                 label: _initials(student.name),
+                imageUrl: student.profilePictureUrl,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -525,35 +529,47 @@ class _StudentsPageState extends State<StudentsPage> {
   Widget _avatarBubble({
     required Color accent,
     required String label,
+    String? imageUrl,
     IconData? icon,
   }) {
+    final bool hasImage = imageUrl != null && imageUrl.trim().isNotEmpty;
     return Container(
       width: 46,
       height: 46,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: <Color>[
-            accent.withValues(alpha: 0.28),
-            accent.withValues(alpha: 0.12),
-          ],
-        ),
+        gradient: hasImage
+            ? null
+            : LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: <Color>[
+                  accent.withValues(alpha: 0.28),
+                  accent.withValues(alpha: 0.12),
+                ],
+              ),
         border: Border.all(color: accent.withValues(alpha: 0.85), width: 1.5),
+        image: hasImage
+            ? DecorationImage(
+                image: NetworkImage(imageUrl),
+                fit: BoxFit.cover,
+              )
+            : null,
       ),
       alignment: Alignment.center,
-      child: icon != null
-          ? Icon(icon, size: 20, color: accent)
-          : Text(
-              label,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: accent,
-                letterSpacing: 0.2,
-              ),
-            ),
+      child: hasImage
+          ? null
+          : icon != null
+              ? Icon(icon, size: 20, color: accent)
+              : Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: accent,
+                    letterSpacing: 0.2,
+                  ),
+                ),
     );
   }
 
@@ -835,6 +851,8 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
   bool _isSaving = false;
   bool _isDeleting = false;
   bool _isEditing = false;
+  bool _isUploadingPhoto = false;
+  String? _profilePictureUrl;
   StudentSummary? _summary;
   StudentBalance? _balance;
   List<Lesson> _completedLessons = <Lesson>[];
@@ -1033,14 +1051,17 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                 height: 88,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: <Color>[
-                      accentColor.withValues(alpha: 0.95),
-                      accentColor.withValues(alpha: 0.55),
-                    ],
-                  ),
+                  gradient: (_profilePictureUrl == null ||
+                          _profilePictureUrl!.isEmpty)
+                      ? LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: <Color>[
+                            accentColor.withValues(alpha: 0.95),
+                            accentColor.withValues(alpha: 0.55),
+                          ],
+                        )
+                      : null,
                   boxShadow: <BoxShadow>[
                     BoxShadow(
                       color: accentColor.withValues(alpha: 0.35),
@@ -1048,17 +1069,27 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                       offset: const Offset(0, 8),
                     ),
                   ],
+                  image: (_profilePictureUrl != null &&
+                          _profilePictureUrl!.isNotEmpty)
+                      ? DecorationImage(
+                          image: NetworkImage(_profilePictureUrl!),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
                 ),
                 alignment: Alignment.center,
-                child: Text(
-                  initials,
-                  style: const TextStyle(
-                    color: CupertinoColors.white,
-                    fontSize: 30,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                  ),
-                ),
+                child: (_profilePictureUrl == null ||
+                        _profilePictureUrl!.isEmpty)
+                    ? Text(
+                        initials,
+                        style: const TextStyle(
+                          color: CupertinoColors.white,
+                          fontSize: 30,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                        ),
+                      )
+                    : null,
               ),
               const SizedBox(height: 14),
               Text(
@@ -1342,47 +1373,157 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
   }
 
   Widget _buildInfoEdit(Color accentColor) {
+    final bool hasImage =
+        _profilePictureUrl != null && _profilePictureUrl!.isNotEmpty;
+    final String initials = _studentInitials(
+      _nameController.text.trim().isEmpty
+          ? 'Ö'
+          : _nameController.text.trim(),
+    );
+
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
       children: <Widget>[
-        _profileHeader(accentColor),
-        const SizedBox(height: 12),
-        _sectionCard(
-          context,
-          title: 'Basic Info',
+        Center(
           child: Column(
             children: <Widget>[
-              _field(_nameController, 'Name *'),
-              const SizedBox(height: 10),
-              _field(
-                _phoneController,
-                'Phone',
-                keyboardType: TextInputType.phone,
+              GestureDetector(
+                onTap: _manageProfilePicture,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: <Widget>[
+                    Container(
+                      width: 104,
+                      height: 104,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: hasImage
+                            ? null
+                            : LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: <Color>[
+                                  accentColor.withValues(alpha: 0.95),
+                                  accentColor.withValues(alpha: 0.55),
+                                ],
+                              ),
+                        boxShadow: <BoxShadow>[
+                          BoxShadow(
+                            color: accentColor.withValues(alpha: 0.28),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                        image: hasImage
+                            ? DecorationImage(
+                                image: NetworkImage(_profilePictureUrl!),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                        border: Border.all(
+                          color: CupertinoColors.white,
+                          width: 3,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: _isUploadingPhoto
+                          ? const CupertinoActivityIndicator(
+                              color: CupertinoColors.white,
+                            )
+                          : hasImage
+                              ? null
+                              : Text(
+                                  initials,
+                                  style: const TextStyle(
+                                    color: CupertinoColors.white,
+                                    fontSize: 34,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                    ),
+                    Positioned(
+                      right: 2,
+                      bottom: 2,
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: CupertinoColors.activeBlue,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: CupertinoColors.systemBackground
+                                .resolveFrom(context),
+                            width: 3,
+                          ),
+                          boxShadow: <BoxShadow>[
+                            BoxShadow(
+                              color: CupertinoColors.activeBlue
+                                  .withValues(alpha: 0.35),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          CupertinoIcons.camera_fill,
+                          size: 15,
+                          color: CupertinoColors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 10),
-              _birthdayButton(),
+              const SizedBox(height: 12),
+              Text(
+                'Fotoğrafa dokunarak değiştir veya kaldır',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                ),
+              ),
             ],
           ),
         ),
-        const SizedBox(height: 12),
-        _sectionCard(
-          context,
-          title: 'Lesson Settings',
-          child: _field(
-            _lessonCostController,
-            'Lesson Cost',
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          ),
-        ),
-        const SizedBox(height: 12),
-        _sectionCard(
-          context,
-          title: 'Notes',
-          child: _field(
-            _notesController,
-            'Notes',
-            minLines: 4,
-            maxLines: 5,
+        const SizedBox(height: 22),
+        AppGlassCard(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              _editFieldLabel('Ad'),
+              _editField(
+                controller: _nameController,
+                placeholder: 'Öğrenci adı',
+              ),
+              const SizedBox(height: 16),
+              _editFieldLabel('Telefon'),
+              _editField(
+                controller: _phoneController,
+                placeholder: '05xx xxx xx xx',
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 16),
+              _editFieldLabel('Doğum günü'),
+              _birthdayButton(),
+              const SizedBox(height: 16),
+              _editFieldLabel('Ders ücreti'),
+              _editField(
+                controller: _lessonCostController,
+                placeholder: 'Örn. 500',
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+              ),
+              const SizedBox(height: 16),
+              _editFieldLabel('Notlar'),
+              _editField(
+                controller: _notesController,
+                placeholder: 'Kısa not ekle…',
+                minLines: 4,
+                maxLines: 6,
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 20),
@@ -1393,8 +1534,11 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 14),
             decoration: BoxDecoration(
-              color: CupertinoColors.systemRed.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
+              color: CupertinoColors.systemRed.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: CupertinoColors.systemRed.withValues(alpha: 0.18),
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1404,17 +1548,18 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                   const SizedBox(width: 8),
                 ] else ...<Widget>[
                   const Icon(
-                    CupertinoIcons.delete,
+                    CupertinoIcons.trash,
                     size: 18,
                     color: CupertinoColors.systemRed,
                   ),
                   const SizedBox(width: 8),
                 ],
                 const Text(
-                  'Delete Student',
+                  'Öğrenciyi sil',
                   style: TextStyle(
                     color: CupertinoColors.systemRed,
                     fontWeight: FontWeight.w600,
+                    fontSize: 16,
                   ),
                 ),
               ],
@@ -1422,6 +1567,56 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _editFieldLabel(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: CupertinoColors.secondaryLabel.resolveFrom(context),
+          letterSpacing: -0.1,
+        ),
+      ),
+    );
+  }
+
+  Widget _editField({
+    required TextEditingController controller,
+    required String placeholder,
+    TextInputType? keyboardType,
+    int minLines = 1,
+    int maxLines = 1,
+  }) {
+    return CupertinoTextField(
+      controller: controller,
+      placeholder: placeholder,
+      keyboardType: keyboardType,
+      minLines: minLines,
+      maxLines: maxLines,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+      ),
+      placeholderStyle: TextStyle(
+        color: CupertinoColors.placeholderText.resolveFrom(context),
+        fontWeight: FontWeight.w400,
+      ),
+      decoration: BoxDecoration(
+        color: CupertinoColors.secondarySystemGroupedBackground
+            .resolveFrom(context),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: CupertinoColors.separator.resolveFrom(context).withValues(
+                alpha: 0.35,
+              ),
+        ),
+      ),
     );
   }
 
@@ -1733,102 +1928,102 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
     }
   }
 
-  Widget _profileHeader(Color accentColor) {
-    final String phone = _phoneController.text.trim();
-    final bool hasPhone = phone.isNotEmpty;
+  Future<void> _manageProfilePicture() async {
+    if (!_isEditing || _isUploadingPhoto) {
+      return;
+    }
 
-    return AppGlassCard(
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        children: <Widget>[
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              color: accentColor.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-              border: Border.all(color: accentColor, width: 1.5),
-            ),
-            child: Icon(
-              CupertinoIcons.person_fill,
-              color: accentColor,
-              size: 24,
-            ),
+    final bool hasPhoto =
+        _profilePictureUrl != null && _profilePictureUrl!.isNotEmpty;
+
+    final String? action = await showAppActionSheet<String>(
+      context: context,
+      title: 'Profil fotoğrafı',
+      actions: <AppSheetAction>[
+        AppSheetAction(
+          label: 'Galeriden seç',
+          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop('gallery'),
+        ),
+        AppSheetAction(
+          label: 'Kamera',
+          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop('camera'),
+        ),
+        if (hasPhoto)
+          AppSheetAction(
+            label: 'Fotoğrafı kaldır',
+            isDestructive: true,
+            onPressed: (BuildContext ctx) => Navigator.of(ctx).pop('remove'),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  _nameController.text.trim().isEmpty
-                      ? 'Student'
-                      : _nameController.text.trim(),
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  hasPhone ? phone : 'No phone number',
-                  style: const TextStyle(
-                    color: CupertinoColors.systemGrey,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          _contactActionButton(
-            color: CupertinoColors.activeGreen,
-            enabled: hasPhone,
-            onPressed: _callStudent,
-            child: const Icon(
-              CupertinoIcons.phone_fill,
-              size: 20,
-              color: CupertinoColors.activeGreen,
-            ),
-          ),
-          const SizedBox(width: 8),
-          _contactActionButton(
-            color: const Color(0xFF25D366),
-            enabled: hasPhone,
-            onPressed: _openWhatsApp,
-            child: const FaIcon(
-              FontAwesomeIcons.whatsapp,
-              size: 18,
-              color: Color(0xFF25D366),
-            ),
-          ),
-        ],
-      ),
+      ],
     );
+    if (action == null || !mounted) {
+      return;
+    }
+
+    if (action == 'remove') {
+      await _removeProfilePicture();
+      return;
+    }
+
+    final ImageSource source =
+        action == 'camera' ? ImageSource.camera : ImageSource.gallery;
+    final ImagePicker picker = ImagePicker();
+    final XFile? picked = await picker.pickImage(
+      source: source,
+      maxWidth: 1600,
+      maxHeight: 1600,
+      imageQuality: 88,
+    );
+    if (picked == null || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _isUploadingPhoto = true;
+    });
+    try {
+      final Student updated = await widget.studentService.uploadProfilePicture(
+        id: widget.studentId,
+        file: File(picked.path),
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _profilePictureUrl = updated.profilePictureUrl;
+      });
+    } on StudentServiceException catch (error) {
+      await _showMessage(error.message);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploadingPhoto = false;
+        });
+      }
+    }
   }
 
-  Widget _contactActionButton({
-    required Color color,
-    required bool enabled,
-    required VoidCallback onPressed,
-    required Widget child,
-  }) {
-    return CupertinoButton(
-      padding: EdgeInsets.zero,
-      minimumSize: Size.zero,
-      onPressed: enabled ? onPressed : null,
-      child: Opacity(
-        opacity: enabled ? 1 : 0.35,
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.14),
-            shape: BoxShape.circle,
-          ),
-          alignment: Alignment.center,
-          child: child,
-        ),
-      ),
-    );
+  Future<void> _removeProfilePicture() async {
+    setState(() {
+      _isUploadingPhoto = true;
+    });
+    try {
+      await widget.studentService.deleteProfilePicture(widget.studentId);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _profilePictureUrl = null;
+      });
+    } on StudentServiceException catch (error) {
+      await _showMessage(error.message);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploadingPhoto = false;
+        });
+      }
+    }
   }
 
   Future<void> _callStudent() async {
@@ -1906,28 +2101,6 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
     );
   }
 
-  Widget _field(
-    TextEditingController controller,
-    String placeholder, {
-    TextInputType? keyboardType,
-    int minLines = 1,
-    int maxLines = 1,
-  }) {
-    return CupertinoTextField(
-      controller: controller,
-      placeholder: placeholder,
-      keyboardType: keyboardType,
-      minLines: minLines,
-      maxLines: maxLines,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      decoration: BoxDecoration(
-        color: CupertinoColors.secondarySystemBackground,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: CupertinoColors.systemGrey4),
-      ),
-    );
-  }
-
   Color _parseHexColor(String? hex) {
     if (hex == null || hex.isEmpty) {
       return CupertinoColors.activeBlue;
@@ -1949,36 +2122,51 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
       onPressed: _showBirthdayPicker,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
-          color: CupertinoColors.secondarySystemBackground,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: CupertinoColors.systemGrey4),
+          color: CupertinoColors.secondarySystemGroupedBackground
+              .resolveFrom(context),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: CupertinoColors.separator.resolveFrom(context).withValues(
+                  alpha: 0.35,
+                ),
+          ),
         ),
         child: Row(
           children: <Widget>[
-            const Icon(
-              Icons.cake_rounded,
-              size: 20,
-              color: Color(0xFFFF2D55),
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF2D55).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.cake_rounded,
+                size: 18,
+                color: Color(0xFFFF2D55),
+              ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Expanded(
               child: Text(
                 _selectedBirthday == null
-                    ? 'Doğum günü ekle'
+                    ? 'Tarih seç'
                     : _formatBirthdayDisplay(_selectedBirthday),
                 style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
                   color: _selectedBirthday == null
                       ? CupertinoColors.placeholderText.resolveFrom(context)
                       : CupertinoColors.label.resolveFrom(context),
                 ),
               ),
             ),
-            const Icon(
-              CupertinoIcons.chevron_down,
+            Icon(
+              CupertinoIcons.chevron_right,
               size: 16,
-              color: CupertinoColors.systemGrey,
+              color: CupertinoColors.tertiaryLabel.resolveFrom(context),
             ),
           ],
         ),
@@ -2155,6 +2343,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
       _initialColor = _colorController.text;
       _initialBirthday = _formatDate(_selectedBirthday);
       setState(() {
+        _profilePictureUrl = detail.student.profilePictureUrl;
         _summary = detail.summary;
         _balance = balance;
         _completedLessons = completed;

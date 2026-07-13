@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/cupertino.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
@@ -109,8 +110,8 @@ class _PaymentPageState extends State<PaymentPage> {
     } on PaymentServiceException catch (error) {
       recordError(error.message);
       return null;
-    } catch (_) {
-      recordError('Failed to load $label.');
+    } catch (error) {
+      recordError('Failed to load $label: $error');
       return null;
     }
   }
@@ -585,22 +586,35 @@ class _PaymentPageState extends State<PaymentPage> {
       selectedDayPoint = _dailyPoints[_selectedDay! - 1];
     }
 
-    num maxTotal = 0;
+    num maxCollected = 0;
+    num monthCollected = 0;
     for (final _DailyChartPoint point in _dailyPoints) {
-      final num total =
-          point.paidAmount + point.prepaidAmount + point.unpaidAmount;
-      if (total > maxTotal) {
-        maxTotal = total;
+      monthCollected += point.collected;
+      if (point.collected > maxCollected) {
+        maxCollected = point.collected;
       }
     }
-    if (maxTotal <= 0) {
-      maxTotal = 1;
+    if (maxCollected <= 0) {
+      maxCollected = 1;
     }
+
+    final DateTime monthStart = _chartMonth;
+    final DateTime monthEnd =
+        DateTime(_chartMonth.year, _chartMonth.month + 1, 0);
+    final String rangeLabel =
+        '${_shortMonthDay(monthStart)} – ${_shortMonthDay(monthEnd)}';
+    final Color chartColor = CupertinoTheme.of(context).primaryColor;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       children: <Widget>[
-        _card(
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF111214),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFF2A2C31)),
+          ),
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -611,7 +625,11 @@ class _PaymentPageState extends State<PaymentPage> {
                     minimumSize: Size.zero,
                     onPressed:
                         _isLoadingDaily ? null : () => _shiftChartMonth(-1),
-                    child: const Icon(CupertinoIcons.chevron_left),
+                    child: const Icon(
+                      CupertinoIcons.chevron_left,
+                      color: Color(0xFFB0B3BA),
+                      size: 18,
+                    ),
                   ),
                   Expanded(
                     child: Text(
@@ -619,7 +637,8 @@ class _PaymentPageState extends State<PaymentPage> {
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
-                        fontSize: 16,
+                        fontSize: 15,
+                        color: Color(0xFFE8E9ED),
                       ),
                     ),
                   ),
@@ -631,14 +650,34 @@ class _PaymentPageState extends State<PaymentPage> {
                         : null,
                     child: Icon(
                       CupertinoIcons.chevron_right,
+                      size: 18,
                       color: canGoNext
-                          ? CupertinoColors.activeBlue
-                          : CupertinoColors.systemGrey3,
+                          ? const Color(0xFFE8E9ED)
+                          : const Color(0xFF555861),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
+              Text(
+                rangeLabel,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF8B8F98),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'TRY ${_formatGrouped(monthCollected)} Collected',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: CupertinoColors.white,
+                  letterSpacing: -0.6,
+                ),
+              ),
+              const SizedBox(height: 16),
               if (_dailyError != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
@@ -657,104 +696,55 @@ class _PaymentPageState extends State<PaymentPage> {
                 )
               else
                 SizedBox(
-                  height: 220,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      SizedBox(
-                        width: 40,
-                        child: _chartYAxis(maxTotal),
-                      ),
-                      Expanded(
-                        child: LayoutBuilder(
-                          builder:
-                              (BuildContext context, BoxConstraints constraints) {
-                            return SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: SizedBox(
-                                width: math.max(
-                                  constraints.maxWidth,
-                                  _dailyPoints.length * 18.0,
-                                ),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: _dailyPoints.map((_DailyChartPoint point) {
-                                    final bool selected =
-                                        point.day == _selectedDay;
-                                    return Expanded(
-                                      child: GestureDetector(
-                                        behavior: HitTestBehavior.opaque,
-                                        onTap: () {
-                                          setState(() {
-                                            _selectedDay = point.day;
-                                          });
-                                        },
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 1,
-                                          ),
-                                          child: Column(
-                                            children: <Widget>[
-                                              Expanded(
-                                                child: Align(
-                                                  alignment:
-                                                      Alignment.bottomCenter,
-                                                  child: _dailyBar(
-                                                    point: point,
-                                                    maxTotal: maxTotal,
-                                                    maxHeight:
-                                                        constraints.maxHeight -
-                                                            28,
-                                                    selected: selected,
-                                                  ),
-                                                ),
-                                              ),
-                                              const SizedBox(height: 6),
-                                              Text(
-                                                '${point.day}',
-                                                style: TextStyle(
-                                                  fontSize: 9,
-                                                  fontWeight: selected
-                                                      ? FontWeight.w700
-                                                      : FontWeight.w500,
-                                                  color: selected
-                                                      ? CupertinoColors
-                                                          .activeBlue
-                                                      : CupertinoColors
-                                                          .systemGrey,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                              ),
-                            );
-                          },
+                  height: 230,
+                  child: LayoutBuilder(
+                    builder:
+                        (BuildContext context, BoxConstraints constraints) {
+                      return GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTapDown: (TapDownDetails details) {
+                          if (_dailyPoints.isEmpty) {
+                            return;
+                          }
+                          final double chartWidth =
+                              constraints.maxWidth - 44; // y-axis gutter
+                          final double x = details.localPosition.dx;
+                          if (x > chartWidth || x < 0) {
+                            return;
+                          }
+                          final int index = _dailyPoints.length == 1
+                              ? 0
+                              : ((x / chartWidth) * (_dailyPoints.length - 1))
+                                  .round()
+                                  .clamp(0, _dailyPoints.length - 1);
+                          setState(() {
+                            _selectedDay = _dailyPoints[index].day;
+                          });
+                        },
+                        child: CustomPaint(
+                          size: Size(constraints.maxWidth, 230),
+                          painter: _RevenueAreaChartPainter(
+                            points: _dailyPoints
+                                .map(
+                                  (_DailyChartPoint p) => p.collected.toDouble(),
+                                )
+                                .toList(),
+                            maxValue: maxCollected.toDouble(),
+                            selectedIndex: (_selectedDay ?? 1) - 1,
+                            lineColor: chartColor,
+                            xLabels: _chartXLabels(_dailyPoints.length),
+                            yLabels: <String>[
+                              _compactNum(maxCollected),
+                              _compactNum(maxCollected * 2 / 3),
+                              _compactNum(maxCollected / 3),
+                              '0',
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ),
-              const SizedBox(height: 14),
-              Wrap(
-                spacing: 12,
-                runSpacing: 8,
-                children: const <Widget>[
-                  _LegendDot(color: CupertinoColors.activeGreen, label: 'Paid'),
-                  _LegendDot(
-                    color: CupertinoColors.systemPurple,
-                    label: 'Prepaid',
-                  ),
-                  _LegendDot(
-                    color: CupertinoColors.systemOrange,
-                    label: 'Unpaid',
-                  ),
-                ],
-              ),
             ],
           ),
         ),
@@ -764,37 +754,29 @@ class _PaymentPageState extends State<PaymentPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    Text(
-                      '${_monthTitle(_chartMonthKey)} ${selectedDayPoint.day}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
-                    ),
-                    Text(
-                      'Net ${_formatNum(selectedDayPoint.collected - selectedDayPoint.refunded)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: CupertinoColors.activeBlue,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _rowMetric('Paid', selectedDayPoint.paidAmount, 'TRY'),
-                _rowMetric('Prepaid', selectedDayPoint.prepaidAmount, 'TRY'),
-                _rowMetric('Unpaid', selectedDayPoint.unpaidAmount, 'TRY'),
-                const SizedBox(height: 8),
                 Text(
-                  'Cash +${_formatNum(selectedDayPoint.collected)} / -${_formatNum(selectedDayPoint.refunded)}',
+                  '${selectedDayPoint.day} ${_monthTitle(_chartMonthKey).split(' ').first}',
                   style: const TextStyle(
-                    fontSize: 13,
-                    color: CupertinoColors.systemGrey,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
                   ),
                 ),
+                const SizedBox(height: 12),
+                _rowMetricColored(
+                  'Collected',
+                  selectedDayPoint.collected,
+                  'TRY',
+                  chartColor,
+                ),
+                _rowMetric('Paid lessons', selectedDayPoint.paidAmount, 'TRY'),
+                _rowMetric(
+                  'Prepaid lessons',
+                  selectedDayPoint.prepaidAmount,
+                  'TRY',
+                ),
+                _rowMetric('Unpaid', selectedDayPoint.unpaidAmount, 'TRY'),
+                if (selectedDayPoint.refunded > 0)
+                  _rowMetric('Refunded', selectedDayPoint.refunded, 'TRY'),
               ],
             ),
           ),
@@ -832,74 +814,94 @@ class _PaymentPageState extends State<PaymentPage> {
     );
   }
 
-  Widget _chartYAxis(num maxTotal) {
-    final List<String> labels = <String>[
-      _compactNum(maxTotal),
-      _compactNum(maxTotal * 0.5),
-      '0',
-    ];
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 28),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: labels
-            .map(
-              (String label) => Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 10,
-                  color: CupertinoColors.systemGrey,
-                ),
-              ),
-            )
-            .toList(),
-      ),
-    );
+  List<String> _chartXLabels(int days) {
+    if (days <= 0) {
+      return <String>[];
+    }
+    if (days == 1) {
+      return <String>['1 ${_shortMonthName(_chartMonth.month)}'];
+    }
+    final List<int> ticks = <int>{
+      0,
+      ((days - 1) / 4).round(),
+      ((days - 1) / 2).round(),
+      ((days - 1) * 3 / 4).round(),
+      days - 1,
+    }.toList()
+      ..sort();
+    return ticks
+        .map(
+          (int index) =>
+              '${index + 1} ${_shortMonthName(_chartMonth.month)}',
+        )
+        .toList();
   }
 
-  Widget _dailyBar({
-    required _DailyChartPoint point,
-    required num maxTotal,
-    required double maxHeight,
-    required bool selected,
-  }) {
-    final double paidH =
-        maxHeight * (point.paidAmount / maxTotal).clamp(0.0, 1.0);
-    final double prepaidH =
-        maxHeight * (point.prepaidAmount / maxTotal).clamp(0.0, 1.0);
-    final double unpaidH =
-        maxHeight * (point.unpaidAmount / maxTotal).clamp(0.0, 1.0);
-    final double totalH = paidH + prepaidH + unpaidH;
-    final bool hasValue =
-        point.paidAmount + point.prepaidAmount + point.unpaidAmount > 0;
+  String _shortMonthDay(DateTime date) {
+    return '${date.day} ${_shortMonthName(date.month)}';
+  }
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      width: selected ? 10 : 7,
-      height: totalH < 2 && hasValue ? 2 : totalH,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(4),
-        boxShadow: selected
-            ? <BoxShadow>[
-                BoxShadow(
-                  color: CupertinoColors.activeBlue.withValues(alpha: 0.25),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
-              ]
-            : null,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
+  String _shortMonthName(int month) {
+    const List<String> names = <String>[
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return names[month - 1];
+  }
+
+  String _formatGrouped(num value) {
+    final String raw = _formatNum(value);
+    final List<String> parts = raw.split('.');
+    final String intPart = parts[0];
+    final StringBuffer out = StringBuffer();
+    for (int i = 0; i < intPart.length; i++) {
+      final int fromEnd = intPart.length - i;
+      out.write(intPart[i]);
+      if (fromEnd > 1 && fromEnd % 3 == 1) {
+        out.write(' ');
+      }
+    }
+    if (parts.length > 1) {
+      out.write('.${parts[1]}');
+    }
+    return out.toString();
+  }
+
+  Widget _rowMetricColored(
+    String label,
+    num amount,
+    String currency,
+    Color color,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          if (unpaidH > 0)
-            Container(height: unpaidH, color: CupertinoColors.systemOrange),
-          if (prepaidH > 0)
-            Container(height: prepaidH, color: CupertinoColors.systemPurple),
-          if (paidH > 0)
-            Container(height: paidH, color: CupertinoColors.activeGreen),
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+          Text(
+            _money(amount, currency),
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
         ],
       ),
     );
@@ -1321,38 +1323,232 @@ class _PaymentPageState extends State<PaymentPage> {
       value.length >= 10 ? value.substring(0, 10) : value;
 }
 
-class _LegendDot extends StatelessWidget {
-  const _LegendDot({
-    required this.color,
-    required this.label,
+class _RevenueAreaChartPainter extends CustomPainter {
+  _RevenueAreaChartPainter({
+    required this.points,
+    required this.maxValue,
+    required this.selectedIndex,
+    required this.lineColor,
+    required this.xLabels,
+    required this.yLabels,
   });
 
-  final Color color;
-  final String label;
+  final List<double> points;
+  final double maxValue;
+  final int selectedIndex;
+  final Color lineColor;
+  final List<String> xLabels;
+  final List<String> yLabels;
+
+  static const Color _gridColor = Color(0xFF3A3D44);
+  static const Color _labelColor = Color(0xFF8B8F98);
+  static const double _rightGutter = 44;
+  static const double _bottomGutter = 28;
+  static const double _topPad = 8;
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: CupertinoColors.systemGrey,
-          ),
-        ),
-      ],
+  void paint(Canvas canvas, Size size) {
+    if (points.isEmpty || maxValue <= 0) {
+      return;
+    }
+
+    final double chartW = size.width - _rightGutter;
+    final double chartH = size.height - _bottomGutter - _topPad;
+    final Rect chartRect = Rect.fromLTWH(0, _topPad, chartW, chartH);
+
+    _drawGrid(canvas, chartRect);
+    _drawYLabels(canvas, size, chartRect);
+    _drawXLabels(canvas, chartRect);
+
+    final Path linePath = Path();
+    final List<Offset> coords = <Offset>[];
+    for (int i = 0; i < points.length; i++) {
+      final double x = points.length == 1
+          ? chartRect.left + chartRect.width / 2
+          : chartRect.left + (i / (points.length - 1)) * chartRect.width;
+      final double y =
+          chartRect.bottom - (points[i] / maxValue).clamp(0.0, 1.0) * chartRect.height;
+      coords.add(Offset(x, y));
+      if (i == 0) {
+        linePath.moveTo(x, y);
+      } else {
+        linePath.lineTo(x, y);
+      }
+    }
+
+    final Path fillPath = Path.from(linePath)
+      ..lineTo(coords.last.dx, chartRect.bottom)
+      ..lineTo(coords.first.dx, chartRect.bottom)
+      ..close();
+
+    final Paint fillPaint = Paint()
+      ..shader = ui.Gradient.linear(
+        Offset(chartRect.left, chartRect.top),
+        Offset(chartRect.left, chartRect.bottom),
+        <Color>[
+          lineColor.withValues(alpha: 0.45),
+          lineColor.withValues(alpha: 0.05),
+          lineColor.withValues(alpha: 0.0),
+        ],
+        <double>[0.0, 0.55, 1.0],
+      );
+    canvas.drawPath(fillPath, fillPaint);
+
+    final Paint linePaint = Paint()
+      ..color = lineColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.4
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..isAntiAlias = true;
+    canvas.drawPath(linePath, linePaint);
+
+    final int sel = selectedIndex.clamp(0, coords.length - 1);
+    final Offset selected = coords[sel];
+
+    final Paint vLinePaint = Paint()
+      ..color = _gridColor
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(
+      Offset(selected.dx, chartRect.top),
+      Offset(selected.dx, chartRect.bottom),
+      vLinePaint,
     );
+
+    canvas.drawCircle(
+      selected,
+      5.5,
+      Paint()..color = const Color(0xFF111214),
+    );
+    canvas.drawCircle(selected, 4, Paint()..color = lineColor);
+  }
+
+  void _drawGrid(Canvas canvas, Rect chartRect) {
+    final Paint paint = Paint()
+      ..color = _gridColor
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
+
+    const int hLines = 3;
+    for (int i = 0; i <= hLines; i++) {
+      final double y = chartRect.top + (chartRect.height / hLines) * i;
+      _drawDashedLine(
+        canvas,
+        Offset(chartRect.left, y),
+        Offset(chartRect.right, y),
+        paint,
+      );
+    }
+
+    if (points.length > 1) {
+      final List<int> ticks = _xTickIndexes(points.length);
+      for (final int index in ticks) {
+        final double x =
+            chartRect.left + (index / (points.length - 1)) * chartRect.width;
+        _drawDashedLine(
+          canvas,
+          Offset(x, chartRect.top),
+          Offset(x, chartRect.bottom),
+          paint,
+        );
+      }
+    }
+  }
+
+  void _drawYLabels(Canvas canvas, Size size, Rect chartRect) {
+    final TextPainter tp = TextPainter(textDirection: TextDirection.ltr);
+    for (int i = 0; i < yLabels.length; i++) {
+      final double t = yLabels.length == 1 ? 0 : i / (yLabels.length - 1);
+      final double y = chartRect.top + chartRect.height * t;
+      tp.text = TextSpan(
+        text: yLabels[i],
+        style: const TextStyle(
+          fontSize: 10,
+          color: _labelColor,
+          fontWeight: FontWeight.w500,
+        ),
+      );
+      tp.layout();
+      tp.paint(
+        canvas,
+        Offset(size.width - tp.width, y - tp.height / 2),
+      );
+    }
+  }
+
+  void _drawXLabels(Canvas canvas, Rect chartRect) {
+    if (xLabels.isEmpty || points.length < 2) {
+      return;
+    }
+    final List<int> ticks = _xTickIndexes(points.length);
+    final TextPainter tp = TextPainter(textDirection: TextDirection.ltr);
+    final int count = math.min(ticks.length, xLabels.length);
+    for (int i = 0; i < count; i++) {
+      final int index = ticks[i];
+      final double x =
+          chartRect.left + (index / (points.length - 1)) * chartRect.width;
+      tp.text = TextSpan(
+        text: xLabels[i],
+        style: const TextStyle(
+          fontSize: 10,
+          color: _labelColor,
+          fontWeight: FontWeight.w500,
+        ),
+      );
+      tp.layout();
+      tp.paint(
+        canvas,
+        Offset(x - tp.width / 2, chartRect.bottom + 8),
+      );
+    }
+  }
+
+  List<int> _xTickIndexes(int days) {
+    if (days <= 1) {
+      return <int>[0];
+    }
+    final Set<int> ticks = <int>{
+      0,
+      ((days - 1) / 4).round(),
+      ((days - 1) / 2).round(),
+      ((days - 1) * 3 / 4).round(),
+      days - 1,
+    };
+    return ticks.toList()..sort();
+  }
+
+  void _drawDashedLine(Canvas canvas, Offset a, Offset b, Paint paint) {
+    const double dash = 3;
+    const double gap = 3;
+    final double dx = b.dx - a.dx;
+    final double dy = b.dy - a.dy;
+    final double len = math.sqrt(dx * dx + dy * dy);
+    if (len == 0) {
+      return;
+    }
+    final double ux = dx / len;
+    final double uy = dy / len;
+    double drawn = 0;
+    while (drawn < len) {
+      final double end = math.min(drawn + dash, len);
+      canvas.drawLine(
+        Offset(a.dx + ux * drawn, a.dy + uy * drawn),
+        Offset(a.dx + ux * end, a.dy + uy * end),
+        paint,
+      );
+      drawn = end + gap;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _RevenueAreaChartPainter oldDelegate) {
+    return oldDelegate.points != points ||
+        oldDelegate.maxValue != maxValue ||
+        oldDelegate.selectedIndex != selectedIndex ||
+        oldDelegate.lineColor != lineColor ||
+        oldDelegate.xLabels != xLabels ||
+        oldDelegate.yLabels != yLabels;
   }
 }
 

@@ -1,6 +1,31 @@
 import 'dart:convert';
 import 'dart:io';
 
+num? _asNum(dynamic value) {
+  if (value == null) {
+    return null;
+  }
+  if (value is num) {
+    return value;
+  }
+  if (value is String) {
+    return num.tryParse(value.replaceAll(',', '.').trim());
+  }
+  return null;
+}
+
+int? _asInt(dynamic value) => _asNum(value)?.toInt();
+
+String? _asString(dynamic value) {
+  if (value == null) {
+    return null;
+  }
+  if (value is String) {
+    return value;
+  }
+  return value.toString();
+}
+
 /// Lesson settlement status: unpaid | paid | prepaid
 class PaymentStatus {
   static const String unpaid = 'unpaid';
@@ -72,21 +97,29 @@ class Payment {
 
   factory Payment.fromJson(Map<String, dynamic> json) {
     return Payment(
-      id: (json['id'] as num?)?.toInt() ?? 0,
-      amount: (json['amount'] as num?) ?? 0,
-      kind: (json['kind'] as String?) ?? PaymentKind.lesson,
-      method: json['method'] as String?,
-      paidAt: json['paid_at'] as String?,
-      notes: json['notes'] as String?,
-      studentId: (json['student_id'] as num?)?.toInt(),
-      groupId: (json['group_id'] as num?)?.toInt(),
-      lessonId: (json['lesson_id'] as num?)?.toInt(),
+      id: _asInt(json['id']) ?? 0,
+      amount: _asNum(json['amount']) ?? 0,
+      kind: _asString(json['kind']) ?? PaymentKind.lesson,
+      method: _asString(json['method']),
+      paidAt: _asString(json['paid_at']),
+      notes: _asString(json['notes']),
+      studentId: _asInt(json['student_id']),
+      groupId: _asInt(json['group_id']),
+      lessonId: _asInt(json['lesson_id']),
       student: json['student'] == null
           ? null
-          : PaymentRef.fromJson(json['student'] as Map<String, dynamic>?),
+          : PaymentRef.fromJson(
+              json['student'] is Map<String, dynamic>
+                  ? json['student'] as Map<String, dynamic>
+                  : null,
+            ),
       group: json['group'] == null
           ? null
-          : PaymentRef.fromJson(json['group'] as Map<String, dynamic>?),
+          : PaymentRef.fromJson(
+              json['group'] is Map<String, dynamic>
+                  ? json['group'] as Map<String, dynamic>
+                  : null,
+            ),
     );
   }
 }
@@ -196,8 +229,8 @@ class StatusAmountBucket {
       return const StatusAmountBucket(count: 0, amount: 0);
     }
     return StatusAmountBucket(
-      count: (json['count'] as num?)?.toInt() ?? 0,
-      amount: (json['amount'] as num?) ?? 0,
+      count: _asInt(json['count']) ?? 0,
+      amount: _asNum(json['amount']) ?? 0,
     );
   }
 }
@@ -258,8 +291,8 @@ class PaymentsOverview {
 
     return PaymentsOverview(
       currency: (json['currency'] as String?) ?? 'TRY',
-      billableCount: (lessons['billable_count'] as num?)?.toInt() ?? 0,
-      freeCount: (lessons['free_count'] as num?)?.toInt() ?? 0,
+      billableCount: _asInt(lessons['billable_count']) ?? 0,
+      freeCount: _asInt(lessons['free_count']) ?? 0,
       unpaid: StatusAmountBucket.fromJson(
         byStatus['unpaid'] as Map<String, dynamic>?,
       ),
@@ -269,18 +302,17 @@ class PaymentsOverview {
       prepaid: StatusAmountBucket.fromJson(
         byStatus['prepaid'] as Map<String, dynamic>?,
       ),
-      cashCollected: (cashflow['collected'] as num?) ?? 0,
-      cashRefunded: (cashflow['refunded'] as num?) ?? 0,
-      cashNet: (cashflow['net_collected'] as num?) ?? 0,
-      receivablesAmount: (receivables['amount'] as num?) ?? 0,
-      receivablesLessonCount: (receivables['lesson_count'] as num?)?.toInt() ?? 0,
-      prepaidAmount: (prepaid['amount'] as num?) ?? 0,
-      prepaidLessonCount: (prepaid['lesson_count'] as num?)?.toInt() ?? 0,
-      paidAmount: (earned['paid_amount'] as num?) ?? 0,
-      prepaidEarnedAmount: (earned['prepaid_amount'] as num?) ?? 0,
-      settledAmount: (earned['settled_amount'] as num?) ?? 0,
-      collectionRatePercent:
-          (json['collection_rate_percent'] as num?) ?? 0,
+      cashCollected: _asNum(cashflow['collected']) ?? 0,
+      cashRefunded: _asNum(cashflow['refunded']) ?? 0,
+      cashNet: _asNum(cashflow['net_collected']) ?? 0,
+      receivablesAmount: _asNum(receivables['amount']) ?? 0,
+      receivablesLessonCount: _asInt(receivables['lesson_count']) ?? 0,
+      prepaidAmount: _asNum(prepaid['amount']) ?? 0,
+      prepaidLessonCount: _asInt(prepaid['lesson_count']) ?? 0,
+      paidAmount: _asNum(earned['paid_amount']) ?? 0,
+      prepaidEarnedAmount: _asNum(earned['prepaid_amount']) ?? 0,
+      settledAmount: _asNum(earned['settled_amount']) ?? 0,
+      collectionRatePercent: _asNum(json['collection_rate_percent']) ?? 0,
     );
   }
 }
@@ -314,22 +346,22 @@ class MonthlyAnalyticsPoint {
 
     return MonthlyAnalyticsPoint(
       month: (json['month'] as String?) ?? '',
-      paidAmount: (lessonBased['paid'] as num?) ??
-          (lessonBased['paid_amount'] as num?) ??
+      paidAmount: _asNum(lessonBased['paid']) ??
+          _asNum(lessonBased['paid_amount']) ??
           0,
-      prepaidAmount: (lessonBased['prepaid'] as num?) ??
-          (lessonBased['prepaid_amount'] as num?) ??
+      prepaidAmount: _asNum(lessonBased['prepaid']) ??
+          _asNum(lessonBased['prepaid_amount']) ??
           0,
-      unpaidAmount: (lessonBased['unpaid'] as num?) ??
-          (lessonBased['unpaid_amount'] as num?) ??
+      unpaidAmount: _asNum(lessonBased['unpaid']) ??
+          _asNum(lessonBased['unpaid_amount']) ??
           0,
-      settledAmount: (lessonBased['settled'] as num?) ??
-          (lessonBased['settled_amount'] as num?) ??
+      settledAmount: _asNum(lessonBased['settled']) ??
+          _asNum(lessonBased['settled_amount']) ??
           0,
-      collected: (cashBased['collected'] as num?) ?? 0,
-      refunded: (cashBased['refunded'] as num?) ?? 0,
-      net: (cashBased['net'] as num?) ??
-          (cashBased['net_collected'] as num?) ??
+      collected: _asNum(cashBased['collected']) ?? 0,
+      refunded: _asNum(cashBased['refunded']) ?? 0,
+      net: _asNum(cashBased['net']) ??
+          _asNum(cashBased['net_collected']) ??
           0,
     );
   }
@@ -352,15 +384,15 @@ class ReceivablesBreakdownItem {
 
   factory ReceivablesBreakdownItem.fromJson(Map<String, dynamic> json) {
     return ReceivablesBreakdownItem(
-      id: (json['id'] as num?)?.toInt() ??
-          (json['student_id'] as num?)?.toInt() ??
-          (json['group_id'] as num?)?.toInt(),
+      id: _asInt(json['id']) ??
+          _asInt(json['student_id']) ??
+          _asInt(json['group_id']),
       name: (json['name'] as String?) ??
           (json['student_name'] as String?) ??
           (json['group_name'] as String?) ??
           '',
-      amount: (json['amount'] as num?) ?? 0,
-      lessonCount: (json['lesson_count'] as num?)?.toInt() ?? 0,
+      amount: _asNum(json['amount']) ?? 0,
+      lessonCount: _asInt(json['lesson_count']) ?? 0,
       oldestLessonDate: json['oldest_lesson_date'] as String?,
     );
   }
@@ -389,10 +421,10 @@ class ReceivableLesson {
     final Map<String, dynamic>? group =
         json['group'] as Map<String, dynamic>?;
     return ReceivableLesson(
-      id: (json['id'] as num?)?.toInt() ?? 0,
+      id: _asInt(json['id']) ?? 0,
       title: (json['title'] as String?) ?? 'Lesson',
       date: (json['date'] as String?) ?? '',
-      amount: (json['price'] as num?) ?? (json['amount'] as num?) ?? 0,
+      amount: _asNum(json['price']) ?? _asNum(json['amount']) ?? 0,
       studentName: student?['name'] as String?,
       groupName: group?['name'] as String?,
     );
@@ -416,10 +448,8 @@ class ReceivablesAnalytics {
 
   factory ReceivablesAnalytics.fromJson(Map<String, dynamic> json) {
     return ReceivablesAnalytics(
-      totalAmount: (json['total_amount'] as num?) ??
-          (json['amount'] as num?) ??
-          0,
-      lessonCount: (json['lesson_count'] as num?)?.toInt() ?? 0,
+      totalAmount: _asNum(json['total_amount']) ?? _asNum(json['amount']) ?? 0,
+      lessonCount: _asInt(json['lesson_count']) ?? 0,
       byStudent: _parseBreakdown(json['by_student'] ?? json['students']),
       byGroup: _parseBreakdown(json['by_group'] ?? json['groups']),
       lessons: _parseLessons(json['lessons']),
@@ -470,11 +500,11 @@ class PrepaidAnalytics {
       creditRows = <dynamic>[];
     }
     return PrepaidAnalytics(
-      scheduledCount: (lessons['scheduled'] as num?)?.toInt() ??
-          (lessons['scheduled_count'] as num?)?.toInt() ??
+      scheduledCount: _asInt(lessons['scheduled']) ??
+          _asInt(lessons['scheduled_count']) ??
           0,
-      completedCount: (lessons['completed'] as num?)?.toInt() ??
-          (lessons['completed_count'] as num?)?.toInt() ??
+      completedCount: _asInt(lessons['completed']) ??
+          _asInt(lessons['completed_count']) ??
           0,
       unallocatedCredits: creditRows
           .whereType<Map<String, dynamic>>()

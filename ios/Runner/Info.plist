@@ -62,5 +62,16 @@
 		<string>tel</string>
 		<string>whatsapp</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Öğrenci profil fotoğrafı seçmek için galeri erişimi gerekir.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Öğrenci profil fotoğrafı çekmek için kamera erişimi gerekir.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Profil fotoğrafı kaydetmek için galeri erişimi gerekir.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 </dict>
 </plist>

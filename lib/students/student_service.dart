@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 class Student {
   const Student({
@@ -11,6 +12,8 @@ class Student {
     this.notes,
     this.status,
     this.color,
+    this.profilePicture,
+    this.profilePictureUrl,
   });
 
   final int id;
@@ -21,6 +24,8 @@ class Student {
   final String? notes;
   final int? status;
   final String? color;
+  final String? profilePicture;
+  final String? profilePictureUrl;
 
   factory Student.fromJson(Map<String, dynamic> json) {
     return Student(
@@ -32,6 +37,34 @@ class Student {
       notes: json['notes'] as String?,
       status: (json['status'] as num?)?.toInt(),
       color: json['color'] as String?,
+      profilePicture: json['profile_picture'] as String?,
+      profilePictureUrl: json['profile_picture_url'] as String?,
+    );
+  }
+
+  Student copyWith({
+    int? id,
+    String? name,
+    String? phone,
+    String? birthday,
+    String? lessonCost,
+    String? notes,
+    int? status,
+    String? color,
+    String? profilePicture,
+    String? profilePictureUrl,
+  }) {
+    return Student(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      phone: phone ?? this.phone,
+      birthday: birthday ?? this.birthday,
+      lessonCost: lessonCost ?? this.lessonCost,
+      notes: notes ?? this.notes,
+      status: status ?? this.status,
+      color: color ?? this.color,
+      profilePicture: profilePicture ?? this.profilePicture,
+      profilePictureUrl: profilePictureUrl ?? this.profilePictureUrl,
     );
   }
 }
@@ -171,6 +204,112 @@ class StudentService {
       throw const StudentServiceException('Student balance is missing.');
     }
     return StudentBalance.fromJson(data);
+  }
+
+  /// Upload or replace profile picture (`multipart/form-data`).
+  Future<Student> uploadProfilePicture({
+    required int id,
+    required File file,
+  }) async {
+    final Uri uri = Uri.parse('$_baseUrl/students/$id/profile-picture');
+    final HttpClient client = HttpClient();
+    try {
+      final List<int> bytes = await file.readAsBytes();
+      if (bytes.length > 5 * 1024 * 1024) {
+        throw const StudentServiceException(
+          'Profile picture must be 5MB or smaller.',
+        );
+      }
+
+      final String filename = file.uri.pathSegments.isNotEmpty
+          ? file.uri.pathSegments.last
+          : 'profile.jpg';
+      final String contentType = _imageContentType(filename);
+      final String boundary =
+          '----TutorBoundary${DateTime.now().millisecondsSinceEpoch}';
+
+      final HttpClientRequest request = await client.postUrl(uri);
+      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      request.headers.set(HttpHeaders.acceptHeader, 'application/json');
+      request.headers.set(
+        HttpHeaders.contentTypeHeader,
+        'multipart/form-data; boundary=$boundary',
+      );
+
+      final BytesBuilder body = BytesBuilder();
+      void writeString(String value) {
+        body.add(utf8.encode(value));
+      }
+
+      writeString('--$boundary\r\n');
+      writeString(
+        'Content-Disposition: form-data; name="profile_picture"; '
+        'filename="$filename"\r\n',
+      );
+      writeString('Content-Type: $contentType\r\n\r\n');
+      body.add(bytes);
+      writeString('\r\n--$boundary--\r\n');
+
+      final Uint8List payload = body.takeBytes();
+      request.contentLength = payload.length;
+      request.add(payload);
+
+      final HttpClientResponse response = await request.close();
+      final String responseBody = await response.transform(utf8.decoder).join();
+      final Map<String, dynamic> json =
+          jsonDecode(responseBody) as Map<String, dynamic>;
+
+      if (json['success'] != true) {
+        throw StudentServiceException(_extractErrorMessage(json));
+      }
+
+      final Map<String, dynamic>? data = json['data'] as Map<String, dynamic>?;
+      if (data == null) {
+        throw const StudentServiceException(
+          'Profile picture upload response is missing.',
+        );
+      }
+      return Student.fromJson(data);
+    } on SocketException {
+      throw const StudentServiceException('Cannot connect to server.');
+    } on FormatException {
+      throw const StudentServiceException('Invalid server response format.');
+    } on StudentServiceException {
+      rethrow;
+    } catch (error) {
+      throw StudentServiceException(error.toString());
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  Future<Student> deleteProfilePicture(int id) async {
+    final Uri uri = Uri.parse('$_baseUrl/students/$id/profile-picture');
+    final Map<String, dynamic> json = await _request(
+      method: 'DELETE',
+      uri: uri,
+    );
+    final Map<String, dynamic>? data = json['data'] as Map<String, dynamic>?;
+    if (data == null) {
+      throw const StudentServiceException(
+        'Profile picture delete response is missing.',
+      );
+    }
+    return Student.fromJson(data);
+  }
+
+  String _imageContentType(String filename) {
+    final String lower = filename.toLowerCase();
+    if (lower.endsWith('.png')) {
+      return 'image/png';
+    }
+    if (lower.endsWith('.webp')) {
+      return 'image/webp';
+    }
+    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
+      return 'image/jpeg';
+    }
+    return 'application/octet-stream';
   }
 
   Future<Map<String, dynamic>> _request({

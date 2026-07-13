@@ -74,6 +74,53 @@ Soft delete — sets `status` to 0.
 
 ---
 
+### Upload Profile Picture
+
+Upload or replace a student's profile picture.
+
+**Endpoint:** `POST /api/students/{id}/profile-picture`
+
+**Content-Type:** `multipart/form-data`
+
+**Body:**
+- `profile_picture` (required image: jpeg, jpg, png, webp, max 5MB)
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Profile picture uploaded successfully",
+  "data": {
+    "id": 1,
+    "profile_picture": "students/profile-pictures/abc.jpg",
+    "profile_picture_url": "http://127.0.0.1:8000/storage/students/profile-pictures/abc.jpg"
+  }
+}
+```
+
+Student list/detail payloads may include `profile_picture` and `profile_picture_url`.
+
+---
+
+### Remove Profile Picture
+
+**Endpoint:** `DELETE /api/students/{id}/profile-picture`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Profile picture removed successfully",
+  "data": {
+    "id": 1,
+    "profile_picture": null,
+    "profile_picture_url": null
+  }
+}
+```
+
+---
+
 ### Student Balance Summary
 
 **Endpoint:** `GET /api/students/{id}/balance`
