@@ -3,6 +3,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:tutor_app/billing/billing_service.dart';
 import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
+import 'package:tutor_app/theme/ios26_theme.dart';
 
 class PaywallPage extends StatefulWidget {
   const PaywallPage({
@@ -21,10 +22,12 @@ class PaywallPage extends StatefulWidget {
 class _PaywallPageState extends State<PaywallPage> {
   final BillingService _billing = BillingService();
   Offerings? _offerings;
-  BillingStatus? _status;
   bool _loading = true;
   bool _busy = false;
   String? _selectedProductId = BillingService.monthlyProductId;
+
+  static const Color _accent = Color(0xFFFF9F0A);
+  static const Color _accentDeep = Color(0xFFE68600);
 
   @override
   void initState() {
@@ -37,13 +40,11 @@ class _PaywallPageState extends State<PaywallPage> {
       _loading = true;
     });
     try {
-      final BillingStatus status = await _billing.fetchStatus(widget.token);
       final Offerings? offerings = await _billing.loadOfferings();
       if (!mounted) {
         return;
       }
       setState(() {
-        _status = status;
         _offerings = offerings;
         _loading = false;
       });
@@ -153,134 +154,253 @@ class _PaywallPageState extends State<PaywallPage> {
     if (package != null) {
       return package.storeProduct.priceString;
     }
+    return '—';
+  }
+
+  String _periodLabel(AppLocalizations l10n, String productId) {
     switch (productId) {
       case BillingService.weeklyProductId:
-        return '— / ${context.l10n.planWeekly}';
+        return l10n.planWeekly;
       case BillingService.yearlyProductId:
-        return '— / ${context.l10n.planYearly}';
+        return l10n.planYearly;
       default:
-        return '— / ${context.l10n.planMonthly}';
+        return l10n.planMonthly;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
+    final Brightness brightness = CupertinoTheme.of(context).brightness ??
+        MediaQuery.platformBrightnessOf(context);
+    final bool isDark = brightness == Brightness.dark;
+
     return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(l10n.premium),
-        leading: CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: _busy ? null : () => Navigator.of(context).pop(),
-          child: Text(l10n.close),
-        ),
-        trailing: CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: _busy ? null : _restore,
-          child: Text(l10n.restorePurchases),
-        ),
-      ),
-      child: SafeArea(
-        child: _loading
-            ? const Center(child: CupertinoActivityIndicator())
-            : ListView(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-                children: <Widget>[
-                  Text(
-                    l10n.paywallTitle,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _reasonText(l10n),
-                    style: TextStyle(
-                      fontSize: 15,
-                      height: 1.35,
-                      color: CupertinoColors.secondaryLabel.resolveFrom(context),
-                    ),
-                  ),
-                  if (_status != null && !_status!.isPremium) ...<Widget>[
-                    const SizedBox(height: 16),
-                    _usageCard(l10n, _status!),
+      backgroundColor: AppSurfaces.scaffold(brightness),
+      child: Stack(
+        children: <Widget>[
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 280,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: <Color>[
+                    _accent.withValues(alpha: isDark ? 0.22 : 0.16),
+                    AppSurfaces.scaffold(brightness).withValues(alpha: 0),
                   ],
-                  const SizedBox(height: 22),
-                  _planTile(
-                    productId: BillingService.weeklyProductId,
-                    title: l10n.planWeekly,
-                    subtitle: l10n.planWeeklyHint,
-                  ),
-                  const SizedBox(height: 10),
-                  _planTile(
-                    productId: BillingService.monthlyProductId,
-                    title: l10n.planMonthly,
-                    subtitle: l10n.planMonthlyHint,
-                    badge: l10n.popular,
-                  ),
-                  const SizedBox(height: 10),
-                  _planTile(
-                    productId: BillingService.yearlyProductId,
-                    title: l10n.planYearly,
-                    subtitle: l10n.planYearlyHint,
-                  ),
-                  const SizedBox(height: 24),
-                  CupertinoButton.filled(
-                    onPressed: _busy ? null : _purchase,
-                    child: _busy
-                        ? const CupertinoActivityIndicator()
-                        : Text(l10n.continueToPremium),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    l10n.paywallLegal,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      height: 1.35,
-                      color: CupertinoColors.secondaryLabel.resolveFrom(context),
-                    ),
-                  ),
-                ],
+                ),
               ),
+            ),
+          ),
+          SafeArea(
+            child: _loading
+                ? const Center(child: CupertinoActivityIndicator())
+                : Column(
+                    children: <Widget>[
+                      _topBar(l10n),
+                      Expanded(
+                        child: ListView(
+                          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+                          children: <Widget>[
+                            _hero(l10n),
+                            const SizedBox(height: 28),
+                            _features(l10n),
+                            const SizedBox(height: 28),
+                            Text(
+                              l10n.choosePlan,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.2,
+                                color: AppSurfaces.secondaryLabel(brightness),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            _planTile(
+                              productId: BillingService.weeklyProductId,
+                              title: l10n.planWeekly,
+                              subtitle: l10n.planWeeklyHint,
+                            ),
+                            const SizedBox(height: 10),
+                            _planTile(
+                              productId: BillingService.monthlyProductId,
+                              title: l10n.planMonthly,
+                              subtitle: l10n.planMonthlyHint,
+                              badge: l10n.popular,
+                            ),
+                            const SizedBox(height: 10),
+                            _planTile(
+                              productId: BillingService.yearlyProductId,
+                              title: l10n.planYearly,
+                              subtitle: l10n.planYearlyHint,
+                              badge: l10n.bestValue,
+                              emphasize: true,
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+                        ),
+                      ),
+                      _bottomCta(l10n, brightness),
+                    ],
+                  ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _usageCard(AppLocalizations l10n, BillingStatus status) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: CupertinoColors.secondarySystemBackground.resolveFrom(context),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _topBar(AppLocalizations l10n) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+      child: Row(
         children: <Widget>[
-          Text(
-            l10n.freePlanUsage,
-            style: const TextStyle(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.usageStudents(
-              status.studentsUsed,
-              status.studentsLimit ?? 4,
+          CupertinoButton(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            onPressed: _busy ? null : () => Navigator.of(context).pop(),
+            child: Text(
+              l10n.close,
+              style: const TextStyle(fontSize: 17),
             ),
           ),
+          const Spacer(),
           Text(
-            l10n.usageSchedule(
-              status.scheduleLessonsUsed,
-              status.scheduleLessonsLimit ?? 24,
+            l10n.premium,
+            style: const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          Text(
-            l10n.usageJournal(
-              status.journalLessonsUsed,
-              status.journalLessonsLimit ?? 24,
+          const Spacer(),
+          const SizedBox(width: 72),
+        ],
+      ),
+    );
+  }
+
+  Widget _hero(AppLocalizations l10n) {
+    return Column(
+      children: <Widget>[
+        Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: <Color>[_accent, _accentDeep],
+            ),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: _accent.withValues(alpha: 0.35),
+                blurRadius: 24,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: const Icon(
+            CupertinoIcons.star_fill,
+            color: CupertinoColors.white,
+            size: 34,
+          ),
+        ),
+        const SizedBox(height: 22),
+        Text(
+          l10n.paywallTitle,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 30,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.6,
+            height: 1.15,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Text(
+            _reasonText(l10n),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              height: 1.4,
+              color: CupertinoColors.secondaryLabel.resolveFrom(context),
             ),
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _features(AppLocalizations l10n) {
+    final List<({IconData icon, String label})> items =
+        <({IconData icon, String label})>[
+      (
+        icon: CupertinoIcons.person_2_fill,
+        label: l10n.paywallFeatureStudents,
+      ),
+      (
+        icon: CupertinoIcons.calendar,
+        label: l10n.paywallFeatureSchedule,
+      ),
+      (
+        icon: CupertinoIcons.book_fill,
+        label: l10n.paywallFeatureJournal,
+      ),
+    ];
+
+    return AppGlassCard(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Column(
+        children: <Widget>[
+          for (int i = 0; i < items.length; i++) ...<Widget>[
+            if (i > 0)
+              Container(
+                height: 0.5,
+                color: CupertinoColors.separator.resolveFrom(context),
+              ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              child: Row(
+                children: <Widget>[
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: _accent.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      items[i].icon,
+                      size: 17,
+                      color: _accentDeep,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      items[i].label,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    CupertinoIcons.checkmark_circle_fill,
+                    size: 22,
+                    color: CupertinoColors.activeGreen.resolveFrom(context),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -291,8 +411,20 @@ class _PaywallPageState extends State<PaywallPage> {
     required String title,
     required String subtitle,
     String? badge,
+    bool emphasize = false,
   }) {
     final bool selected = _selectedProductId == productId;
+    final Brightness brightness = CupertinoTheme.of(context).brightness ??
+        MediaQuery.platformBrightnessOf(context);
+    final bool isDark = brightness == Brightness.dark;
+
+    final Color borderColor = selected
+        ? _accent
+        : (isDark ? const Color(0x22FFFFFF) : const Color(0x14000000));
+    final Color fill = selected
+        ? _accent.withValues(alpha: isDark ? 0.16 : 0.08)
+        : AppSurfaces.card(brightness);
+
     return GestureDetector(
       onTap: _busy
           ? null
@@ -301,29 +433,43 @@ class _PaywallPageState extends State<PaywallPage> {
                 _selectedProductId = productId;
               });
             },
-      child: Container(
-        padding: const EdgeInsets.all(14),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
         decoration: BoxDecoration(
-          color: CupertinoColors.secondarySystemBackground.resolveFrom(context),
-          borderRadius: BorderRadius.circular(14),
+          color: fill,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: selected
-                ? CupertinoColors.activeBlue
-                : CupertinoColors.systemGrey4.resolveFrom(context),
+            color: borderColor,
             width: selected ? 2 : 1,
           ),
         ),
         child: Row(
           children: <Widget>[
-            Icon(
-              selected
-                  ? CupertinoIcons.check_mark_circled_solid
-                  : CupertinoIcons.circle,
-              color: selected
-                  ? CupertinoColors.activeBlue
-                  : CupertinoColors.systemGrey,
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: selected ? _accent : const Color(0x00000000),
+                border: Border.all(
+                  color: selected
+                      ? _accent
+                      : CupertinoColors.systemGrey3.resolveFrom(context),
+                  width: selected ? 0 : 1.5,
+                ),
+              ),
+              child: selected
+                  ? const Icon(
+                      CupertinoIcons.checkmark,
+                      size: 14,
+                      color: CupertinoColors.white,
+                    )
+                  : null,
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -335,6 +481,7 @@ class _PaywallPageState extends State<PaywallPage> {
                         style: const TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
+                          letterSpacing: -0.3,
                         ),
                       ),
                       if (badge != null) ...<Widget>[
@@ -342,27 +489,30 @@ class _PaywallPageState extends State<PaywallPage> {
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
-                            vertical: 2,
+                            vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: CupertinoColors.activeBlue.withValues(
-                              alpha: 0.15,
-                            ),
-                            borderRadius: BorderRadius.circular(999),
+                            color: emphasize
+                                ? _accent
+                                : _accent.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(7),
                           ),
                           child: Text(
                             badge,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: CupertinoColors.activeBlue,
+                              letterSpacing: -0.1,
+                              color: emphasize
+                                  ? CupertinoColors.white
+                                  : _accentDeep,
                             ),
                           ),
                         ),
                       ],
                     ],
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 3),
                   Text(
                     subtitle,
                     style: TextStyle(
@@ -374,12 +524,94 @@ class _PaywallPageState extends State<PaywallPage> {
                 ],
               ),
             ),
-            Text(
-              _priceLabel(productId),
-              style: const TextStyle(fontWeight: FontWeight.w700),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: <Widget>[
+                Text(
+                  _priceLabel(productId),
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                Text(
+                  _periodLabel(context.l10n, productId).toLowerCase(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _bottomCta(AppLocalizations l10n, Brightness brightness) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 10),
+      decoration: BoxDecoration(
+        color: AppSurfaces.scaffold(brightness),
+        border: Border(
+          top: BorderSide(
+            color: AppSurfaces.separator(brightness),
+            width: 0.5,
+          ),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          SizedBox(
+            width: double.infinity,
+            child: CupertinoButton(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              borderRadius: BorderRadius.circular(14),
+              color: _accent,
+              disabledColor: _accent.withValues(alpha: 0.45),
+              onPressed: _busy ? null : _purchase,
+              child: _busy
+                  ? const CupertinoActivityIndicator(
+                      color: CupertinoColors.white,
+                    )
+                  : Text(
+                      l10n.continueToPremium,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: CupertinoColors.white,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          CupertinoButton(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            onPressed: _busy ? null : _restore,
+            child: Text(
+              l10n.restorePurchases,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: CupertinoColors.secondaryLabel.resolveFrom(context),
+              ),
+            ),
+          ),
+          Text(
+            l10n.paywallLegal,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 11,
+              height: 1.35,
+              color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+            ),
+          ),
+        ],
       ),
     );
   }

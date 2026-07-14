@@ -1799,32 +1799,50 @@ abstract class AppLocalizations {
   /// No description provided for @paywallTitle.
   ///
   /// In en, this message translates to:
-  /// **'Go unlimited'**
+  /// **'Teach without limits'**
   String get paywallTitle;
 
   /// No description provided for @paywallSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Remove student, schedule, and journal limits.'**
+  /// **'Unlock the full toolkit for growing your tutoring practice.'**
   String get paywallSubtitle;
 
   /// No description provided for @paywallReasonStudents.
   ///
   /// In en, this message translates to:
-  /// **'Free plan allows up to 4 active students.'**
+  /// **'You’ve reached the free limit of 4 active students.'**
   String get paywallReasonStudents;
 
   /// No description provided for @paywallReasonSchedule.
   ///
   /// In en, this message translates to:
-  /// **'Free plan allows up to 24 schedule lessons.'**
+  /// **'You’ve reached the free limit of 24 schedule lessons.'**
   String get paywallReasonSchedule;
 
   /// No description provided for @paywallReasonJournal.
   ///
   /// In en, this message translates to:
-  /// **'Free plan allows up to 24 journal lessons.'**
+  /// **'You’ve reached the free limit of 24 journal lessons.'**
   String get paywallReasonJournal;
+
+  /// No description provided for @paywallFeatureStudents.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited active students'**
+  String get paywallFeatureStudents;
+
+  /// No description provided for @paywallFeatureSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited schedule lessons'**
+  String get paywallFeatureSchedule;
+
+  /// No description provided for @paywallFeatureJournal.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited journal lessons'**
+  String get paywallFeatureJournal;
 
   /// No description provided for @planWeekly.
   ///
@@ -1847,19 +1865,19 @@ abstract class AppLocalizations {
   /// No description provided for @planWeeklyHint.
   ///
   /// In en, this message translates to:
-  /// **'Flexible, renews weekly'**
+  /// **'Flexible billing'**
   String get planWeeklyHint;
 
   /// No description provided for @planMonthlyHint.
   ///
   /// In en, this message translates to:
-  /// **'Most popular'**
+  /// **'Billed monthly'**
   String get planMonthlyHint;
 
   /// No description provided for @planYearlyHint.
   ///
   /// In en, this message translates to:
-  /// **'Best value'**
+  /// **'Best value annually'**
   String get planYearlyHint;
 
   /// No description provided for @popular.
@@ -1868,10 +1886,16 @@ abstract class AppLocalizations {
   /// **'Popular'**
   String get popular;
 
+  /// No description provided for @bestValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Best value'**
+  String get bestValue;
+
   /// No description provided for @continueToPremium.
   ///
   /// In en, this message translates to:
-  /// **'Continue to Premium'**
+  /// **'Unlock Premium'**
   String get continueToPremium;
 
   /// No description provided for @restorePurchases.
@@ -1898,10 +1922,16 @@ abstract class AppLocalizations {
   /// **'Payment is charged to your App Store account. Manage subscriptions in Settings.'**
   String get paywallLegal;
 
+  /// No description provided for @choosePlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a plan'**
+  String get choosePlan;
+
   /// No description provided for @freePlanUsage.
   ///
   /// In en, this message translates to:
-  /// **'Free plan usage'**
+  /// **'Current free usage'**
   String get freePlanUsage;
 
   /// No description provided for @usageStudents.

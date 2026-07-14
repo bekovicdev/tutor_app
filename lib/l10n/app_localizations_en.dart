@@ -923,22 +923,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get premium => 'Premium';
 
   @override
-  String get paywallTitle => 'Go unlimited';
+  String get paywallTitle => 'Teach without limits';
 
   @override
-  String get paywallSubtitle => 'Remove student, schedule, and journal limits.';
+  String get paywallSubtitle =>
+      'Unlock the full toolkit for growing your tutoring practice.';
 
   @override
   String get paywallReasonStudents =>
-      'Free plan allows up to 4 active students.';
+      'You’ve reached the free limit of 4 active students.';
 
   @override
   String get paywallReasonSchedule =>
-      'Free plan allows up to 24 schedule lessons.';
+      'You’ve reached the free limit of 24 schedule lessons.';
 
   @override
   String get paywallReasonJournal =>
-      'Free plan allows up to 24 journal lessons.';
+      'You’ve reached the free limit of 24 journal lessons.';
+
+  @override
+  String get paywallFeatureStudents => 'Unlimited active students';
+
+  @override
+  String get paywallFeatureSchedule => 'Unlimited schedule lessons';
+
+  @override
+  String get paywallFeatureJournal => 'Unlimited journal lessons';
 
   @override
   String get planWeekly => 'Weekly';
@@ -950,19 +960,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get planYearly => 'Yearly';
 
   @override
-  String get planWeeklyHint => 'Flexible, renews weekly';
+  String get planWeeklyHint => 'Flexible billing';
 
   @override
-  String get planMonthlyHint => 'Most popular';
+  String get planMonthlyHint => 'Billed monthly';
 
   @override
-  String get planYearlyHint => 'Best value';
+  String get planYearlyHint => 'Best value annually';
 
   @override
   String get popular => 'Popular';
 
   @override
-  String get continueToPremium => 'Continue to Premium';
+  String get bestValue => 'Best value';
+
+  @override
+  String get continueToPremium => 'Unlock Premium';
 
   @override
   String get restorePurchases => 'Restore purchases';
@@ -979,7 +992,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Payment is charged to your App Store account. Manage subscriptions in Settings.';
 
   @override
-  String get freePlanUsage => 'Free plan usage';
+  String get choosePlan => 'Choose a plan';
+
+  @override
+  String get freePlanUsage => 'Current free usage';
 
   @override
   String usageStudents(int used, int limit) {

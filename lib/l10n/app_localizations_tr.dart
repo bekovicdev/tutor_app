@@ -924,23 +924,32 @@ class AppLocalizationsTr extends AppLocalizations {
   String get premium => 'Premium';
 
   @override
-  String get paywallTitle => 'Sınırsız öğretmene geç';
+  String get paywallTitle => 'Limitsiz öğret';
 
   @override
   String get paywallSubtitle =>
-      'Öğrenci, program ve günlük limitlerini kaldır.';
+      'Öğretmenlik pratiğini büyütmek için tüm araçların kilidini aç.';
 
   @override
   String get paywallReasonStudents =>
-      'Ücretsiz planda en fazla 4 aktif öğrenci ekleyebilirsin.';
+      'Ücretsiz planda 4 aktif öğrenci limitine ulaştın.';
 
   @override
   String get paywallReasonSchedule =>
-      'Ücretsiz planda en fazla 24 program dersi ekleyebilirsin.';
+      'Ücretsiz planda 24 program dersi limitine ulaştın.';
 
   @override
   String get paywallReasonJournal =>
-      'Ücretsiz planda en fazla 24 günlük dersi ekleyebilirsin.';
+      'Ücretsiz planda 24 günlük dersi limitine ulaştın.';
+
+  @override
+  String get paywallFeatureStudents => 'Sınırsız aktif öğrenci';
+
+  @override
+  String get paywallFeatureSchedule => 'Sınırsız program dersi';
+
+  @override
+  String get paywallFeatureJournal => 'Sınırsız günlük dersi';
 
   @override
   String get planWeekly => 'Haftalık';
@@ -952,19 +961,22 @@ class AppLocalizationsTr extends AppLocalizations {
   String get planYearly => 'Yıllık';
 
   @override
-  String get planWeeklyHint => 'Esnek, haftalık yenilenir';
+  String get planWeeklyHint => 'Esnek faturalama';
 
   @override
-  String get planMonthlyHint => 'En popüler seçenek';
+  String get planMonthlyHint => 'Aylık yenilenir';
 
   @override
-  String get planYearlyHint => 'En iyi değer';
+  String get planYearlyHint => 'Yıllık en avantajlı';
 
   @override
   String get popular => 'Popüler';
 
   @override
-  String get continueToPremium => 'Premium\'a devam et';
+  String get bestValue => 'En iyi değer';
+
+  @override
+  String get continueToPremium => 'Premium’u aç';
 
   @override
   String get restorePurchases => 'Satın alımları geri yükle';
@@ -981,7 +993,10 @@ class AppLocalizationsTr extends AppLocalizations {
       'Ödeme App Store hesabına yansır. Abonelikleri Ayarlar’dan yönetebilirsin.';
 
   @override
-  String get freePlanUsage => 'Ücretsiz kullanım';
+  String get choosePlan => 'Plan seç';
+
+  @override
+  String get freePlanUsage => 'Ücretsiz kullanımın';
 
   @override
   String usageStudents(int used, int limit) {
