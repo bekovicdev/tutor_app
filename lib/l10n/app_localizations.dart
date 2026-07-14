@@ -1789,6 +1789,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear'**
   String get clearLesson;
+
+  /// No description provided for @premium.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium'**
+  String get premium;
+
+  /// No description provided for @paywallTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Go unlimited'**
+  String get paywallTitle;
+
+  /// No description provided for @paywallSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove student, schedule, and journal limits.'**
+  String get paywallSubtitle;
+
+  /// No description provided for @paywallReasonStudents.
+  ///
+  /// In en, this message translates to:
+  /// **'Free plan allows up to 4 active students.'**
+  String get paywallReasonStudents;
+
+  /// No description provided for @paywallReasonSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Free plan allows up to 24 schedule lessons.'**
+  String get paywallReasonSchedule;
+
+  /// No description provided for @paywallReasonJournal.
+  ///
+  /// In en, this message translates to:
+  /// **'Free plan allows up to 24 journal lessons.'**
+  String get paywallReasonJournal;
+
+  /// No description provided for @planWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get planWeekly;
+
+  /// No description provided for @planMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get planMonthly;
+
+  /// No description provided for @planYearly.
+  ///
+  /// In en, this message translates to:
+  /// **'Yearly'**
+  String get planYearly;
+
+  /// No description provided for @planWeeklyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Flexible, renews weekly'**
+  String get planWeeklyHint;
+
+  /// No description provided for @planMonthlyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Most popular'**
+  String get planMonthlyHint;
+
+  /// No description provided for @planYearlyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Best value'**
+  String get planYearlyHint;
+
+  /// No description provided for @popular.
+  ///
+  /// In en, this message translates to:
+  /// **'Popular'**
+  String get popular;
+
+  /// No description provided for @continueToPremium.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue to Premium'**
+  String get continueToPremium;
+
+  /// No description provided for @restorePurchases.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore purchases'**
+  String get restorePurchases;
+
+  /// No description provided for @paywallProductsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Store products are not available yet. Check RevenueCat and product IDs.'**
+  String get paywallProductsUnavailable;
+
+  /// No description provided for @paywallNoPurchases.
+  ///
+  /// In en, this message translates to:
+  /// **'No purchases found to restore.'**
+  String get paywallNoPurchases;
+
+  /// No description provided for @paywallLegal.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment is charged to your App Store account. Manage subscriptions in Settings.'**
+  String get paywallLegal;
+
+  /// No description provided for @freePlanUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Free plan usage'**
+  String get freePlanUsage;
+
+  /// No description provided for @usageStudents.
+  ///
+  /// In en, this message translates to:
+  /// **'Students: {used}/{limit}'**
+  String usageStudents(int used, int limit);
+
+  /// No description provided for @usageSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule lessons: {used}/{limit}'**
+  String usageSchedule(int used, int limit);
+
+  /// No description provided for @usageJournal.
+  ///
+  /// In en, this message translates to:
+  /// **'Journal lessons: {used}/{limit}'**
+  String usageJournal(int used, int limit);
+
+  /// No description provided for @manageSubscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription'**
+  String get manageSubscription;
+
+  /// No description provided for @premiumActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium active'**
+  String get premiumActive;
+
+  /// No description provided for @premiumFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free plan'**
+  String get premiumFree;
+
+  /// No description provided for @upgradeToPremium.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade to Premium'**
+  String get upgradeToPremium;
 }
 
 class _AppLocalizationsDelegate

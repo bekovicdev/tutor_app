@@ -918,4 +918,93 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clearLesson => 'Clear';
+
+  @override
+  String get premium => 'Premium';
+
+  @override
+  String get paywallTitle => 'Go unlimited';
+
+  @override
+  String get paywallSubtitle => 'Remove student, schedule, and journal limits.';
+
+  @override
+  String get paywallReasonStudents =>
+      'Free plan allows up to 4 active students.';
+
+  @override
+  String get paywallReasonSchedule =>
+      'Free plan allows up to 24 schedule lessons.';
+
+  @override
+  String get paywallReasonJournal =>
+      'Free plan allows up to 24 journal lessons.';
+
+  @override
+  String get planWeekly => 'Weekly';
+
+  @override
+  String get planMonthly => 'Monthly';
+
+  @override
+  String get planYearly => 'Yearly';
+
+  @override
+  String get planWeeklyHint => 'Flexible, renews weekly';
+
+  @override
+  String get planMonthlyHint => 'Most popular';
+
+  @override
+  String get planYearlyHint => 'Best value';
+
+  @override
+  String get popular => 'Popular';
+
+  @override
+  String get continueToPremium => 'Continue to Premium';
+
+  @override
+  String get restorePurchases => 'Restore purchases';
+
+  @override
+  String get paywallProductsUnavailable =>
+      'Store products are not available yet. Check RevenueCat and product IDs.';
+
+  @override
+  String get paywallNoPurchases => 'No purchases found to restore.';
+
+  @override
+  String get paywallLegal =>
+      'Payment is charged to your App Store account. Manage subscriptions in Settings.';
+
+  @override
+  String get freePlanUsage => 'Free plan usage';
+
+  @override
+  String usageStudents(int used, int limit) {
+    return 'Students: $used/$limit';
+  }
+
+  @override
+  String usageSchedule(int used, int limit) {
+    return 'Schedule lessons: $used/$limit';
+  }
+
+  @override
+  String usageJournal(int used, int limit) {
+    return 'Journal lessons: $used/$limit';
+  }
+
+  @override
+  String get manageSubscription => 'Subscription';
+
+  @override
+  String get premiumActive => 'Premium active';
+
+  @override
+  String get premiumFree => 'Free plan';
+
+  @override
+  String get upgradeToPremium => 'Upgrade to Premium';
 }

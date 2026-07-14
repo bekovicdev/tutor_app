@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
-import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
@@ -10,6 +9,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:tutor_app/auth/auth_page.dart';
 import 'package:tutor_app/auth/auth_service.dart';
 import 'package:tutor_app/auth/auth_storage.dart';
+import 'package:tutor_app/billing/billing_service.dart';
 import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/notifications/fcm_service.dart';
 import 'package:tutor_app/pages/journal_page.dart';
@@ -23,14 +23,30 @@ import 'package:tutor_app/theme/ios26_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  try {
-    await Firebase.initializeApp();
+  final bool firebaseReady = await _initFirebase();
+  if (firebaseReady) {
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
     await FcmService.instance.initialize();
-  } catch (_) {
-    // App can still run without Firebase; FCM token will be skipped.
+  } else {
+    debugPrint(
+      'Firebase not configured. Add GoogleService-Info.plist / '
+      'google-services.json (or run `flutterfire configure`), then rebuild.',
+    );
   }
   runApp(const MyApp());
+}
+
+Future<bool> _initFirebase() async {
+  try {
+    if (Firebase.apps.isNotEmpty) {
+      return true;
+    }
+    await Firebase.initializeApp();
+    return Firebase.apps.isNotEmpty;
+  } catch (error) {
+    debugPrint('Firebase.initializeApp failed: $error');
+    return false;
+  }
 }
 
 class MyApp extends StatefulWidget {
@@ -98,9 +114,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     return CupertinoApp(
       onGenerateTitle: (BuildContext context) => context.l10n.appTitle,
-      navigatorObservers: supportsLiquidGlass
-          ? <NavigatorObserver>[CNTabBarRouteObserver()]
-          : const <NavigatorObserver>[],
       theme: buildAppCupertinoTheme(brightness),
       localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
         AppLocalizations.delegate,
@@ -258,6 +271,10 @@ class _AppRootState extends State<AppRoot> {
 
   Future<void> _onAuthenticated(AuthSession session) async {
     await _authStorage.saveToken(session.token);
+    await BillingService.configure(appUserId: '${session.user.id}');
+    try {
+      await BillingService().syncFromStore(session.token);
+    } catch (_) {}
     await FcmService.instance.syncTokenForSession(token: session.token);
     if (!mounted) {
       return;
@@ -275,6 +292,10 @@ class _AppRootState extends State<AppRoot> {
     if (user.notificationsEnabled != null) {
       await AppSettings.setNotificationsEnabled(user.notificationsEnabled!);
     }
+    await BillingService.configure(appUserId: '${user.id}');
+    try {
+      await BillingService().syncFromStore(token);
+    } catch (_) {}
     await FcmService.instance.syncTokenForSession(token: token);
     if (!mounted) {
       return;
@@ -407,8 +428,6 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
-  int _index = 0;
-
   List<Widget> _pages() => <Widget>[
         StudentsPage(token: widget.session.token),
         SchedulePage(token: widget.session.token),
@@ -450,89 +469,10 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    if (supportsLiquidGlass) {
-      return _buildLiquidGlassShell();
-    }
-    return _buildClassicShell();
-  }
-
-  Widget _buildClassicShell() {
     final List<Widget> pages = _pages();
     return CupertinoTabScaffold(
       tabBar: CupertinoTabBar(items: _classicTabItems(context.l10n)),
       tabBuilder: (BuildContext context, int index) => pages[index],
-    );
-  }
-
-  Widget _buildLiquidGlassShell() {
-    final List<Widget> pages = _pages();
-    final AppLocalizations l10n = context.l10n;
-    return CupertinoPageScaffold(
-      backgroundColor: CupertinoTheme.of(context).scaffoldBackgroundColor,
-      child: Column(
-        children: <Widget>[
-          Expanded(
-            child: MediaQuery.removePadding(
-              context: context,
-              removeBottom: true,
-              child: IndexedStack(
-                index: _index,
-                children: pages,
-              ),
-            ),
-          ),
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-              child: CNTabBar(
-                currentIndex: _index,
-                onTap: (int value) {
-                  setState(() {
-                    _index = value;
-                  });
-                },
-                iconSize: 22,
-                height: 54,
-                items: <CNTabBarItem>[
-                  CNTabBarItem(
-                    label: l10n.tabStudents,
-                    icon: const CNSymbol('person.2'),
-                    activeIcon: const CNSymbol('person.2.fill'),
-                    customIcon: CupertinoIcons.person_2,
-                    activeCustomIcon: CupertinoIcons.person_2_fill,
-                  ),
-                  CNTabBarItem(
-                    label: l10n.tabSchedule,
-                    icon: const CNSymbol('calendar'),
-                    customIcon: CupertinoIcons.calendar,
-                  ),
-                  CNTabBarItem(
-                    label: l10n.tabJournal,
-                    icon: const CNSymbol('book'),
-                    activeIcon: const CNSymbol('book.fill'),
-                    customIcon: CupertinoIcons.book,
-                    activeCustomIcon: CupertinoIcons.book_fill,
-                  ),
-                  CNTabBarItem(
-                    label: l10n.tabPayment,
-                    icon: const CNSymbol('dollarsign.circle'),
-                    activeIcon: const CNSymbol('dollarsign.circle.fill'),
-                    customIcon: CupertinoIcons.money_dollar_circle,
-                    activeCustomIcon: CupertinoIcons.money_dollar_circle_fill,
-                  ),
-                  CNTabBarItem(
-                    label: l10n.tabSettings,
-                    icon: const CNSymbol('gearshape'),
-                    activeIcon: const CNSymbol('gearshape.fill'),
-                    customIcon: CupertinoIcons.settings,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

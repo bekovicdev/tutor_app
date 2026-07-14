@@ -11,6 +11,7 @@ import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/create_payment_page.dart';
 import 'package:tutor_app/pages/group_detail_page.dart';
+import 'package:tutor_app/pages/paywall_page.dart';
 import 'package:tutor_app/payments/payment_service.dart';
 import 'package:tutor_app/students/student_service.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
@@ -2970,7 +2971,15 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
       }
       Navigator.of(context).pop(true);
     } on StudentServiceException catch (error) {
-      await _showErrorDialog(error.message);
+      if (error.isQuota) {
+        await openPaywall(
+          context,
+          token: widget.studentService.token,
+          reasonCode: error.code,
+        );
+      } else {
+        await _showErrorDialog(error.message);
+      }
     } finally {
       if (mounted) {
         setState(() {

@@ -25,6 +25,9 @@ class AuthUser {
     this.individualLessonCost,
     this.groupLessonCost,
     this.notificationsEnabled,
+    this.isPremium,
+    this.premiumStartAt,
+    this.premiumEndAt,
   });
 
   final int id;
@@ -37,6 +40,9 @@ class AuthUser {
   final String? individualLessonCost;
   final String? groupLessonCost;
   final bool? notificationsEnabled;
+  final bool? isPremium;
+  final String? premiumStartAt;
+  final String? premiumEndAt;
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
     return AuthUser(
@@ -50,6 +56,9 @@ class AuthUser {
       individualLessonCost: json['individual_lesson_cost']?.toString(),
       groupLessonCost: json['group_lesson_cost']?.toString(),
       notificationsEnabled: json['notifications_enabled'] as bool?,
+      isPremium: json['is_premium'] as bool?,
+      premiumStartAt: json['premium_start_at']?.toString(),
+      premiumEndAt: json['premium_end_at']?.toString(),
     );
   }
 
@@ -59,6 +68,9 @@ class AuthUser {
     String? individualLessonCost,
     String? groupLessonCost,
     bool? notificationsEnabled,
+    bool? isPremium,
+    String? premiumStartAt,
+    String? premiumEndAt,
   }) {
     return AuthUser(
       id: id,
@@ -72,6 +84,9 @@ class AuthUser {
       groupLessonCost: groupLessonCost ?? this.groupLessonCost,
       notificationsEnabled:
           notificationsEnabled ?? this.notificationsEnabled,
+      isPremium: isPremium ?? this.isPremium,
+      premiumStartAt: premiumStartAt ?? this.premiumStartAt,
+      premiumEndAt: premiumEndAt ?? this.premiumEndAt,
     );
   }
 }

@@ -88,7 +88,9 @@ Get profile for the authenticated user.
 
 **Endpoint:** `GET /api/me`
 
-Includes `individual_lesson_cost` and `group_lesson_cost` when set.
+Includes `individual_lesson_cost`, `group_lesson_cost`, `notifications_enabled`, `is_premium`, `premium_start_at`, and `premium_end_at` when set.
+
+See also [billing-api.md](billing-api.md).
 
 ### Update Profile
 

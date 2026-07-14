@@ -281,5 +281,49 @@
   "pickUnpaidLessonHint": "Haftalık takvimde ödenmemiş bir günlük dersine dokun.",
   "pickLessonHint": "Haftalık takvimde bir günlük dersine dokun.",
   "noLessonsThisWeek": "Bu hafta uygun ders yok. Başka bir haftayı dene.",
-  "clearLesson": "Temizle"
+  "clearLesson": "Temizle",
+  "premium": "Premium",
+  "paywallTitle": "Sınırsız öğretmene geç",
+  "paywallSubtitle": "Öğrenci, program ve günlük limitlerini kaldır.",
+  "paywallReasonStudents": "Ücretsiz planda en fazla 4 aktif öğrenci ekleyebilirsin.",
+  "paywallReasonSchedule": "Ücretsiz planda en fazla 24 program dersi ekleyebilirsin.",
+  "paywallReasonJournal": "Ücretsiz planda en fazla 24 günlük dersi ekleyebilirsin.",
+  "planWeekly": "Haftalık",
+  "planMonthly": "Aylık",
+  "planYearly": "Yıllık",
+  "planWeeklyHint": "Esnek, haftalık yenilenir",
+  "planMonthlyHint": "En popüler seçenek",
+  "planYearlyHint": "En iyi değer",
+  "popular": "Popüler",
+  "continueToPremium": "Premium'a devam et",
+  "restorePurchases": "Satın alımları geri yükle",
+  "paywallProductsUnavailable": "App Store ürünleri henüz yüklenemedi. RevenueCat ve ürün kimliklerini kontrol et.",
+  "paywallNoPurchases": "Geri yüklenecek satın alma bulunamadı.",
+  "paywallLegal": "Ödeme App Store hesabına yansır. Abonelikleri Ayarlar’dan yönetebilirsin.",
+  "freePlanUsage": "Ücretsiz kullanım",
+  "usageStudents": "Öğrenciler: {used}/{limit}",
+  "@usageStudents": {
+    "placeholders": {
+      "used": {"type": "int"},
+      "limit": {"type": "int"}
+    }
+  },
+  "usageSchedule": "Program dersleri: {used}/{limit}",
+  "@usageSchedule": {
+    "placeholders": {
+      "used": {"type": "int"},
+      "limit": {"type": "int"}
+    }
+  },
+  "usageJournal": "Günlük dersleri: {used}/{limit}",
+  "@usageJournal": {
+    "placeholders": {
+      "used": {"type": "int"},
+      "limit": {"type": "int"}
+    }
+  },
+  "manageSubscription": "Abonelik",
+  "premiumActive": "Premium aktif",
+  "premiumFree": "Ücretsiz plan",
+  "upgradeToPremium": "Premium’a yükselt"
 }

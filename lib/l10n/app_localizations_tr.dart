@@ -919,4 +919,94 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get clearLesson => 'Temizle';
+
+  @override
+  String get premium => 'Premium';
+
+  @override
+  String get paywallTitle => 'Sınırsız öğretmene geç';
+
+  @override
+  String get paywallSubtitle =>
+      'Öğrenci, program ve günlük limitlerini kaldır.';
+
+  @override
+  String get paywallReasonStudents =>
+      'Ücretsiz planda en fazla 4 aktif öğrenci ekleyebilirsin.';
+
+  @override
+  String get paywallReasonSchedule =>
+      'Ücretsiz planda en fazla 24 program dersi ekleyebilirsin.';
+
+  @override
+  String get paywallReasonJournal =>
+      'Ücretsiz planda en fazla 24 günlük dersi ekleyebilirsin.';
+
+  @override
+  String get planWeekly => 'Haftalık';
+
+  @override
+  String get planMonthly => 'Aylık';
+
+  @override
+  String get planYearly => 'Yıllık';
+
+  @override
+  String get planWeeklyHint => 'Esnek, haftalık yenilenir';
+
+  @override
+  String get planMonthlyHint => 'En popüler seçenek';
+
+  @override
+  String get planYearlyHint => 'En iyi değer';
+
+  @override
+  String get popular => 'Popüler';
+
+  @override
+  String get continueToPremium => 'Premium\'a devam et';
+
+  @override
+  String get restorePurchases => 'Satın alımları geri yükle';
+
+  @override
+  String get paywallProductsUnavailable =>
+      'App Store ürünleri henüz yüklenemedi. RevenueCat ve ürün kimliklerini kontrol et.';
+
+  @override
+  String get paywallNoPurchases => 'Geri yüklenecek satın alma bulunamadı.';
+
+  @override
+  String get paywallLegal =>
+      'Ödeme App Store hesabına yansır. Abonelikleri Ayarlar’dan yönetebilirsin.';
+
+  @override
+  String get freePlanUsage => 'Ücretsiz kullanım';
+
+  @override
+  String usageStudents(int used, int limit) {
+    return 'Öğrenciler: $used/$limit';
+  }
+
+  @override
+  String usageSchedule(int used, int limit) {
+    return 'Program dersleri: $used/$limit';
+  }
+
+  @override
+  String usageJournal(int used, int limit) {
+    return 'Günlük dersleri: $used/$limit';
+  }
+
+  @override
+  String get manageSubscription => 'Abonelik';
+
+  @override
+  String get premiumActive => 'Premium aktif';
+
+  @override
+  String get premiumFree => 'Ücretsiz plan';
+
+  @override
+  String get upgradeToPremium => 'Premium’a yükselt';
 }

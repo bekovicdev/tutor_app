@@ -419,5 +419,49 @@
   "pickUnpaidLessonHint": "Tap an unpaid journal lesson on the week grid.",
   "pickLessonHint": "Tap a journal lesson on the week grid.",
   "noLessonsThisWeek": "No matching lessons this week. Try another week.",
-  "clearLesson": "Clear"
+  "clearLesson": "Clear",
+  "premium": "Premium",
+  "paywallTitle": "Go unlimited",
+  "paywallSubtitle": "Remove student, schedule, and journal limits.",
+  "paywallReasonStudents": "Free plan allows up to 4 active students.",
+  "paywallReasonSchedule": "Free plan allows up to 24 schedule lessons.",
+  "paywallReasonJournal": "Free plan allows up to 24 journal lessons.",
+  "planWeekly": "Weekly",
+  "planMonthly": "Monthly",
+  "planYearly": "Yearly",
+  "planWeeklyHint": "Flexible, renews weekly",
+  "planMonthlyHint": "Most popular",
+  "planYearlyHint": "Best value",
+  "popular": "Popular",
+  "continueToPremium": "Continue to Premium",
+  "restorePurchases": "Restore purchases",
+  "paywallProductsUnavailable": "Store products are not available yet. Check RevenueCat and product IDs.",
+  "paywallNoPurchases": "No purchases found to restore.",
+  "paywallLegal": "Payment is charged to your App Store account. Manage subscriptions in Settings.",
+  "freePlanUsage": "Free plan usage",
+  "usageStudents": "Students: {used}/{limit}",
+  "@usageStudents": {
+    "placeholders": {
+      "used": {"type": "int"},
+      "limit": {"type": "int"}
+    }
+  },
+  "usageSchedule": "Schedule lessons: {used}/{limit}",
+  "@usageSchedule": {
+    "placeholders": {
+      "used": {"type": "int"},
+      "limit": {"type": "int"}
+    }
+  },
+  "usageJournal": "Journal lessons: {used}/{limit}",
+  "@usageJournal": {
+    "placeholders": {
+      "used": {"type": "int"},
+      "limit": {"type": "int"}
+    }
+  },
+  "manageSubscription": "Subscription",
+  "premiumActive": "Premium active",
+  "premiumFree": "Free plan",
+  "upgradeToPremium": "Upgrade to Premium"
 }

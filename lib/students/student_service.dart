@@ -345,7 +345,11 @@ class StudentService {
           jsonDecode(responseBody) as Map<String, dynamic>;
 
       if (json['success'] != true) {
-        throw StudentServiceException(_extractErrorMessage(json));
+        throw StudentServiceException(
+          _extractErrorMessage(json),
+          code: json['code'] as String?,
+          statusCode: response.statusCode,
+        );
       }
       return json;
     } on SocketException {
@@ -457,7 +461,14 @@ class StudentBalance {
 }
 
 class StudentServiceException implements Exception {
-  const StudentServiceException(this.message);
+  const StudentServiceException(this.message, {this.code, this.statusCode});
 
   final String message;
+  final String? code;
+  final int? statusCode;
+
+  bool get isQuota =>
+      code == 'quota_students' ||
+      code == 'quota_schedule_lessons' ||
+      code == 'quota_journal_lessons';
 }

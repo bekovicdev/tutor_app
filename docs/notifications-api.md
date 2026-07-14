@@ -43,6 +43,25 @@ FIREBASE_PROJECT_ID=  # optional; read from JSON if empty
 
 Service account needs Firebase Cloud Messaging permission.
 
+## Flutter Firebase setup (required for device tokens)
+
+The app needs a Firebase iOS/Android app config or `Firebase.initializeApp` fails and FCM is skipped:
+
+```bash
+dart pub global activate flutterfire_cli
+flutterfire configure
+```
+
+This generates `lib/firebase_options.dart` and platform files (`ios/Runner/GoogleService-Info.plist`, `android/app/google-services.json`).
+
+Then initialize with options:
+
+```dart
+await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+```
+
+Until that exists, the app runs without push; login still works.
+
 ## Scheduler
 
 In `routes/console.php`:

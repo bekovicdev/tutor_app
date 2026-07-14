@@ -3,6 +3,7 @@ import 'package:intl/intl.dart' as intl;
 import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/create_lesson_page.dart';
+import 'package:tutor_app/pages/paywall_page.dart';
 import 'package:tutor_app/payments/payment_service.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
@@ -557,6 +558,14 @@ class _SchedulePageState extends State<SchedulePage> {
       await _loadWeek();
     } on LessonServiceException catch (error) {
       if (!mounted) {
+        return;
+      }
+      if (error.isQuota) {
+        await openPaywall(
+          context,
+          token: widget.token,
+          reasonCode: error.code,
+        );
         return;
       }
       await showAppAlert<void>(

@@ -1,11 +1,9 @@
 import 'dart:ui';
 
-import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-/// Shared spacing / radius tuned for iOS 26–style surfaces.
+/// Shared spacing / radius tuned for iOS-style surfaces.
 abstract final class AppGlassTokens {
   static const double radius = 18;
   static const double radiusSmall = 12;
@@ -13,17 +11,9 @@ abstract final class AppGlassTokens {
   static const EdgeInsets cardPadding = EdgeInsets.all(14);
 }
 
-/// True only on iOS/macOS 26+ where native Liquid Glass is available.
-bool get supportsLiquidGlass {
-  if (kIsWeb) {
-    return false;
-  }
-  try {
-    return PlatformVersion.shouldUseNativeGlass;
-  } catch (_) {
-    return false;
-  }
-}
+/// Native Liquid Glass needs Xcode with the iOS 26 SDK.
+/// Disabled on current toolchain (Xcode 16 / iOS 18 SDK).
+bool get supportsLiquidGlass => false;
 
 /// iOS-like surface colors that stay readable in dark mode.
 abstract final class AppSurfaces {

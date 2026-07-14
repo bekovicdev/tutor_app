@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:tutor_app/groups/group_service.dart';
 import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
+import 'package:tutor_app/pages/paywall_page.dart';
 import 'package:tutor_app/payments/payment_service.dart';
 import 'package:tutor_app/students/student_service.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
@@ -864,7 +865,15 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
       }
       Navigator.of(context).pop(true);
     } on LessonServiceException catch (error) {
-      await _showMessage(error.message);
+      if (error.isQuota) {
+        await openPaywall(
+          context,
+          token: widget.token,
+          reasonCode: error.code,
+        );
+      } else {
+        await _showMessage(error.message);
+      }
     } finally {
       if (mounted) {
         setState(() {

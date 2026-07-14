@@ -14,7 +14,9 @@ import 'package:tutor_app/settings/app_settings.dart';
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
-    await Firebase.initializeApp();
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp();
+    }
   } catch (_) {}
 }
 
@@ -25,7 +27,6 @@ class FcmService {
 
   static final FcmService instance = FcmService._();
 
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
   final AuthService _authService = AuthService();
@@ -42,14 +43,29 @@ class FcmService {
     importance: Importance.high,
   );
 
+  bool get isFirebaseReady => Firebase.apps.isNotEmpty;
+
+  FirebaseMessaging? get _messagingOrNull {
+    if (!isFirebaseReady) {
+      return null;
+    }
+    return FirebaseMessaging.instance;
+  }
+
   Future<void> initialize() async {
     if (_initialized) {
       return;
     }
     _initialized = true;
 
+    final FirebaseMessaging? messaging = _messagingOrNull;
+    if (messaging == null) {
+      debugPrint('FCM skipped: Firebase app is not initialized.');
+      return;
+    }
+
     try {
-      await _messaging.setForegroundNotificationPresentationOptions(
+      await messaging.setForegroundNotificationPresentationOptions(
         alert: true,
         badge: true,
         sound: true,
@@ -73,7 +89,7 @@ class FcmService {
       await androidPlugin?.requestNotificationsPermission();
 
       _foregroundSub = FirebaseMessaging.onMessage.listen(_showForegroundMessage);
-      _tokenRefreshSub = _messaging.onTokenRefresh.listen((String token) {
+      _tokenRefreshSub = messaging.onTokenRefresh.listen((String token) {
         unawaited(_syncTokenToApi(token));
       });
     } on MissingPluginException {
@@ -84,8 +100,12 @@ class FcmService {
   }
 
   Future<String?> getDeviceToken() async {
+    final FirebaseMessaging? messaging = _messagingOrNull;
+    if (messaging == null) {
+      return null;
+    }
     try {
-      final NotificationSettings settings = await _messaging.requestPermission(
+      final NotificationSettings settings = await messaging.requestPermission(
         alert: true,
         badge: true,
         sound: true,
@@ -93,7 +113,7 @@ class FcmService {
       if (settings.authorizationStatus == AuthorizationStatus.denied) {
         return null;
       }
-      return await _messaging.getToken();
+      return await messaging.getToken();
     } on MissingPluginException {
       return null;
     } catch (error) {
@@ -103,6 +123,9 @@ class FcmService {
   }
 
   Future<void> syncTokenForSession({required String token}) async {
+    if (!isFirebaseReady) {
+      return;
+    }
     final bool enabled = await AppSettings.notificationsEnabled();
     if (!enabled) {
       return;
@@ -132,7 +155,7 @@ class FcmService {
         clearFcmToken: true,
       );
       try {
-        await _messaging.deleteToken();
+        await _messagingOrNull?.deleteToken();
       } catch (_) {}
       return;
     }

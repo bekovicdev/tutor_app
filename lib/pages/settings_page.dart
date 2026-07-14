@@ -1,8 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:tutor_app/auth/auth_service.dart';
+import 'package:tutor_app/billing/billing_service.dart';
 import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/notifications/fcm_service.dart';
+import 'package:tutor_app/pages/paywall_page.dart';
 import 'package:tutor_app/settings/app_settings.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
@@ -31,9 +33,11 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   final AuthService _authService = AuthService();
+  final BillingService _billingService = BillingService();
   bool _notificationsEnabled = true;
   bool _loadingPrefs = true;
   bool _savingCosts = false;
+  BillingStatus? _billingStatus;
   final TextEditingController _individualCostController =
       TextEditingController();
   final TextEditingController _groupCostController = TextEditingController();
@@ -56,6 +60,7 @@ class _SettingsPageState extends State<SettingsPage> {
     String individual = widget.user.individualLessonCost ?? '';
     String group = widget.user.groupLessonCost ?? '';
     bool notificationsFromApi = notifications;
+    BillingStatus? billing;
 
     try {
       final AuthUser fresh = await _authService.me(widget.token);
@@ -68,6 +73,7 @@ class _SettingsPageState extends State<SettingsPage> {
       await AppSettings.setIndividualLessonCost(individual);
       await AppSettings.setGroupLessonCost(group);
       widget.onUserUpdated?.call(fresh);
+      billing = await _billingService.fetchStatus(widget.token);
     } on AuthException {
       final String? localIndividual = await AppSettings.individualLessonCost();
       final String? localGroup = await AppSettings.groupLessonCost();
@@ -77,6 +83,8 @@ class _SettingsPageState extends State<SettingsPage> {
       if (group.isEmpty && localGroup != null) {
         group = localGroup;
       }
+    } on BillingException {
+      // Optional card; settings still load.
     }
 
     if (!mounted) {
@@ -84,10 +92,31 @@ class _SettingsPageState extends State<SettingsPage> {
     }
     setState(() {
       _notificationsEnabled = notificationsFromApi;
+      _billingStatus = billing;
       _individualCostController.text = individual;
       _groupCostController.text = group;
       _loadingPrefs = false;
     });
+  }
+
+  Future<void> _openPaywall() async {
+    final BillingStatus? updated = await openPaywall(
+      context,
+      token: widget.token,
+    );
+    if (!mounted || updated == null) {
+      return;
+    }
+    setState(() {
+      _billingStatus = updated;
+    });
+    widget.onUserUpdated?.call(
+      widget.user.copyWith(
+        isPremium: updated.isPremium,
+        premiumStartAt: updated.premiumStartAt?.toIso8601String(),
+        premiumEndAt: updated.premiumEndAt?.toIso8601String(),
+      ),
+    );
   }
 
   Future<void> _setNotifications(bool value) async {
@@ -287,6 +316,71 @@ class _SettingsPageState extends State<SettingsPage> {
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                 children: <Widget>[
                   _profileCard(l10n),
+                  const SizedBox(height: 22),
+                  _sectionLabel(l10n.manageSubscription),
+                  _groupedCard(
+                    children: <Widget>[
+                      CupertinoButton(
+                        padding: EdgeInsets.zero,
+                        onPressed: (_billingStatus?.isPremium ??
+                                widget.user.isPremium == true)
+                            ? null
+                            : _openPaywall,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                          child: Row(
+                            children: <Widget>[
+                              _iconBadge(
+                                CupertinoIcons.star_fill,
+                                const Color(0xFFFF9F0A),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    Text(
+                                      (_billingStatus?.isPremium ??
+                                              widget.user.isPremium == true)
+                                          ? l10n.premiumActive
+                                          : l10n.premiumFree,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: CupertinoColors.label,
+                                      ),
+                                    ),
+                                    if (_billingStatus != null &&
+                                        !(_billingStatus!.isPremium))
+                                      Text(
+                                        l10n.usageStudents(
+                                          _billingStatus!.studentsUsed,
+                                          _billingStatus!.studentsLimit ?? 4,
+                                        ),
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: CupertinoColors.secondaryLabel
+                                              .resolveFrom(context),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              if (!(_billingStatus?.isPremium ??
+                                  widget.user.isPremium == true))
+                                Text(
+                                  l10n.upgradeToPremium,
+                                  style: const TextStyle(
+                                    color: CupertinoColors.activeBlue,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 22),
                   _sectionLabel(l10n.teaching),
                   _groupedCard(
