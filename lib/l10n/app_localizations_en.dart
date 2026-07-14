@@ -527,6 +527,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lessonSettlement => 'Lesson settlement';
 
   @override
+  String billableFreeCounts(int billable, int free) {
+    return 'Billable: $billable · Free: $free';
+  }
+
+  @override
   String get earned => 'Earned';
 
   @override
@@ -700,9 +705,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String minutes(int count) {
     return '$count min';
   }
-
-  @override
-  String get mathTutoringPlaceholder => 'Math tutoring';
 
   @override
   String get selectAGroup => 'Select a group.';

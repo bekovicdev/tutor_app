@@ -46,32 +46,48 @@ class AppSettings {
 
   static Future<String?> individualLessonCost() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_individualCostKey);
+    return _asWholeNumberText(prefs.getString(_individualCostKey));
   }
 
   static Future<void> setIndividualLessonCost(String? value) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final String? trimmed = value?.trim();
-    if (trimmed == null || trimmed.isEmpty) {
+    final String? normalized = _asWholeNumberText(value?.trim());
+    if (normalized == null || normalized.isEmpty) {
       await prefs.remove(_individualCostKey);
     } else {
-      await prefs.setString(_individualCostKey, trimmed);
+      await prefs.setString(_individualCostKey, normalized);
     }
   }
 
   static Future<String?> groupLessonCost() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_groupCostKey);
+    return _asWholeNumberText(prefs.getString(_groupCostKey));
   }
 
   static Future<void> setGroupLessonCost(String? value) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final String? trimmed = value?.trim();
-    if (trimmed == null || trimmed.isEmpty) {
+    final String? normalized = _asWholeNumberText(value?.trim());
+    if (normalized == null || normalized.isEmpty) {
       await prefs.remove(_groupCostKey);
     } else {
-      await prefs.setString(_groupCostKey, trimmed);
+      await prefs.setString(_groupCostKey, normalized);
     }
+  }
+
+  /// Whole TRY amounts only — strips decimals like `500.0` → `500`.
+  static String? _asWholeNumberText(String? raw) {
+    if (raw == null) {
+      return null;
+    }
+    final String trimmed = raw.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+    final num? value = num.tryParse(trimmed.replaceAll(',', '.'));
+    if (value == null || value < 0) {
+      return trimmed;
+    }
+    return value.round().toString();
   }
 
   static Brightness resolveBrightness(

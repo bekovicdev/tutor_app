@@ -234,6 +234,13 @@
   "noGroupReceivables": "No group receivables.",
   "noUnallocatedPrepaid": "No unallocated prepaid credits.",
   "lessonSettlement": "Lesson settlement",
+  "billableFreeCounts": "Billable: {billable} · Free: {free}",
+  "@billableFreeCounts": {
+    "placeholders": {
+      "billable": {"type": "int"},
+      "free": {"type": "int"}
+    }
+  },
   "earned": "Earned",
   "byStudent": "By student",
   "byGroup": "By group",
@@ -317,7 +324,6 @@
       "count": {"type": "int"}
     }
   },
-  "mathTutoringPlaceholder": "Math tutoring",
   "selectAGroup": "Select a group.",
   "selectAStudent": "Select a student.",
   "enterValidPrice": "Enter a valid price.",

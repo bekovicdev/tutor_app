@@ -55,33 +55,55 @@ class _SettingsPageState extends State<SettingsPage> {
     super.dispose();
   }
 
+  /// Default lesson costs are whole TRY amounts — no decimals.
+  String _costAsIntText(String? raw) {
+    if (raw == null) {
+      return '';
+    }
+    final String trimmed = raw.trim();
+    if (trimmed.isEmpty) {
+      return '';
+    }
+    final num? value = num.tryParse(trimmed.replaceAll(',', '.'));
+    if (value == null || value < 0) {
+      return '';
+    }
+    return value.round().toString();
+  }
+
   Future<void> _loadPrefs() async {
     final bool notifications = await AppSettings.notificationsEnabled();
-    String individual = widget.user.individualLessonCost ?? '';
-    String group = widget.user.groupLessonCost ?? '';
+    String individual = _costAsIntText(widget.user.individualLessonCost);
+    String group = _costAsIntText(widget.user.groupLessonCost);
     bool notificationsFromApi = notifications;
     BillingStatus? billing;
 
     try {
       final AuthUser fresh = await _authService.me(widget.token);
-      individual = fresh.individualLessonCost ?? individual;
-      group = fresh.groupLessonCost ?? group;
+      individual = _costAsIntText(
+        fresh.individualLessonCost ?? widget.user.individualLessonCost,
+      );
+      group = _costAsIntText(
+        fresh.groupLessonCost ?? widget.user.groupLessonCost,
+      );
       if (fresh.notificationsEnabled != null) {
         notificationsFromApi = fresh.notificationsEnabled!;
         await AppSettings.setNotificationsEnabled(notificationsFromApi);
       }
-      await AppSettings.setIndividualLessonCost(individual);
-      await AppSettings.setGroupLessonCost(group);
+      await AppSettings.setIndividualLessonCost(
+        individual.isEmpty ? null : individual,
+      );
+      await AppSettings.setGroupLessonCost(group.isEmpty ? null : group);
       widget.onUserUpdated?.call(fresh);
       billing = await _billingService.fetchStatus(widget.token);
     } on AuthException {
       final String? localIndividual = await AppSettings.individualLessonCost();
       final String? localGroup = await AppSettings.groupLessonCost();
-      if (individual.isEmpty && localIndividual != null) {
-        individual = localIndividual;
+      if (individual.isEmpty) {
+        individual = _costAsIntText(localIndividual);
       }
-      if (group.isEmpty && localGroup != null) {
-        group = localGroup;
+      if (group.isEmpty) {
+        group = _costAsIntText(localGroup);
       }
     } on BillingException {
       // Optional card; settings still load.
@@ -151,10 +173,10 @@ class _SettingsPageState extends State<SettingsPage> {
     final String individualRaw = _individualCostController.text.trim();
     final String groupRaw = _groupCostController.text.trim();
 
-    num? individual;
-    num? group;
+    int? individual;
+    int? group;
     if (individualRaw.isNotEmpty) {
-      individual = num.tryParse(individualRaw.replaceAll(',', '.'));
+      individual = int.tryParse(individualRaw);
       if (individual == null || individual < 0) {
         await showAppAlert<void>(
           context: context,
@@ -168,7 +190,7 @@ class _SettingsPageState extends State<SettingsPage> {
       }
     }
     if (groupRaw.isNotEmpty) {
-      group = num.tryParse(groupRaw.replaceAll(',', '.'));
+      group = int.tryParse(groupRaw);
       if (group == null || group < 0) {
         await showAppAlert<void>(
           context: context,
@@ -182,6 +204,12 @@ class _SettingsPageState extends State<SettingsPage> {
       }
     }
 
+    final String individualText =
+        individual == null ? '' : individual.toString();
+    final String groupText = group == null ? '' : group.toString();
+    _individualCostController.text = individualText;
+    _groupCostController.text = groupText;
+
     setState(() {
       _savingCosts = true;
     });
@@ -190,11 +218,15 @@ class _SettingsPageState extends State<SettingsPage> {
         token: widget.token,
         individualLessonCost: individual,
         groupLessonCost: group,
-        clearIndividualLessonCost: individualRaw.isEmpty,
-        clearGroupLessonCost: groupRaw.isEmpty,
+        clearIndividualLessonCost: individualText.isEmpty,
+        clearGroupLessonCost: groupText.isEmpty,
       );
-      await AppSettings.setIndividualLessonCost(individualRaw);
-      await AppSettings.setGroupLessonCost(groupRaw);
+      await AppSettings.setIndividualLessonCost(
+        individualText.isEmpty ? null : individualText,
+      );
+      await AppSettings.setGroupLessonCost(
+        groupText.isEmpty ? null : groupText,
+      );
       widget.onUserUpdated?.call(updated);
     } on AuthException catch (error) {
       if (!mounted) {
@@ -718,10 +750,9 @@ class _SettingsPageState extends State<SettingsPage> {
               controller: controller,
               placeholder: placeholder,
               textAlign: TextAlign.end,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: TextInputType.number,
               inputFormatters: <TextInputFormatter>[
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                FilteringTextInputFormatter.digitsOnly,
               ],
               onEditingComplete: () {
                 FocusScope.of(context).unfocus();

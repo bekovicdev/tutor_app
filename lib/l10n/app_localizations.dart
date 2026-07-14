@@ -1064,6 +1064,12 @@ abstract class AppLocalizations {
   /// **'Lesson settlement'**
   String get lessonSettlement;
 
+  /// No description provided for @billableFreeCounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Billable: {billable} · Free: {free}'**
+  String billableFreeCounts(int billable, int free);
+
   /// No description provided for @earned.
   ///
   /// In en, this message translates to:
@@ -1393,12 +1399,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} min'**
   String minutes(int count);
-
-  /// No description provided for @mathTutoringPlaceholder.
-  ///
-  /// In en, this message translates to:
-  /// **'Math tutoring'**
-  String get mathTutoringPlaceholder;
 
   /// No description provided for @selectAGroup.
   ///

@@ -161,6 +161,13 @@
   "noGroupReceivables": "Grup alacağı yok.",
   "noUnallocatedPrepaid": "Dağıtılmamış ön ödeme kredisi yok.",
   "lessonSettlement": "Ders mahsubu",
+  "billableFreeCounts": "Ücretli: {billable} · Ücretsiz: {free}",
+  "@billableFreeCounts": {
+    "placeholders": {
+      "billable": {"type": "int"},
+      "free": {"type": "int"}
+    }
+  },
   "earned": "Kazanılan",
   "byStudent": "Öğrenciye göre",
   "byGroup": "Gruba göre",
@@ -216,7 +223,6 @@
   "selectGroupTitle": "Grup Seç",
   "freeLesson": "Ücretsiz ders",
   "minutes": "{count} dk",
-  "mathTutoringPlaceholder": "Matematik dersi",
   "selectAGroup": "Bir grup seçin.",
   "selectAStudent": "Bir öğrenci seçin.",
   "enterValidPrice": "Geçerli bir ücret girin.",

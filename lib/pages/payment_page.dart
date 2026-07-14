@@ -572,7 +572,10 @@ class _PaymentPageState extends State<PaymentPage> {
               ),
               const SizedBox(height: 10),
               Text(
-                'Billable: ${overview.billableCount} · Free: ${overview.freeCount}',
+                l10n.billableFreeCounts(
+                  overview.billableCount,
+                  overview.freeCount,
+                ),
                 style: const TextStyle(color: CupertinoColors.systemGrey),
               ),
               const SizedBox(height: 10),
@@ -1456,7 +1459,7 @@ class _PaymentPageState extends State<PaymentPage> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: <Widget>[
               Text(
-                '${payment.kind == PaymentKind.refund ? '-' : ''}${_formatNum(payment.amount)}',
+                '${payment.kind == PaymentKind.refund ? '-' : ''}${_money(payment.amount, _overview?.currency ?? context.l10n.currencyTry)}',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   color: payment.kind == PaymentKind.refund

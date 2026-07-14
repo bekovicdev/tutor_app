@@ -13,6 +13,7 @@ import 'package:tutor_app/pages/create_payment_page.dart';
 import 'package:tutor_app/pages/group_detail_page.dart';
 import 'package:tutor_app/pages/paywall_page.dart';
 import 'package:tutor_app/payments/payment_service.dart';
+import 'package:tutor_app/settings/app_settings.dart';
 import 'package:tutor_app/students/student_service.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
@@ -707,13 +708,10 @@ class _StudentsPageState extends State<StudentsPage> {
   }
 
   Future<void> _openStudentDetailPage(int studentId) async {
-    final bool? changed = await Navigator.of(context).push<bool>(
-      CupertinoPageRoute<bool>(
-        builder: (BuildContext context) => _StudentDetailPage(
-          studentId: studentId,
-          studentService: _studentService,
-        ),
-      ),
+    final bool? changed = await openStudentDetailPage(
+      context,
+      studentId: studentId,
+      studentService: _studentService,
     );
     if (changed == true) {
       await _reloadCurrentMode();
@@ -823,6 +821,22 @@ class _StudentsPageState extends State<StudentsPage> {
       ],
     );
   }
+}
+
+/// Opens the student detail screen. Returns `true` if data changed.
+Future<bool?> openStudentDetailPage(
+  BuildContext context, {
+  required int studentId,
+  required StudentService studentService,
+}) {
+  return Navigator.of(context).push<bool>(
+    CupertinoPageRoute<bool>(
+      builder: (BuildContext context) => _StudentDetailPage(
+        studentId: studentId,
+        studentService: studentService,
+      ),
+    ),
+  );
 }
 
 class _StudentDetailPage extends StatefulWidget {
@@ -1205,7 +1219,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
         _metricGlanceCard(
           label: l10n.lessonFee,
           value: cost.isEmpty ? '—' : cost,
-          subtitle: cost.isEmpty ? l10n.notSet : l10n.perLesson,
+          subtitle: l10n.perLesson,
           icon: CupertinoIcons.money_dollar_circle_fill,
           color: AppBrand.primary,
         ),
@@ -2578,7 +2592,13 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
       }
       _nameController.text = detail.student.name;
       _phoneController.text = detail.student.phone ?? '';
-      _lessonCostController.text = detail.student.lessonCost ?? '';
+      final String studentCost = detail.student.lessonCost?.trim() ?? '';
+      if (studentCost.isNotEmpty) {
+        _lessonCostController.text = studentCost;
+      } else {
+        final String? defaultCost = await AppSettings.individualLessonCost();
+        _lessonCostController.text = defaultCost ?? '';
+      }
       _notesController.text = detail.student.notes ?? '';
       _colorController.text = detail.student.color ?? '';
       _selectedBirthday = _parseDate(detail.student.birthday);
@@ -2729,6 +2749,25 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
   int _green = 132;
   int _blue = 255;
   bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDefaultLessonCost();
+  }
+
+  Future<void> _loadDefaultLessonCost() async {
+    final String? cost = await AppSettings.individualLessonCost();
+    if (!mounted || cost == null || cost.isEmpty) {
+      return;
+    }
+    if (_lessonCostController.text.trim().isNotEmpty) {
+      return;
+    }
+    setState(() {
+      _lessonCostController.text = cost;
+    });
+  }
 
   @override
   void dispose() {

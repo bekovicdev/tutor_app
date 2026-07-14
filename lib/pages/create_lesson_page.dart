@@ -4,6 +4,7 @@ import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/paywall_page.dart';
 import 'package:tutor_app/payments/payment_service.dart';
+import 'package:tutor_app/settings/app_settings.dart';
 import 'package:tutor_app/students/student_service.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
@@ -62,6 +63,8 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
   List<Student> _groupMembers = <Student>[];
   bool _isLoading = true;
   bool _isSubmitting = false;
+  String? _defaultIndividualCost;
+  String? _defaultGroupCost;
 
   @override
   void initState() {
@@ -186,6 +189,8 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
   Future<void> _loadLookups() async {
     List<Student> students = <Student>[];
     List<TutorGroup> groups = <TutorGroup>[];
+    final String? defaultIndividual = await AppSettings.individualLessonCost();
+    final String? defaultGroup = await AppSettings.groupLessonCost();
     try {
       students = await _studentService.listStudents();
     } on StudentServiceException {
@@ -200,6 +205,8 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
       return;
     }
     setState(() {
+      _defaultIndividualCost = defaultIndividual;
+      _defaultGroupCost = defaultGroup;
       _students = students;
       _groups = groups;
       final Lesson? existing = widget.lesson;
@@ -233,11 +240,38 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
         if (groups.isNotEmpty) {
           _selectedGroup = groups.first;
         }
+        _fillDefaultPrice();
       }
       _isLoading = false;
     });
     if (_isGroup && _selectedGroup != null) {
       await _loadGroupMembersAndNotes(_selectedGroup);
+    }
+  }
+
+  void _fillDefaultPrice({bool force = false}) {
+    if (_isFree) {
+      return;
+    }
+    if (!force && _priceController.text.trim().isNotEmpty) {
+      return;
+    }
+    if (_isGroup) {
+      final String? groupDefault = _defaultGroupCost;
+      if (groupDefault != null && groupDefault.isNotEmpty) {
+        _priceController.text = groupDefault;
+      }
+      return;
+    }
+    final Student? student = _selectedStudent;
+    final String? studentCost = student?.lessonCost?.trim();
+    if (studentCost != null && studentCost.isNotEmpty) {
+      _priceController.text = studentCost;
+      return;
+    }
+    final String? individualDefault = _defaultIndividualCost;
+    if (individualDefault != null && individualDefault.isNotEmpty) {
+      _priceController.text = individualDefault;
     }
   }
 
@@ -303,6 +337,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                       }
                       setState(() {
                         _isGroup = value;
+                        _fillDefaultPrice(force: true);
                       });
                       if (value && _selectedGroup != null) {
                         _loadGroupMembersAndNotes(_selectedGroup);
@@ -416,7 +451,6 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                   _sectionTitle(l10n.titleOptional),
                   CupertinoTextField(
                     controller: _titleController,
-                    placeholder: l10n.mathTutoringPlaceholder,
                     padding: const EdgeInsets.all(12),
                     decoration: _fieldDecoration(context),
                   ),
@@ -602,11 +636,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
           onPressed: (BuildContext ctx) {
             setState(() {
               _selectedStudent = student;
-              if (student.lessonCost != null &&
-                  student.lessonCost!.isNotEmpty &&
-                  _priceController.text.trim().isEmpty) {
-                _priceController.text = student.lessonCost!;
-              }
+              _fillDefaultPrice(force: true);
             });
             Navigator.of(ctx).pop();
           },
@@ -625,6 +655,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
           onPressed: (BuildContext ctx) {
             setState(() {
               _selectedGroup = group;
+              _fillDefaultPrice(force: true);
             });
             Navigator.of(ctx).pop();
             _loadGroupMembersAndNotes(group);

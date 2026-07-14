@@ -527,6 +527,11 @@ class AppLocalizationsTr extends AppLocalizations {
   String get lessonSettlement => 'Ders mahsubu';
 
   @override
+  String billableFreeCounts(int billable, int free) {
+    return 'Ücretli: $billable · Ücretsiz: $free';
+  }
+
+  @override
   String get earned => 'Kazanılan';
 
   @override
@@ -700,9 +705,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String minutes(int count) {
     return '$count dk';
   }
-
-  @override
-  String get mathTutoringPlaceholder => 'Matematik dersi';
 
   @override
   String get selectAGroup => 'Bir grup seçin.';

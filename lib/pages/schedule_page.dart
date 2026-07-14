@@ -439,6 +439,7 @@ class _SchedulePageState extends State<SchedulePage> {
                       : null,
                   onDayTap: () => _selectDay(day),
                   onSlotTap: (int hour) => _onSlotSelected(day, hour),
+                  onSlotLongPress: (int hour) => _onSlotSelected(day, hour),
                   onSlotPressStart: (int hour) {
                     setState(() {
                       _pressedSlotDay = day;
@@ -629,6 +630,7 @@ class _DayColumn extends StatelessWidget {
     required this.pressedHour,
     required this.onDayTap,
     required this.onSlotTap,
+    required this.onSlotLongPress,
     required this.onSlotPressStart,
     required this.onSlotPressEnd,
     required this.onLessonTap,
@@ -644,6 +646,7 @@ class _DayColumn extends StatelessWidget {
   final int? pressedHour;
   final VoidCallback onDayTap;
   final ValueChanged<int> onSlotTap;
+  final ValueChanged<int> onSlotLongPress;
   final ValueChanged<int> onSlotPressStart;
   final VoidCallback onSlotPressEnd;
   final ValueChanged<Lesson> onLessonTap;
@@ -662,119 +665,123 @@ class _DayColumn extends StatelessWidget {
         .resolveFrom(context)
         .withValues(alpha: 0.08);
 
-    return GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      onTap: slotPicking ? null : onDayTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 1),
-        decoration: BoxDecoration(
-          color: selected ? selectedFill : null,
-          border: Border(left: BorderSide(color: line, width: 0.5)),
-        ),
-        child: SizedBox(
-          height: height,
-          child: Stack(
-            children: <Widget>[
-              Column(
-                children: List<Widget>.generate(hoursInDay, (int hour) {
-                  return Container(
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 1),
+      decoration: BoxDecoration(
+        color: selected ? selectedFill : null,
+        border: Border(left: BorderSide(color: line, width: 0.5)),
+      ),
+      child: SizedBox(
+        height: height,
+        child: Stack(
+          children: <Widget>[
+            Column(
+              children: List<Widget>.generate(hoursInDay, (int hour) {
+                return GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: slotPicking ? null : onDayTap,
+                  onLongPress:
+                      slotPicking ? null : () => onSlotLongPress(hour),
+                  child: Container(
                     height: hourHeight,
                     decoration: BoxDecoration(
-                      border: Border(top: BorderSide(color: line, width: 0.5)),
-                    ),
-                  );
-                }),
-              ),
-              ...lessons.map((Lesson lesson) {
-                final int start = lesson.startMinutes.clamp(0, 24 * 60);
-                final int end = lesson.endMinutes.clamp(0, 24 * 60);
-                if (end <= start) {
-                  return const SizedBox.shrink();
-                }
-                final double top = start / 60 * hourHeight;
-                final double blockHeight =
-                    ((end - start) / 60 * hourHeight).clamp(16.0, height);
-
-                final Color accent = parseColor(lesson.accentColor);
-                final bool cancelled = lesson.status == 'cancelled';
-
-                return Positioned(
-                  top: top,
-                  left: 1,
-                  right: 1,
-                  height: blockHeight,
-                  child: IgnorePointer(
-                    ignoring: slotPicking,
-                    child: GestureDetector(
-                      onTap: () => onLessonTap(lesson),
-                      child: Opacity(
-                        opacity: slotPicking ? 0.4 : 1,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 3,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: cancelled
-                                ? CupertinoColors.systemGrey5
-                                : accent.withValues(alpha: 0.22),
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(
-                              color: cancelled
-                                  ? CupertinoColors.systemGrey3
-                                  : accent,
-                              width: 0.8,
-                            ),
-                          ),
-                          child: Text(
-                            lesson.displayTitle,
-                            maxLines: blockHeight < 28 ? 1 : 3,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                              height: 1.1,
-                              color: cancelled
-                                  ? CupertinoColors.systemGrey
-                                  : CupertinoColors.label.resolveFrom(context),
-                              decoration: cancelled
-                                  ? TextDecoration.lineThrough
-                                  : null,
-                            ),
-                          ),
-                        ),
+                      border: Border(
+                        top: BorderSide(color: line, width: 0.5),
                       ),
                     ),
                   ),
                 );
               }),
-              if (slotPicking)
-                ...List<Widget>.generate(hoursInDay, (int hour) {
-                  final bool pressed = pressedHour == hour;
-                  return Positioned(
-                    top: hour * hourHeight,
-                    left: 0,
-                    right: 0,
-                    height: hourHeight,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTapDown: (_) => onSlotPressStart(hour),
-                      onTapCancel: onSlotPressEnd,
-                      onTapUp: (_) => onSlotPressEnd(),
-                      onTap: () => onSlotTap(hour),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 90),
-                        margin: const EdgeInsets.all(2),
+            ),
+            ...lessons.map((Lesson lesson) {
+              final int start = lesson.startMinutes.clamp(0, 24 * 60);
+              final int end = lesson.endMinutes.clamp(0, 24 * 60);
+              if (end <= start) {
+                return const SizedBox.shrink();
+              }
+              final double top = start / 60 * hourHeight;
+              final double blockHeight =
+                  ((end - start) / 60 * hourHeight).clamp(16.0, height);
+
+              final Color accent = parseColor(lesson.accentColor);
+              final bool cancelled = lesson.status == 'cancelled';
+
+              return Positioned(
+                top: top,
+                left: 1,
+                right: 1,
+                height: blockHeight,
+                child: IgnorePointer(
+                  ignoring: slotPicking,
+                  child: GestureDetector(
+                    onTap: () => onLessonTap(lesson),
+                    child: Opacity(
+                      opacity: slotPicking ? 0.4 : 1,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 3,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                          color: pressed ? pressFill : null,
-                          borderRadius: BorderRadius.circular(8),
+                          color: cancelled
+                              ? CupertinoColors.systemGrey5
+                              : accent.withValues(alpha: 0.22),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: cancelled
+                                ? CupertinoColors.systemGrey3
+                                : accent,
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Text(
+                          lesson.displayTitle,
+                          maxLines: blockHeight < 28 ? 1 : 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            height: 1.1,
+                            color: cancelled
+                                ? CupertinoColors.systemGrey
+                                : CupertinoColors.label.resolveFrom(context),
+                            decoration: cancelled
+                                ? TextDecoration.lineThrough
+                                : null,
+                          ),
                         ),
                       ),
                     ),
-                  );
-                }),
-            ],
-          ),
+                  ),
+                ),
+              );
+            }),
+            if (slotPicking)
+              ...List<Widget>.generate(hoursInDay, (int hour) {
+                final bool pressed = pressedHour == hour;
+                return Positioned(
+                  top: hour * hourHeight,
+                  left: 0,
+                  right: 0,
+                  height: hourHeight,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTapDown: (_) => onSlotPressStart(hour),
+                    onTapCancel: onSlotPressEnd,
+                    onTapUp: (_) => onSlotPressEnd(),
+                    onTap: () => onSlotTap(hour),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 90),
+                      margin: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: pressed ? pressFill : null,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+          ],
         ),
       ),
     );

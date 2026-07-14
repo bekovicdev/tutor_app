@@ -3,6 +3,7 @@ import 'package:flutter/material.dart' show Material, MaterialType;
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:tutor_app/groups/group_service.dart';
 import 'package:tutor_app/l10n/l10n_ext.dart';
+import 'package:tutor_app/pages/students_page.dart';
 import 'package:tutor_app/students/student_service.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
@@ -132,66 +133,75 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             });
             _changed = true;
           },
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: CupertinoColors.secondarySystemGroupedBackground
-                  .resolveFrom(context),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: <Widget>[
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: accent.withOpacity(0.18),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: accent, width: 1.4),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      CupertinoIcons.person_fill,
-                      size: 18,
-                      color: accent,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => _openStudentDetail(student.id),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: CupertinoColors.secondarySystemGroupedBackground
+                    .resolveFrom(context),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: <Widget>[
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: accent.withOpacity(0.18),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: accent, width: 1.4),
+                    ),
+                    child: Center(
+                      child: Icon(
+                        CupertinoIcons.person_fill,
+                        size: 18,
+                        color: accent,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        student.name,
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      if (item.pivotStatus == 0) ...<Widget>[
-                        const SizedBox(height: 4),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
                         Text(
-                          context.l10n.inactiveInGroup,
+                          student.name,
                           style: const TextStyle(
-                            color: CupertinoColors.systemOrange,
-                            fontSize: 13,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ] else if (student.phone != null &&
-                          student.phone!.isNotEmpty) ...<Widget>[
-                        const SizedBox(height: 4),
-                        Text(
-                          student.phone!,
-                          style: const TextStyle(
-                            color: CupertinoColors.systemGrey,
+                        if (item.pivotStatus == 0) ...<Widget>[
+                          const SizedBox(height: 4),
+                          Text(
+                            context.l10n.inactiveInGroup,
+                            style: const TextStyle(
+                              color: CupertinoColors.systemOrange,
+                              fontSize: 13,
+                            ),
                           ),
-                        ),
+                        ] else if (student.phone != null &&
+                            student.phone!.isNotEmpty) ...<Widget>[
+                          const SizedBox(height: 4),
+                          Text(
+                            student.phone!,
+                            style: const TextStyle(
+                              color: CupertinoColors.systemGrey,
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                  Icon(
+                    CupertinoIcons.chevron_right,
+                    size: 16,
+                    color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -284,6 +294,18 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     }
   }
 
+  Future<void> _openStudentDetail(int studentId) async {
+    final bool? changed = await openStudentDetailPage(
+      context,
+      studentId: studentId,
+      studentService: widget.studentService,
+    );
+    if (changed == true) {
+      _changed = true;
+      await _loadMembers();
+    }
+  }
+
   Future<bool> _confirmRemove(Student student) async {
     final bool? shouldRemove = await showAppAlert<bool>(
       context: context,
@@ -347,82 +369,21 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   Future<void> _showEditGroupSheet() async {
-    final AppLocalizations l10n = context.l10n;
-    final TextEditingController nameController = TextEditingController(
-      text: _group.name,
-    );
-    final TextEditingController colorController = TextEditingController(
-      text: _group.color ?? '',
-    );
-
-    final bool? saved = await showAppAlert<bool>(
-      context: context,
-      title: l10n.editGroup,
-      content: Column(
-        children: <Widget>[
-          CupertinoTextField(
-            controller: nameController,
-            placeholder: l10n.groupName,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          ),
-          const SizedBox(height: 8),
-          CupertinoTextField(
-            controller: colorController,
-            placeholder: l10n.colorHint,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          ),
-        ],
+    final TutorGroup? updated = await Navigator.of(context).push<TutorGroup>(
+      CupertinoPageRoute<TutorGroup>(
+        builder: (_) => CreateGroupPage(
+          groupService: widget.groupService,
+          group: _group,
+        ),
       ),
-      actions: <AppAlertAction>[
-        AppAlertAction(
-          label: l10n.cancel,
-          style: AppAlertStyle.cancel,
-          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(false),
-        ),
-        AppAlertAction(
-          label: l10n.save,
-          style: AppAlertStyle.primary,
-          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(true),
-        ),
-      ],
     );
-
-    if (saved != true) {
-      nameController.dispose();
-      colorController.dispose();
+    if (!mounted || updated == null) {
       return;
     }
-
-    final String name = nameController.text.trim();
-    final String color = colorController.text.trim();
-    nameController.dispose();
-    colorController.dispose();
-
-    if (name.isEmpty) {
-      await _showMessage(l10n.nameRequired);
-      return;
-    }
-
-    try {
-      await widget.groupService.updateGroup(
-        id: _group.id,
-        request: GroupCreateRequest(name: name, color: color),
-      );
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _group = TutorGroup(
-          id: _group.id,
-          name: name,
-          color: color.isEmpty ? _group.color : color,
-          status: _group.status,
-        );
-      });
-      _changed = true;
-    } on GroupServiceException catch (error) {
-      await _showMessage(error.message);
-    }
+    setState(() {
+      _group = updated;
+    });
+    _changed = true;
   }
 
   Future<void> _confirmDeleteGroup() async {
@@ -490,20 +451,38 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 }
 
 class CreateGroupPage extends StatefulWidget {
-  const CreateGroupPage({required this.groupService, super.key});
+  const CreateGroupPage({
+    required this.groupService,
+    this.group,
+    super.key,
+  });
 
   final GroupService groupService;
+  final TutorGroup? group;
+
+  bool get isEditing => group != null;
 
   @override
   State<CreateGroupPage> createState() => _CreateGroupPageState();
 }
 
 class _CreateGroupPageState extends State<CreateGroupPage> {
-  final TextEditingController _nameController = TextEditingController();
-  int _red = 52;
-  int _green = 199;
-  int _blue = 89;
+  late final TextEditingController _nameController;
+  late int _red;
+  late int _green;
+  late int _blue;
   bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final TutorGroup? group = widget.group;
+    _nameController = TextEditingController(text: group?.name ?? '');
+    final Color initial = _parseHexColor(group?.color);
+    _red = (initial.r * 255.0).round() & 0xff;
+    _green = (initial.g * 255.0).round() & 0xff;
+    _blue = (initial.b * 255.0).round() & 0xff;
+  }
 
   @override
   void dispose() {
@@ -512,6 +491,26 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   }
 
   Color get _selectedColor => Color.fromARGB(255, _red, _green, _blue);
+
+  Color _parseHexColor(String? hex) {
+    if (hex == null || hex.isEmpty) {
+      return const Color.fromARGB(255, 52, 199, 89);
+    }
+    final String value = hex.replaceAll('#', '').trim();
+    if (value.length != 6) {
+      return const Color.fromARGB(255, 52, 199, 89);
+    }
+    final int? rgb = int.tryParse(value, radix: 16);
+    if (rgb == null) {
+      return const Color.fromARGB(255, 52, 199, 89);
+    }
+    return Color.fromARGB(
+      255,
+      (rgb >> 16) & 0xFF,
+      (rgb >> 8) & 0xFF,
+      rgb & 0xFF,
+    );
+  }
 
   String _hexFromColor(Color color) {
     final int rgb = color.toARGB32() & 0x00FFFFFF;
@@ -523,10 +522,10 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     final AppLocalizations l10n = context.l10n;
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: Text(l10n.addGroupTitle),
+        middle: Text(widget.isEditing ? l10n.editGroup : l10n.addGroupTitle),
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
-          onPressed: () => Navigator.of(context).pop(false),
+          onPressed: () => Navigator.of(context).pop(),
           child: Text(l10n.cancel),
         ),
         trailing: CupertinoButton(
@@ -738,18 +737,43 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     setState(() {
       _isSubmitting = true;
     });
+    final String name = _nameController.text.trim();
+    final String color = _hexFromColor(_selectedColor);
     try {
-      await widget.groupService.createGroup(
-        GroupCreateRequest(
-          name: _nameController.text.trim(),
-          color: _hexFromColor(_selectedColor),
-          status: 1,
-        ),
-      );
-      if (!mounted) {
-        return;
+      if (widget.isEditing) {
+        final TutorGroup existing = widget.group!;
+        await widget.groupService.updateGroup(
+          id: existing.id,
+          request: GroupCreateRequest(
+            name: name,
+            color: color,
+            status: existing.status,
+          ),
+        );
+        if (!mounted) {
+          return;
+        }
+        Navigator.of(context).pop(
+          TutorGroup(
+            id: existing.id,
+            name: name,
+            color: color,
+            status: existing.status,
+          ),
+        );
+      } else {
+        await widget.groupService.createGroup(
+          GroupCreateRequest(
+            name: name,
+            color: color,
+            status: 1,
+          ),
+        );
+        if (!mounted) {
+          return;
+        }
+        Navigator.of(context).pop(true);
       }
-      Navigator.of(context).pop(true);
     } on GroupServiceException catch (error) {
       await _showMessage(error.message);
     } finally {
