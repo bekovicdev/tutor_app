@@ -17,6 +17,7 @@ import 'package:tutor_app/students/student_service.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
 import 'package:tutor_app/widgets/birthday_calendar_picker.dart';
+import 'package:tutor_app/widgets/settings_nav_button.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 enum _StudentsViewMode { students, groups }
@@ -24,9 +25,14 @@ enum _StudentsViewMode { students, groups }
 enum _StudentDetailTab { info, lessons, payments }
 
 class StudentsPage extends StatefulWidget {
-  const StudentsPage({required this.token, super.key});
+  const StudentsPage({
+    required this.token,
+    this.onOpenSettings,
+    super.key,
+  });
 
   final String token;
+  final void Function(BuildContext context)? onOpenSettings;
 
   @override
   State<StudentsPage> createState() => _StudentsPageState();
@@ -86,6 +92,11 @@ class _StudentsPageState extends State<StudentsPage> {
           ],
         ),
         border: appNavigationBarBorderOf(context),
+        leading: widget.onOpenSettings == null
+            ? null
+            : SettingsNavButton(
+                onPressed: () => widget.onOpenSettings!(context),
+              ),
       ),
       child: SafeArea(
         child: Stack(
@@ -134,14 +145,10 @@ class _StudentsPageState extends State<StudentsPage> {
         height: 56,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: <Color>[Color(0xFF5AC8FA), CupertinoColors.activeBlue],
-          ),
+          gradient: AppBrand.heroGradient,
           boxShadow: <BoxShadow>[
             BoxShadow(
-              color: CupertinoColors.activeBlue.withValues(alpha: 0.35),
+              color: AppBrand.primary.withValues(alpha: 0.35),
               blurRadius: 16,
               offset: const Offset(0, 6),
             ),
@@ -210,13 +217,13 @@ class _StudentsPageState extends State<StudentsPage> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: selected
-              ? CupertinoColors.activeBlue
+              ? AppBrand.primary
               : CupertinoColors.transparent,
           borderRadius: BorderRadius.circular(24),
           boxShadow: selected
               ? <BoxShadow>[
                   BoxShadow(
-                    color: CupertinoColors.activeBlue.withValues(alpha: 0.28),
+                    color: AppBrand.primary.withValues(alpha: 0.28),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -334,10 +341,10 @@ class _StudentsPageState extends State<StudentsPage> {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: CupertinoColors.activeBlue.withValues(alpha: 0.12),
+                color: AppBrand.primary.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 32, color: CupertinoColors.activeBlue),
+              child: Icon(icon, size: 32, color: AppBrand.primary),
             ),
             const SizedBox(height: 16),
             Text(
@@ -787,15 +794,15 @@ class _StudentsPageState extends State<StudentsPage> {
 
   Color _parseHexColor(String? hex) {
     if (hex == null || hex.isEmpty) {
-      return CupertinoColors.activeBlue;
+      return AppBrand.primary;
     }
     final String value = hex.replaceAll('#', '').trim();
     if (value.length != 6) {
-      return CupertinoColors.activeBlue;
+      return AppBrand.primary;
     }
     final int? rgb = int.tryParse(value, radix: 16);
     if (rgb == null) {
-      return CupertinoColors.activeBlue;
+      return AppBrand.primary;
     }
     return Color.fromARGB(
       255,
@@ -1200,7 +1207,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
           value: cost.isEmpty ? '—' : cost,
           subtitle: cost.isEmpty ? l10n.notSet : l10n.perLesson,
           icon: CupertinoIcons.money_dollar_circle_fill,
-          color: CupertinoColors.activeBlue,
+          color: AppBrand.primary,
         ),
         if (birthday.isEmpty) ...<Widget>[
           const SizedBox(height: 10),
@@ -1468,7 +1475,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                         width: 34,
                         height: 34,
                         decoration: BoxDecoration(
-                          color: CupertinoColors.activeBlue,
+                          color: AppBrand.primary,
                           shape: BoxShape.circle,
                           border: Border.all(
                             color: CupertinoColors.systemBackground.resolveFrom(
@@ -1478,7 +1485,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                           ),
                           boxShadow: <BoxShadow>[
                             BoxShadow(
-                              color: CupertinoColors.activeBlue.withValues(
+                              color: AppBrand.primary.withValues(
                                 alpha: 0.35,
                               ),
                               blurRadius: 10,
@@ -1680,7 +1687,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                       child: _metricTile(
                         label: l10n.total,
                         value: '${summary.lessonsTotal}',
-                        color: CupertinoColors.activeBlue,
+                        color: AppBrand.primary,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -1909,13 +1916,13 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
               Expanded(
                 child: CupertinoButton(
                   padding: const EdgeInsets.symmetric(vertical: 10),
-                  color: CupertinoColors.activeBlue.withValues(alpha: 0.12),
+                  color: AppBrand.primary.withValues(alpha: 0.12),
                   onPressed: _openLoadPackage,
                   child: Text(
                     l10n.loadPackage,
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: CupertinoColors.activeBlue,
+                      color: AppBrand.primary,
                     ),
                   ),
                 ),
@@ -2345,15 +2352,15 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
 
   Color _parseHexColor(String? hex) {
     if (hex == null || hex.isEmpty) {
-      return CupertinoColors.activeBlue;
+      return AppBrand.primary;
     }
     final String value = hex.replaceAll('#', '').trim();
     if (value.length != 6) {
-      return CupertinoColors.activeBlue;
+      return AppBrand.primary;
     }
     final int? rgb = int.tryParse(value, radix: 16);
     if (rgb == null) {
-      return CupertinoColors.activeBlue;
+      return AppBrand.primary;
     }
     return Color.fromARGB(
       255,

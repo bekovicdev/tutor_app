@@ -10,13 +10,21 @@ import 'package:tutor_app/payments/payment_service.dart';
 import 'package:tutor_app/students/student_service.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
+import 'package:tutor_app/widgets/settings_nav_button.dart';
 
 enum _PaymentTab { overview, monthly, receivables, prepaid, payments }
 
 class PaymentPage extends StatefulWidget {
-  const PaymentPage({required this.token, super.key});
+  const PaymentPage({
+    required this.token,
+    this.onOpenSettings,
+    this.onSettlementsChanged,
+    super.key,
+  });
 
   final String token;
+  final void Function(BuildContext context)? onOpenSettings;
+  final VoidCallback? onSettlementsChanged;
 
   @override
   State<PaymentPage> createState() => _PaymentPageState();
@@ -108,6 +116,7 @@ class _PaymentPageState extends State<PaymentPage> {
           _errorMessage = firstError;
           _isLoading = false;
         });
+        widget.onSettlementsChanged?.call();
         await _loadDailyChart(_chartMonth);
       }
     }
@@ -383,6 +392,11 @@ class _PaymentPageState extends State<PaymentPage> {
       navigationBar: CupertinoNavigationBar(
         middle: Text(context.l10n.payment),
         border: appNavigationBarBorderOf(context),
+        leading: widget.onOpenSettings == null
+            ? null
+            : SettingsNavButton(
+                onPressed: () => widget.onOpenSettings!(context),
+              ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
@@ -451,7 +465,7 @@ class _PaymentPageState extends State<PaymentPage> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               minimumSize: Size.zero,
               color: selected
-                  ? CupertinoColors.activeBlue
+                  ? AppBrand.primary
                   : CupertinoColors.systemGrey5.resolveFrom(context),
               borderRadius: BorderRadius.circular(8),
               onPressed: () {
@@ -533,7 +547,7 @@ class _PaymentPageState extends State<PaymentPage> {
                   _formatNum(overview.cashCollected),
                   _formatNum(overview.cashRefunded),
                 ),
-                color: CupertinoColors.activeBlue,
+                color: AppBrand.primary,
               ),
             ),
             const SizedBox(width: 10),

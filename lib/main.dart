@@ -17,6 +17,7 @@ import 'package:tutor_app/pages/payment_page.dart';
 import 'package:tutor_app/pages/schedule_page.dart';
 import 'package:tutor_app/pages/settings_page.dart';
 import 'package:tutor_app/pages/students_page.dart';
+import 'package:tutor_app/payments/payment_service.dart';
 import 'package:tutor_app/settings/app_settings.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
@@ -428,12 +429,74 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
-  List<Widget> _pages() => <Widget>[
-        StudentsPage(token: widget.session.token),
-        SchedulePage(token: widget.session.token),
-        JournalPage(token: widget.session.token),
-        PaymentPage(token: widget.session.token),
-        SettingsPage(
+  static const int _paymentTabIndex = 3;
+
+  final CupertinoTabController _tabController = CupertinoTabController();
+  late final List<Widget> _tabPages;
+  int _unpaidLessonCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController.addListener(_onTabChanged);
+    _tabPages = <Widget>[
+      StudentsPage(
+        token: widget.session.token,
+        onOpenSettings: _openSettings,
+      ),
+      SchedulePage(
+        token: widget.session.token,
+        onOpenSettings: _openSettings,
+      ),
+      JournalPage(
+        token: widget.session.token,
+        onOpenSettings: _openSettings,
+      ),
+      PaymentPage(
+        token: widget.session.token,
+        onOpenSettings: _openSettings,
+        onSettlementsChanged: _refreshPaymentBadge,
+      ),
+    ];
+    _refreshPaymentBadge();
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_onTabChanged);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _onTabChanged() {
+    if (_tabController.index == _paymentTabIndex) {
+      _refreshPaymentBadge();
+    }
+  }
+
+  Future<void> _refreshPaymentBadge() async {
+    try {
+      final PaymentsOverview overview =
+          await PaymentService(token: widget.session.token).overview();
+      if (!mounted) {
+        return;
+      }
+      final int next = overview.unpaid.count;
+      if (next == _unpaidLessonCount) {
+        return;
+      }
+      setState(() {
+        _unpaidLessonCount = next;
+      });
+    } catch (_) {
+      // Badge is optional; ignore network/store errors.
+    }
+  }
+
+  void _openSettings(BuildContext context) {
+    Navigator.of(context).push(
+      CupertinoPageRoute<void>(
+        builder: (_) => SettingsPage(
           user: widget.session.user,
           token: widget.session.token,
           onLogout: widget.onLogout,
@@ -441,38 +504,81 @@ class _AppShellState extends State<AppShell> {
           onThemePreferenceChanged: widget.onThemePreferenceChanged,
           onUserUpdated: widget.onUserUpdated,
         ),
-      ];
+      ),
+    );
+  }
 
-  List<BottomNavigationBarItem> _classicTabItems(AppLocalizations l10n) =>
+  Widget _tabIcon(IconData icon, {int badgeCount = 0}) {
+    if (badgeCount <= 0) {
+      return Icon(icon);
+    }
+    final String label = badgeCount > 99 ? '99+' : '$badgeCount';
+    return Stack(
+      clipBehavior: Clip.none,
+      children: <Widget>[
+        Icon(icon),
+        Positioned(
+          right: -8,
+          top: -4,
+          child: Container(
+            constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            decoration: BoxDecoration(
+              color: CupertinoColors.systemRed,
+              borderRadius: BorderRadius.circular(9),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: CupertinoColors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                height: 1.1,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<BottomNavigationBarItem> _tabItems(AppLocalizations l10n) =>
       <BottomNavigationBarItem>[
-    BottomNavigationBarItem(
-      icon: const Icon(CupertinoIcons.person_2),
-      label: l10n.tabStudents,
-    ),
-    BottomNavigationBarItem(
-      icon: const Icon(CupertinoIcons.calendar),
-      label: l10n.tabSchedule,
-    ),
-    BottomNavigationBarItem(
-      icon: const Icon(CupertinoIcons.book),
-      label: l10n.tabJournal,
-    ),
-    BottomNavigationBarItem(
-      icon: const Icon(CupertinoIcons.money_dollar),
-      label: l10n.tabPayment,
-    ),
-    BottomNavigationBarItem(
-      icon: const Icon(CupertinoIcons.settings),
-      label: l10n.tabSettings,
-    ),
-  ];
+        BottomNavigationBarItem(
+          icon: const Icon(CupertinoIcons.person_2),
+          activeIcon: const Icon(CupertinoIcons.person_2_fill),
+          label: l10n.tabStudents,
+        ),
+        BottomNavigationBarItem(
+          icon: const Icon(CupertinoIcons.calendar),
+          activeIcon: const Icon(CupertinoIcons.calendar_today),
+          label: l10n.tabSchedule,
+        ),
+        BottomNavigationBarItem(
+          icon: const Icon(CupertinoIcons.book),
+          activeIcon: const Icon(CupertinoIcons.book_fill),
+          label: l10n.tabJournal,
+        ),
+        BottomNavigationBarItem(
+          icon: _tabIcon(
+            CupertinoIcons.money_dollar_circle,
+            badgeCount: _unpaidLessonCount,
+          ),
+          activeIcon: _tabIcon(
+            CupertinoIcons.money_dollar_circle_fill,
+            badgeCount: _unpaidLessonCount,
+          ),
+          label: l10n.tabPayment,
+        ),
+      ];
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> pages = _pages();
     return CupertinoTabScaffold(
-      tabBar: CupertinoTabBar(items: _classicTabItems(context.l10n)),
-      tabBuilder: (BuildContext context, int index) => pages[index],
+      controller: _tabController,
+      tabBar: CupertinoTabBar(items: _tabItems(context.l10n)),
+      tabBuilder: (BuildContext context, int index) => _tabPages[index],
     );
   }
 }

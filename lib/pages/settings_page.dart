@@ -332,7 +332,7 @@ class _SettingsPageState extends State<SettingsPage> {
                             children: <Widget>[
                               _iconBadge(
                                 CupertinoIcons.star_fill,
-                                const Color(0xFFFF9F0A),
+                                AppBrand.primary,
                               ),
                               const SizedBox(width: 12),
                               Expanded(
@@ -371,7 +371,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                 Text(
                                   l10n.upgradeToPremium,
                                   style: const TextStyle(
-                                    color: CupertinoColors.activeBlue,
+                                    color: AppBrand.primary,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -387,7 +387,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     children: <Widget>[
                       _costRow(
                         icon: CupertinoIcons.person_fill,
-                        iconColor: const Color(0xFF007AFF),
+                        iconColor: AppBrand.primary,
                         title: l10n.defaultIndividualCost,
                         controller: _individualCostController,
                         placeholder: '0',
@@ -420,7 +420,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     children: <Widget>[
                       _switchRow(
                         icon: CupertinoIcons.bell_fill,
-                        iconColor: const Color(0xFFFF9F0A),
+                        iconColor: AppBrand.primary,
                         title: l10n.notifications,
                         subtitle: l10n.notificationsSubtitle,
                         value: _notificationsEnabled,
@@ -487,7 +487,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       _divider(),
                       _infoRow(
                         icon: CupertinoIcons.globe,
-                        iconColor: CupertinoColors.activeBlue,
+                        iconColor: AppBrand.primary,
                         title: l10n.language,
                         value: _languageLabel(l10n),
                         subtitle: l10n.languageFollowsDevice,

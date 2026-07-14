@@ -5,6 +5,7 @@ import 'package:tutor_app/groups/group_service.dart';
 import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/students/student_service.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
+import 'package:tutor_app/theme/ios26_theme.dart';
 
 class GroupDetailPage extends StatefulWidget {
   const GroupDetailPage({
@@ -66,7 +67,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   width: 54,
                   height: 54,
                   decoration: const BoxDecoration(
-                    color: CupertinoColors.activeBlue,
+                    color: AppBrand.primary,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -458,15 +459,15 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 
   Color _parseHexColor(String? hex) {
     if (hex == null || hex.isEmpty) {
-      return CupertinoColors.activeBlue;
+      return AppBrand.primary;
     }
     final String value = hex.replaceAll('#', '').trim();
     if (value.length != 6) {
-      return CupertinoColors.activeBlue;
+      return AppBrand.primary;
     }
     final int? rgb = int.tryParse(value, radix: 16);
     if (rgb == null) {
-      return CupertinoColors.activeBlue;
+      return AppBrand.primary;
     }
     return Color.fromARGB(
       255,

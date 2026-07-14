@@ -154,12 +154,12 @@ Color _resolveIconColor(
   final bool hasPrimary =
       actions.any((AppAlertAction a) => a.style == AppAlertStyle.primary);
   if (hasDestructive && hasPrimary) {
-    return const Color(0xFFFF9F0A);
+    return AppBrand.primary;
   }
   if (hasDestructive) {
     return CupertinoColors.systemRed.resolveFrom(context);
   }
-  return CupertinoColors.activeBlue;
+  return AppBrand.primary;
 }
 
 class _AppAlertBody extends StatelessWidget {
@@ -327,10 +327,10 @@ class _AlertActionButtonState extends State<_AlertActionButton> {
     switch (action.style) {
       case AppAlertStyle.primary:
         labelColor = CupertinoColors.white;
-        fill = const <Color>[Color(0xFF5AC8FA), Color(0xFF007AFF)];
+        fill = const <Color>[AppBrand.goldBright, AppBrand.goldDeep];
         shadows = <BoxShadow>[
           BoxShadow(
-            color: const Color(0xFF007AFF).withValues(alpha: 0.35),
+            color: AppBrand.gold.withValues(alpha: 0.35),
             blurRadius: 14,
             offset: const Offset(0, 6),
           ),
@@ -350,10 +350,10 @@ class _AlertActionButtonState extends State<_AlertActionButton> {
         ];
         shadows = null;
       case AppAlertStyle.normal:
-        labelColor = CupertinoColors.activeBlue;
+        labelColor = AppBrand.primary;
         fill = <Color>[
-          CupertinoColors.activeBlue.withValues(alpha: 0.14),
-          CupertinoColors.activeBlue.withValues(alpha: 0.08),
+          AppBrand.primary.withValues(alpha: 0.14),
+          AppBrand.primary.withValues(alpha: 0.08),
         ];
         shadows = null;
     }
@@ -547,7 +547,7 @@ class _SheetChipState extends State<_SheetChip> {
     final bool destructive = widget.action.isDestructive;
     final Color accent = destructive
         ? CupertinoColors.systemRed.resolveFrom(context)
-        : CupertinoColors.activeBlue;
+        : AppBrand.primary;
     final Color bg = widget.flat
         ? const Color(0x00000000)
         : accent.withValues(alpha: destructive ? 0.10 : 0.08);

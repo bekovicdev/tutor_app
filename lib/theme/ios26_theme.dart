@@ -11,6 +11,44 @@ abstract final class AppGlassTokens {
   static const EdgeInsets cardPadding = EdgeInsets.all(14);
 }
 
+/// Sophisticated gold brand palette (not system orange).
+abstract final class AppBrand {
+  /// Light-mode gold — readable on white chrome.
+  static const Color gold = Color(0xFFB8952A);
+
+  /// Darker gold for gradients / pressed states.
+  static const Color goldDeep = Color(0xFF9A7A1C);
+
+  /// Brighter gold for dark backgrounds.
+  static const Color goldBright = Color(0xFFD4B84A);
+
+  /// Theme primary — light [gold], dark [goldBright].
+  static const CupertinoDynamicColor primary =
+      CupertinoDynamicColor.withBrightness(
+    color: gold,
+    darkColor: goldBright,
+  );
+
+  /// Deeper companion for borders / icon fills.
+  static const CupertinoDynamicColor primaryDeep =
+      CupertinoDynamicColor.withBrightness(
+    color: goldDeep,
+    darkColor: gold,
+  );
+
+  static const LinearGradient heroGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: <Color>[goldBright, goldDeep],
+  );
+
+  static Color resolve(BuildContext context) =>
+      CupertinoDynamicColor.resolve(primary, context);
+
+  static Color resolveDeep(BuildContext context) =>
+      CupertinoDynamicColor.resolve(primaryDeep, context);
+}
+
 /// Native Liquid Glass needs Xcode with the iOS 26 SDK.
 /// Disabled on current toolchain (Xcode 16 / iOS 18 SDK).
 bool get supportsLiquidGlass => false;
@@ -107,18 +145,19 @@ CupertinoThemeData _classicTheme(Brightness brightness) {
       isDark ? const Color(0x99EBEBF5) : const Color(0x993C3C43);
   return CupertinoThemeData(
     brightness: brightness,
-    primaryColor: CupertinoColors.activeBlue,
+    primaryColor: AppBrand.primary,
+    primaryContrastingColor: CupertinoColors.white,
     scaffoldBackgroundColor: AppSurfaces.scaffold(brightness),
     barBackgroundColor: AppSurfaces.bar(brightness),
     textTheme: CupertinoTextThemeData(
       primaryColor: isDark ? CupertinoColors.white : CupertinoColors.label,
       textStyle: _appTextStyle(color: label, fontSize: 17),
       actionTextStyle: _appTextStyle(
-        color: CupertinoColors.activeBlue,
+        color: AppBrand.primary,
         fontSize: 17,
       ),
       navActionTextStyle: _appTextStyle(
-        color: CupertinoColors.activeBlue,
+        color: AppBrand.primary,
         fontSize: 17,
       ),
       navTitleTextStyle: _appTextStyle(

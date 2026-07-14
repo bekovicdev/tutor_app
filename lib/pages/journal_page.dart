@@ -7,11 +7,17 @@ import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/create_lesson_page.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
+import 'package:tutor_app/widgets/settings_nav_button.dart';
 
 class JournalPage extends StatefulWidget {
-  const JournalPage({required this.token, super.key});
+  const JournalPage({
+    required this.token,
+    this.onOpenSettings,
+    super.key,
+  });
 
   final String token;
+  final void Function(BuildContext context)? onOpenSettings;
 
   @override
   State<JournalPage> createState() => _JournalPageState();
@@ -160,6 +166,11 @@ class _JournalPageState extends State<JournalPage> {
       navigationBar: CupertinoNavigationBar(
         middle: Text(l10n.journal),
         border: appNavigationBarBorderOf(context),
+        leading: widget.onOpenSettings == null
+            ? null
+            : SettingsNavButton(
+                onPressed: () => widget.onOpenSettings!(context),
+              ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
@@ -252,13 +263,13 @@ class _JournalPageState extends State<JournalPage> {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
                   color: selected
-                      ? CupertinoColors.activeBlue
+                      ? AppBrand.primary
                       : CupertinoColors.secondarySystemGroupedBackground
                             .resolveFrom(context),
                   borderRadius: BorderRadius.circular(12),
                   border: isToday && !selected
                       ? Border.all(
-                          color: CupertinoColors.activeBlue,
+                          color: AppBrand.primary,
                           width: 1.2,
                         )
                       : null,
@@ -297,7 +308,7 @@ class _JournalPageState extends State<JournalPage> {
                         color: lessonCount > 0
                             ? (selected
                                   ? CupertinoColors.white
-                                  : CupertinoColors.activeBlue)
+                                  : AppBrand.primary)
                             : CupertinoColors.transparent,
                       ),
                     ),
@@ -735,15 +746,15 @@ class _JournalPageState extends State<JournalPage> {
 
   Color _parseHexColor(String? hex) {
     if (hex == null || hex.isEmpty) {
-      return CupertinoColors.activeBlue;
+      return AppBrand.primary;
     }
     final String value = hex.replaceAll('#', '').trim();
     if (value.length != 6) {
-      return CupertinoColors.activeBlue;
+      return AppBrand.primary;
     }
     final int? rgb = int.tryParse(value, radix: 16);
     if (rgb == null) {
-      return CupertinoColors.activeBlue;
+      return AppBrand.primary;
     }
     return Color.fromARGB(
       255,

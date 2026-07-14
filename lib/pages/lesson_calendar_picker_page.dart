@@ -281,14 +281,14 @@ class _LessonCalendarPickerPageState extends State<LessonCalendarPickerPage> {
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   decoration: BoxDecoration(
                     color: selected
-                        ? CupertinoColors.activeBlue
+                        ? AppBrand.primary
                         : isToday
-                            ? CupertinoColors.activeBlue.withValues(alpha: 0.12)
+                            ? AppBrand.primary.withValues(alpha: 0.12)
                             : CupertinoColors.transparent,
                     borderRadius: BorderRadius.circular(8),
                     border: isToday && !selected
                         ? Border.all(
-                            color: CupertinoColors.activeBlue,
+                            color: AppBrand.primary,
                             width: 1.2,
                           )
                         : null,
@@ -303,7 +303,7 @@ class _LessonCalendarPickerPageState extends State<LessonCalendarPickerPage> {
                           color: selected
                               ? CupertinoColors.white
                               : isToday
-                                  ? CupertinoColors.activeBlue
+                                  ? AppBrand.primary
                                   : CupertinoColors.secondaryLabel
                                       .resolveFrom(context),
                         ),
@@ -316,7 +316,7 @@ class _LessonCalendarPickerPageState extends State<LessonCalendarPickerPage> {
                           color: selected
                               ? CupertinoColors.white
                               : isToday
-                                  ? CupertinoColors.activeBlue
+                                  ? AppBrand.primary
                                   : CupertinoColors.label.resolveFrom(context),
                         ),
                       ),
@@ -431,15 +431,15 @@ class _LessonCalendarPickerPageState extends State<LessonCalendarPickerPage> {
 
   Color _parseHexColor(String? hex) {
     if (hex == null || hex.isEmpty) {
-      return CupertinoColors.activeBlue;
+      return AppBrand.primary;
     }
     final String value = hex.replaceAll('#', '').trim();
     if (value.length != 6) {
-      return CupertinoColors.activeBlue;
+      return AppBrand.primary;
     }
     final int? rgb = int.tryParse(value, radix: 16);
     if (rgb == null) {
-      return CupertinoColors.activeBlue;
+      return AppBrand.primary;
     }
     return Color.fromARGB(
       255,
@@ -477,7 +477,7 @@ class _PickerDayColumn extends StatelessWidget {
     final Color line = CupertinoColors.separator
         .resolveFrom(context)
         .withValues(alpha: 0.55);
-    final Color selectedFill = CupertinoColors.activeBlue
+    final Color selectedFill = AppBrand.primary
         .resolveFrom(context)
         .withValues(alpha: 0.06);
 

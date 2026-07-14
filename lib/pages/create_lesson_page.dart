@@ -6,6 +6,7 @@ import 'package:tutor_app/pages/paywall_page.dart';
 import 'package:tutor_app/payments/payment_service.dart';
 import 'package:tutor_app/students/student_service.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
+import 'package:tutor_app/theme/ios26_theme.dart';
 
 class CreateLessonPage extends StatefulWidget {
   const CreateLessonPage({
@@ -325,10 +326,10 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: CupertinoColors.activeBlue.withValues(alpha: 0.10),
+                        color: AppBrand.primary.withValues(alpha: 0.10),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: CupertinoColors.activeBlue.withValues(alpha: 0.25),
+                          color: AppBrand.primary.withValues(alpha: 0.25),
                         ),
                       ),
                       child: Row(
@@ -336,7 +337,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                           const Icon(
                             CupertinoIcons.calendar,
                             size: 18,
-                            color: CupertinoColors.activeBlue,
+                            color: AppBrand.primary,
                           ),
                           const SizedBox(width: 10),
                           Expanded(

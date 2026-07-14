@@ -26,9 +26,6 @@ class _PaywallPageState extends State<PaywallPage> {
   bool _busy = false;
   String? _selectedProductId = BillingService.monthlyProductId;
 
-  static const Color _accent = Color(0xFFFF9F0A);
-  static const Color _accentDeep = Color(0xFFE68600);
-
   @override
   void initState() {
     super.initState();
@@ -190,7 +187,7 @@ class _PaywallPageState extends State<PaywallPage> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: <Color>[
-                    _accent.withValues(alpha: isDark ? 0.22 : 0.16),
+                    AppBrand.primary.withValues(alpha: isDark ? 0.22 : 0.16),
                     AppSurfaces.scaffold(brightness).withValues(alpha: 0),
                   ],
                 ),
@@ -290,14 +287,10 @@ class _PaywallPageState extends State<PaywallPage> {
           height: 72,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: <Color>[_accent, _accentDeep],
-            ),
+            gradient: AppBrand.heroGradient,
             boxShadow: <BoxShadow>[
               BoxShadow(
-                color: _accent.withValues(alpha: 0.35),
+                color: AppBrand.primary.withValues(alpha: 0.35),
                 blurRadius: 24,
                 offset: const Offset(0, 10),
               ),
@@ -372,13 +365,13 @@ class _PaywallPageState extends State<PaywallPage> {
                     width: 34,
                     height: 34,
                     decoration: BoxDecoration(
-                      color: _accent.withValues(alpha: 0.14),
+                      color: AppBrand.primary.withValues(alpha: 0.14),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
                       items[i].icon,
                       size: 17,
-                      color: _accentDeep,
+                      color: AppBrand.primaryDeep,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -419,10 +412,10 @@ class _PaywallPageState extends State<PaywallPage> {
     final bool isDark = brightness == Brightness.dark;
 
     final Color borderColor = selected
-        ? _accent
+        ? AppBrand.primary
         : (isDark ? const Color(0x22FFFFFF) : const Color(0x14000000));
     final Color fill = selected
-        ? _accent.withValues(alpha: isDark ? 0.16 : 0.08)
+        ? AppBrand.primary.withValues(alpha: isDark ? 0.16 : 0.08)
         : AppSurfaces.card(brightness);
 
     return GestureDetector(
@@ -453,10 +446,10 @@ class _PaywallPageState extends State<PaywallPage> {
               height: 24,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: selected ? _accent : const Color(0x00000000),
+                color: selected ? AppBrand.primary : const Color(0x00000000),
                 border: Border.all(
                   color: selected
-                      ? _accent
+                      ? AppBrand.primary
                       : CupertinoColors.systemGrey3.resolveFrom(context),
                   width: selected ? 0 : 1.5,
                 ),
@@ -493,8 +486,8 @@ class _PaywallPageState extends State<PaywallPage> {
                           ),
                           decoration: BoxDecoration(
                             color: emphasize
-                                ? _accent
-                                : _accent.withValues(alpha: 0.14),
+                                ? AppBrand.primary
+                                : AppBrand.primary.withValues(alpha: 0.14),
                             borderRadius: BorderRadius.circular(7),
                           ),
                           child: Text(
@@ -505,7 +498,7 @@ class _PaywallPageState extends State<PaywallPage> {
                               letterSpacing: -0.1,
                               color: emphasize
                                   ? CupertinoColors.white
-                                  : _accentDeep,
+                                  : AppBrand.primaryDeep,
                             ),
                           ),
                         ),
@@ -571,8 +564,8 @@ class _PaywallPageState extends State<PaywallPage> {
             child: CupertinoButton(
               padding: const EdgeInsets.symmetric(vertical: 16),
               borderRadius: BorderRadius.circular(14),
-              color: _accent,
-              disabledColor: _accent.withValues(alpha: 0.45),
+              color: AppBrand.primary,
+              disabledColor: AppBrand.primary.withValues(alpha: 0.45),
               onPressed: _busy ? null : _purchase,
               child: _busy
                   ? const CupertinoActivityIndicator(
