@@ -18,12 +18,14 @@ import 'package:tutor_app/pages/schedule_page.dart';
 import 'package:tutor_app/pages/settings_page.dart';
 import 'package:tutor_app/pages/students_page.dart';
 import 'package:tutor_app/payments/payment_service.dart';
+import 'package:tutor_app/settings/app_currency.dart';
 import 'package:tutor_app/settings/app_settings.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AppCurrency.load();
   final bool firebaseReady = await _initFirebase();
   if (firebaseReady) {
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
@@ -59,6 +61,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   AppThemePreference _themePreference = AppThemePreference.system;
+  String _currencyCode = AppCurrency.code;
 
   @override
   void initState() {
@@ -103,6 +106,16 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     await AppSettings.setThemePreference(value);
   }
 
+  Future<void> _onCurrencyChanged(String code) async {
+    await AppCurrency.setCode(code);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _currencyCode = AppCurrency.code;
+    });
+  }
+
   Brightness get _resolvedBrightness {
     final Brightness platform =
         WidgetsBinding.instance.platformDispatcher.platformBrightness;
@@ -140,19 +153,24 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         final MediaQueryData media = MediaQuery.of(context);
         final TextStyle rootStyle =
             CupertinoTheme.of(context).textTheme.textStyle;
-        return MediaQuery(
-          data: media.copyWith(platformBrightness: brightness),
-          // Keep a stable non-inheriting root style so brightness changes
-          // do not lerp inherit:true ↔ inherit:false TextStyles.
-          child: DefaultTextStyle(
-            style: rootStyle,
-            child: child ?? const SizedBox.shrink(),
+        return AppCurrencyScope(
+          code: _currencyCode,
+          child: MediaQuery(
+            data: media.copyWith(platformBrightness: brightness),
+            // Keep a stable non-inheriting root style so brightness changes
+            // do not lerp inherit:true ↔ inherit:false TextStyles.
+            child: DefaultTextStyle(
+              style: rootStyle,
+              child: child ?? const SizedBox.shrink(),
+            ),
           ),
         );
       },
       home: AppRoot(
         themePreference: _themePreference,
         onThemePreferenceChanged: _onThemePreferenceChanged,
+        currencyCode: _currencyCode,
+        onCurrencyChanged: _onCurrencyChanged,
       ),
     );
   }
@@ -162,11 +180,15 @@ class AppRoot extends StatefulWidget {
   const AppRoot({
     required this.themePreference,
     required this.onThemePreferenceChanged,
+    required this.currencyCode,
+    required this.onCurrencyChanged,
     super.key,
   });
 
   final AppThemePreference themePreference;
   final ValueChanged<AppThemePreference> onThemePreferenceChanged;
+  final String currencyCode;
+  final ValueChanged<String> onCurrencyChanged;
 
   @override
   State<AppRoot> createState() => _AppRootState();
@@ -388,6 +410,8 @@ class _AppRootState extends State<AppRoot> {
         onLogout: _logout,
         themePreference: widget.themePreference,
         onThemePreferenceChanged: widget.onThemePreferenceChanged,
+        currencyCode: widget.currencyCode,
+        onCurrencyChanged: widget.onCurrencyChanged,
         onUserUpdated: (AuthUser user) {
           final AuthSession? current = _session;
           if (current == null) {
@@ -414,6 +438,8 @@ class AppShell extends StatefulWidget {
     required this.onLogout,
     required this.themePreference,
     required this.onThemePreferenceChanged,
+    required this.currencyCode,
+    required this.onCurrencyChanged,
     this.onUserUpdated,
     super.key,
   });
@@ -422,6 +448,8 @@ class AppShell extends StatefulWidget {
   final Future<void> Function() onLogout;
   final AppThemePreference themePreference;
   final ValueChanged<AppThemePreference> onThemePreferenceChanged;
+  final String currencyCode;
+  final ValueChanged<String> onCurrencyChanged;
   final ValueChanged<AuthUser>? onUserUpdated;
 
   @override
@@ -502,6 +530,8 @@ class _AppShellState extends State<AppShell> {
           onLogout: widget.onLogout,
           themePreference: widget.themePreference,
           onThemePreferenceChanged: widget.onThemePreferenceChanged,
+          currencyCode: widget.currencyCode,
+          onCurrencyChanged: widget.onCurrencyChanged,
           onUserUpdated: widget.onUserUpdated,
         ),
       ),

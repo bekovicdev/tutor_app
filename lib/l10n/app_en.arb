@@ -372,6 +372,7 @@
   "logoutConfirmTitle": "Log out?",
   "logoutConfirmMessage": "You will need to sign in again to continue.",
   "costPlaceholder": "e.g. 500",
+  "currency": "Currency",
   "signedInWith": "Signed in with {provider}",
   "@signedInWith": {
     "placeholders": {

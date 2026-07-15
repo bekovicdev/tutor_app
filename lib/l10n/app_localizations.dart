@@ -1588,6 +1588,12 @@ abstract class AppLocalizations {
   /// **'e.g. 500'**
   String get costPlaceholder;
 
+  /// No description provided for @currency.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency'**
+  String get currency;
+
   /// No description provided for @signedInWith.
   ///
   /// In en, this message translates to:

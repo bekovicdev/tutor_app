@@ -1535,7 +1535,7 @@ class _PaymentPageState extends State<PaymentPage> {
     }
   }
 
-  String get _currency => kCurrencyLabel;
+  String get _currency => context.currencyLabel();
 
   String _money(num amount, [String? _]) =>
       '${_formatNum(amount)} $_currency';

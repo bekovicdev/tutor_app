@@ -372,6 +372,7 @@
   "logoutConfirmTitle": "Выйти?",
   "logoutConfirmMessage": "Чтобы продолжить, нужно будет войти снова.",
   "costPlaceholder": "напр. 500",
+  "currency": "Валюта",
   "signedInWith": "Вход через {provider}",
   "@signedInWith": {
     "placeholders": {

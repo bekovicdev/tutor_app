@@ -807,6 +807,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get costPlaceholder => 'Örn. 500';
 
   @override
+  String get currency => 'Para birimi';
+
+  @override
   String signedInWith(String provider) {
     return '$provider ile giriş yapıldı';
   }

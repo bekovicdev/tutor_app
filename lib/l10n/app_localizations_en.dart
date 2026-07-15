@@ -807,6 +807,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get costPlaceholder => 'e.g. 500';
 
   @override
+  String get currency => 'Currency';
+
+  @override
   String signedInWith(String provider) {
     return 'Signed in with $provider';
   }

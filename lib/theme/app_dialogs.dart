@@ -434,7 +434,7 @@ class _AppActionSheetBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double bottom = MediaQuery.paddingOf(context).bottom;
-    final double maxSheetHeight = MediaQuery.sizeOf(context).height * 0.55;
+    final double maxSheetHeight = MediaQuery.sizeOf(context).height * 0.72;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(14, 0, 14, bottom > 0 ? bottom + 4 : 14),

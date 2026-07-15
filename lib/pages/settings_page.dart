@@ -5,6 +5,7 @@ import 'package:tutor_app/billing/billing_service.dart';
 import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/notifications/fcm_service.dart';
 import 'package:tutor_app/pages/paywall_page.dart';
+import 'package:tutor_app/settings/app_currency.dart';
 import 'package:tutor_app/settings/app_settings.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
@@ -16,6 +17,8 @@ class SettingsPage extends StatefulWidget {
     required this.onLogout,
     required this.themePreference,
     required this.onThemePreferenceChanged,
+    required this.currencyCode,
+    required this.onCurrencyChanged,
     this.onUserUpdated,
     super.key,
   });
@@ -25,6 +28,8 @@ class SettingsPage extends StatefulWidget {
   final Future<void> Function() onLogout;
   final AppThemePreference themePreference;
   final ValueChanged<AppThemePreference> onThemePreferenceChanged;
+  final String currencyCode;
+  final ValueChanged<String> onCurrencyChanged;
   final ValueChanged<AuthUser>? onUserUpdated;
 
   @override
@@ -38,6 +43,7 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _loadingPrefs = true;
   bool _savingCosts = false;
   BillingStatus? _billingStatus;
+  late String _currencyCode;
   final TextEditingController _individualCostController =
       TextEditingController();
   final TextEditingController _groupCostController = TextEditingController();
@@ -45,7 +51,16 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     super.initState();
+    _currencyCode = widget.currencyCode;
     _loadPrefs();
+  }
+
+  @override
+  void didUpdateWidget(covariant SettingsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.currencyCode != widget.currencyCode) {
+      _currencyCode = widget.currencyCode;
+    }
   }
 
   @override
@@ -313,6 +328,35 @@ class _SettingsPageState extends State<SettingsPage> {
     };
   }
 
+  String get _currencyValueLabel {
+    final AppCurrencyOption option =
+        AppCurrency.optionFor(_currencyCode) ?? AppCurrency.current;
+    return '${option.symbol} · ${option.code}';
+  }
+
+  Future<void> _pickCurrency() async {
+    final AppLocalizations l10n = context.l10n;
+    await showAppActionSheet<void>(
+      context: context,
+      title: l10n.currency,
+      actions: AppCurrency.options.map((AppCurrencyOption option) {
+        final bool selected = option.code == _currencyCode;
+        return AppSheetAction(
+          label: selected
+              ? '✓ ${option.symbol}  ${option.code} — ${option.name}'
+              : '${option.symbol}  ${option.code} — ${option.name}',
+          onPressed: (BuildContext ctx) {
+            setState(() {
+              _currencyCode = option.code;
+            });
+            widget.onCurrencyChanged(option.code);
+            Navigator.of(ctx).pop();
+          },
+        );
+      }).toList(),
+    );
+  }
+
   String get _initials {
     final String name = widget.user.name.trim();
     if (name.isEmpty) {
@@ -383,19 +427,6 @@ class _SettingsPageState extends State<SettingsPage> {
                                         color: CupertinoColors.label,
                                       ),
                                     ),
-                                    if (_billingStatus != null &&
-                                        !(_billingStatus!.isPremium))
-                                      Text(
-                                        l10n.usageStudents(
-                                          _billingStatus!.studentsUsed,
-                                          _billingStatus!.studentsLimit ?? 4,
-                                        ),
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: CupertinoColors.secondaryLabel
-                                              .resolveFrom(context),
-                                        ),
-                                      ),
                                   ],
                                 ),
                               ),
@@ -524,6 +555,15 @@ class _SettingsPageState extends State<SettingsPage> {
                         title: l10n.language,
                         value: _languageLabel(l10n),
                         subtitle: l10n.languageFollowsDevice,
+                      ),
+                      _divider(),
+                      _navRow(
+                        icon: CupertinoIcons.money_dollar_circle_fill,
+                        iconColor: const Color(0xFF30B0C7),
+                        title: l10n.currency,
+                        value: _currencyValueLabel,
+                        showChevron: true,
+                        onTap: _pickCurrency,
                       ),
                     ],
                   ),
@@ -766,7 +806,7 @@ class _SettingsPageState extends State<SettingsPage> {
               suffix: Padding(
                 padding: const EdgeInsets.only(right: 10),
                 child: Text(
-                  kCurrencyLabel,
+                  AppCurrency.symbolFor(_currencyCode),
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
