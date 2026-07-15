@@ -259,10 +259,11 @@
   "completed": "Completed",
   "paidLessons": "Paid lessons",
   "prepaidLessons": "Prepaid lessons",
-  "collectedLabel": "TRY {amount} Collected",
+  "collectedLabel": "{amount} {currency} Collected",
   "@collectedLabel": {
     "placeholders": {
-      "amount": {"type": "String"}
+      "amount": {"type": "String"},
+      "currency": {"type": "String"}
     }
   },
   "cashNetLine": "Cash +{collected} / -{refunded} · Net {net}",
@@ -364,13 +365,13 @@
   "languageFollowsDevice": "Follows device language",
   "languageEnglish": "English",
   "languageTurkish": "Turkish",
+  "languageRussian": "Russian",
   "appVersion": "Version",
   "editProfile": "Edit profile",
   "editProfileComingSoon": "Profile editing will be available soon.",
   "logoutConfirmTitle": "Log out?",
   "logoutConfirmMessage": "You will need to sign in again to continue.",
   "costPlaceholder": "e.g. 500",
-  "currencyTry": "TRY",
   "signedInWith": "Signed in with {provider}",
   "@signedInWith": {
     "placeholders": {

@@ -1,0 +1,479 @@
+{
+  "@@locale": "ru",
+  "appTitle": "Tutor App",
+  "tabStudents": "Ученики",
+  "tabSchedule": "Расписание",
+  "tabJournal": "Журнал",
+  "tabPayment": "Оплата",
+  "tabSettings": "Настройки",
+  "ok": "ОК",
+  "cancel": "Отмена",
+  "save": "Сохранить",
+  "delete": "Удалить",
+  "edit": "Изменить",
+  "add": "Добавить",
+  "back": "Назад",
+  "close": "Закрыть",
+  "retry": "Повторить",
+  "next": "Далее",
+  "done": "Готово",
+  "select": "Выбрать",
+  "remove": "Убрать",
+  "today": "Сегодня",
+  "loading": "Загрузка…",
+  "somethingWentWrong": "Что-то пошло не так",
+  "oauthError": "Ошибка OAuth",
+  "oauthLoginFailed": "Не удалось войти через OAuth.",
+  "authTitle": "Вход",
+  "welcomeTitle": "Добро пожаловать в Tutor App",
+  "createAccountTitle": "Создайте аккаунт",
+  "authSubtitle": "Планируйте уроки, ведите заметки и управляйте репетиторством.",
+  "login": "Войти",
+  "register": "Регистрация",
+  "createAccount": "Создать аккаунт",
+  "continueWithGoogle": "Продолжить с Google",
+  "continueWithApple": "Продолжить с Apple",
+  "orContinueWith": "или продолжить через",
+  "dontHaveAccount": "Нет аккаунта?",
+  "alreadyHaveAccount": "Уже есть аккаунт?",
+  "stepOf": "Шаг {current} из {total}",
+  "@stepOf": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "email": "Email",
+  "password": "Пароль",
+  "name": "Имя",
+  "phone": "Телефон",
+  "passwordConfirmation": "Подтверждение пароля",
+  "individualLessonCostOptional": "Стоимость индивидуального урока (необязательно)",
+  "groupLessonCostOptional": "Стоимость группового урока (необязательно)",
+  "emailPasswordRequired": "Укажите email и пароль.",
+  "nameRequired": "Укажите имя.",
+  "emailRequired": "Укажите email.",
+  "passwordRequired": "Укажите пароль.",
+  "passwordConfirmationRequired": "Подтвердите пароль.",
+  "couldNotOpenOAuth": "Не удалось открыть страницу OAuth.",
+  "oauthCouldNotStart": "Не удалось начать вход через OAuth.",
+  "oauthInvalidGrantHint": "Сессия Google истекла или redirect URI не совпадает. Закройте браузер, проверьте в Google Cloud адрес http://127.0.0.1:8000/api/auth/google/callback и попробуйте снова из приложения.",
+  "settings": "Настройки",
+  "signedInAs": "Вы вошли как {name}",
+  "@signedInAs": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "logout": "Выйти",
+  "students": "Ученики",
+  "groups": "Группы",
+  "studentCount": "{count} ученик(ов)",
+  "@studentCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "groupCount": "{count} групп(ы)",
+  "@groupCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "searchByNameOrPhone": "Поиск по имени или телефону",
+  "searchGroups": "Поиск групп",
+  "noGroupsYet": "Пока нет групп",
+  "noGroupsHint": "Создайте группу, чтобы объединить учеников.",
+  "addGroup": "Добавить группу",
+  "noStudentsYet": "Пока нет учеников",
+  "noStudentsHint": "Добавьте первого ученика, чтобы начать учёт уроков.",
+  "addStudent": "Добавить ученика",
+  "group": "Группа",
+  "costPerLesson": "{cost} / урок",
+  "@costPerLesson": {
+    "placeholders": {
+      "cost": {"type": "String"}
+    }
+  },
+  "deleteStudent": "Удалить ученика",
+  "deleteStudentConfirm": "Удалить {name}? Статус станет неактивным.",
+  "@deleteStudentConfirm": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "deleteGroup": "Удалить группу",
+  "deleteGroupConfirm": "Удалить {name}? Статус станет неактивным.",
+  "@deleteGroupConfirm": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "studentDetail": "Карточка ученика",
+  "info": "Инфо",
+  "lessons": "Уроки",
+  "payments": "Платежи",
+  "student": "Ученик",
+  "call": "Позвонить",
+  "whatsApp": "WhatsApp",
+  "lessonFee": "Стоимость урока",
+  "notSet": "Не указано",
+  "perLesson": "за урок",
+  "noBirthdayAdded": "День рождения не добавлен",
+  "notes": "Заметки",
+  "lastLesson": "Последний урок: {date}",
+  "@lastLesson": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "tapPhotoToChange": "Нажмите, чтобы изменить или удалить фото",
+  "studentName": "Имя ученика",
+  "eg500": "напр. 500",
+  "addShortNote": "Краткая заметка…",
+  "deleteStudentAction": "Удалить ученика",
+  "selectDate": "Выберите дату",
+  "profilePhoto": "Фото профиля",
+  "chooseFromGallery": "Выбрать из галереи",
+  "camera": "Камера",
+  "removePhoto": "Удалить фото",
+  "addPhoneFirst": "Сначала добавьте номер телефона.",
+  "couldNotStartCall": "Не удалось начать звонок.",
+  "couldNotOpenWhatsApp": "Не удалось открыть WhatsApp.",
+  "unsavedChanges": "Несохранённые изменения",
+  "saveBeforeLeaving": "Сохранить изменения перед выходом?",
+  "dontSave": "Не сохранять",
+  "studentUpdated": "Ученик успешно обновлён.",
+  "deleteStudentContinue": "Ученик станет неактивным. Продолжить?",
+  "addStudentTitle": "Новый ученик",
+  "pickAColor": "Выбрать цвет",
+  "nameAndSurname": "Имя и фамилия",
+  "addBirthday": "Добавить день рождения",
+  "birthday": "День рождения",
+  "birthdayColon": "День рождения: {date}",
+  "@birthdayColon": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "lessonCostColon": "Стоимость урока:",
+  "completedLessons": "Завершённые уроки",
+  "lessonsWithStatusCompleted": "Уроки со статусом «завершён»",
+  "total": "Итого",
+  "cancelled": "Отменён",
+  "completedList": "Список завершённых",
+  "noCompletedLessonsYet": "Завершённых уроков пока нет.",
+  "noPaymentData": "Нет данных об оплате.",
+  "totalPaid": "Всего оплачено",
+  "prepaid": "Предоплата",
+  "debtsUnpaid": "Долги (не оплачено)",
+  "cashflow": "Денежный поток",
+  "collected": "Получено",
+  "refunded": "Возврат",
+  "net": "Нетто",
+  "settled": "Зачтено",
+  "lessonTotal": "Сумма уроков",
+  "noStudentsInGroup": "В этой группе нет учеников.",
+  "inactiveInGroup": "Неактивен в группе",
+  "addToGroup": "Добавить в {name}",
+  "@addToGroup": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "chooseStudentToAdd": "Выберите ученика…",
+  "allStudentsAlreadyInGroup": "Все ученики уже в этой группе.",
+  "removeFromGroup": "Убрать из группы",
+  "removeStudentFromGroup": "Убрать {student} из {group}?",
+  "@removeStudentFromGroup": {
+    "placeholders": {
+      "student": {"type": "String"},
+      "group": {"type": "String"}
+    }
+  },
+  "editGroup": "Редактировать группу",
+  "groupName": "Название группы",
+  "color": "Цвет",
+  "colorHint": "Цвет (#33FF57)",
+  "addGroupTitle": "Новая группа",
+  "schedule": "Расписание",
+  "journal": "Журнал",
+  "payment": "Оплата",
+  "markCompleted": "Отметить выполненным",
+  "cancelLesson": "Отменить урок",
+  "deleteLesson": "Удалить урок",
+  "deleteLessonConfirm": "Удалить «{title}» навсегда?",
+  "@deleteLessonConfirm": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "overview": "Обзор",
+  "monthly": "По месяцам",
+  "receivables": "Дебиторка",
+  "deletePayment": "Удалить платёж",
+  "deletePaymentConfirm": "Удалить платёж {amount}? Связанный урок может стать неоплаченным.",
+  "@deletePaymentConfirm": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "failedToLoad": "Не удалось загрузить {label}: {error}",
+  "@failedToLoad": {
+    "placeholders": {
+      "label": {"type": "String"},
+      "error": {"type": "String"}
+    }
+  },
+  "failedToLoadDailyChart": "Не удалось загрузить дневной график.",
+  "noOverviewData": "Нет данных обзора.",
+  "noReceivablesData": "Нет данных по дебиторке.",
+  "noPrepaidData": "Нет данных по предоплате.",
+  "noPaymentsYet": "Платежей пока нет.",
+  "recordPayment": "Записать платёж",
+  "noGroupReceivables": "Нет групповой дебиторки.",
+  "noUnallocatedPrepaid": "Нет нераспределённых предоплат.",
+  "lessonSettlement": "Зачёт уроков",
+  "billableFreeCounts": "Платные: {billable} · Бесплатные: {free}",
+  "@billableFreeCounts": {
+    "placeholders": {
+      "billable": {"type": "int"},
+      "free": {"type": "int"}
+    }
+  },
+  "earned": "Заработано",
+  "byStudent": "По ученикам",
+  "byGroup": "По группам",
+  "unpaidLessons": "Неоплаченные уроки",
+  "unallocatedCredits": "Нераспределённый кредит",
+  "monthTotals": "Итоги за {month}",
+  "@monthTotals": {
+    "placeholders": {
+      "month": {"type": "String"}
+    }
+  },
+  "markPaid": "Отметить оплаченным",
+  "paid": "Оплачено",
+  "unpaid": "Не оплачено",
+  "scheduled": "Запланировано",
+  "completed": "Завершено",
+  "paidLessons": "Оплаченные уроки",
+  "prepaidLessons": "Уроки из предоплаты",
+  "collectedLabel": "{amount} {currency} получено",
+  "@collectedLabel": {
+    "placeholders": {
+      "amount": {"type": "String"},
+      "currency": {"type": "String"}
+    }
+  },
+  "cashNetLine": "Нал +{collected} / -{refunded} · Нетто {net}",
+  "@cashNetLine": {
+    "placeholders": {
+      "collected": {"type": "String"},
+      "refunded": {"type": "String"},
+      "net": {"type": "String"}
+    }
+  },
+  "cashLine": "Нал +{collected} / -{refunded}",
+  "@cashLine": {
+    "placeholders": {
+      "collected": {"type": "String"},
+      "refunded": {"type": "String"}
+    }
+  },
+  "recordPaymentTitle": "Записать платёж",
+  "amount": "Сумма",
+  "kind": "Тип",
+  "method": "Способ",
+  "lessonOptional": "Урок (необязательно)",
+  "kindLesson": "Урок",
+  "kindPrepaid": "Предоплата",
+  "kindRefund": "Возврат",
+  "methodCash": "Наличные",
+  "methodTransfer": "Перевод",
+  "methodCard": "Карта",
+  "methodOther": "Другое",
+  "selectStudent": "Выбрать ученика",
+  "selectLesson": "Выбрать урок",
+  "selectStudentTitle": "Выбор ученика",
+  "selectLessonTitle": "Выбор урока",
+  "noLesson": "Без урока",
+  "noStudentsAvailable": "Нет доступных учеников.",
+  "noLessonsFound": "Уроков по этому фильтру нет.",
+  "applyToLessonStatus": "Применить к статусу урока",
+  "optionalNotes": "Заметка (необязательно)",
+  "enterValidAmount": "Введите корректную сумму.",
+  "selectStudentOrLesson": "Выберите ученика или урок.",
+  "addSchedule": "Добавить в расписание",
+  "addLesson": "Добавить урок",
+  "editSchedule": "Изменить расписание",
+  "editLesson": "Изменить урок",
+  "deleteLessonConfirmShort": "Удалить этот урок навсегда?",
+  "target": "Кому",
+  "date": "Дата",
+  "startTime": "Время начала",
+  "duration": "Длительность",
+  "status": "Статус",
+  "titleOptional": "Название (необязательно)",
+  "price": "Цена",
+  "selectGroup": "Выбрать группу",
+  "selectGroupTitle": "Выбор группы",
+  "freeLesson": "Бесплатный урок",
+  "minutes": "{count} мин",
+  "@minutes": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "selectAGroup": "Выберите группу.",
+  "selectAStudent": "Выберите ученика.",
+  "enterValidPrice": "Введите корректную цену.",
+  "dismiss": "Закрыть",
+  "lessonsCount": "{count} уроков",
+  "@lessonsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "unpaidLessonsCount": "{count} неоплаченных уроков",
+  "@unpaidLessonsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "lessonsOldest": "{count} уроков · старейший {date}",
+  "@lessonsOldest": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "date": {"type": "String"}
+    }
+  },
+  "account": "Аккаунт",
+  "profile": "Профиль",
+  "teaching": "Преподавание",
+  "preferences": "Предпочтения",
+  "about": "О приложении",
+  "defaultIndividualCost": "Стандартная цена индивидуального",
+  "defaultGroupCost": "Стандартная цена группового",
+  "notifications": "Уведомления",
+  "notificationsSubtitle": "Напоминания об уроках и оплате",
+  "appearance": "Оформление",
+  "themeSystem": "Системная",
+  "themeLight": "Светлая",
+  "themeDark": "Тёмная",
+  "language": "Язык",
+  "languageFollowsDevice": "Как на устройстве",
+  "languageEnglish": "Английский",
+  "languageTurkish": "Турецкий",
+  "languageRussian": "Русский",
+  "appVersion": "Версия",
+  "editProfile": "Редактировать профиль",
+  "editProfileComingSoon": "Редактирование профиля скоро появится.",
+  "logoutConfirmTitle": "Выйти?",
+  "logoutConfirmMessage": "Чтобы продолжить, нужно будет войти снова.",
+  "costPlaceholder": "напр. 500",
+  "signedInWith": "Вход через {provider}",
+  "@signedInWith": {
+    "placeholders": {
+      "provider": {"type": "String"}
+    }
+  },
+  "support": "Поддержка",
+  "supportMessage": "Вопросы или отзывы? Напишите нам в любое время.",
+  "teachingDefaultsHint": "Используется как цена по умолчанию при создании уроков.",
+  "selectTimeSlot": "Выберите время",
+  "selectTimeSlotHint": "Нажмите на ячейку, чтобы выбрать день и время.",
+  "selectedSlot": "{date} · {time}",
+  "@selectedSlot": {
+    "placeholders": {
+      "date": {"type": "String"},
+      "time": {"type": "String"}
+    }
+  },
+  "markLessonDone": "Отметить выполненным",
+  "movedToJournal": "Перенесено в журнал как завершённое.",
+  "settlePaymentTitle": "Оплата за этот урок",
+  "leaveUnpaid": "Оставить неоплаченным",
+  "markPaidNow": "Отметить оплаченным",
+  "applyPrepaidCredit": "Списать с предоплаты",
+  "editLessonAction": "Изменить урок",
+  "studentNotes": "Заметки по ученикам",
+  "studentNotePlaceholder": "Заметка для {name}",
+  "@studentNotePlaceholder": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "noGroupMembers": "В этой группе пока нет участников.",
+  "packageCredit": "Кредит пакета",
+  "approxLessonsLeft": "~{count} уроков осталось",
+  "@approxLessonsLeft": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "applyCredit": "Применить кредит",
+  "applyCreditToLesson": "Применить кредит к уроку",
+  "noUnpaidLessons": "У этого ученика нет неоплаченных уроков.",
+  "creditApplied": "Предоплата применена.",
+  "loadPackage": "Пополнить пакет",
+  "loadPackageHint": "Записать предоплату как кредит пакета для ученика.",
+  "unallocatedCreditTotal": "Нераспределённый кредит",
+  "prepaidWalletHint": "Кредиты, ожидающие применения к урокам.",
+  "selectUnpaidLesson": "Выбрать неоплаченный урок",
+  "lessonNotesSummary": "Заметки",
+  "pickLessonFromCalendar": "Выбрать урок",
+  "pickUnpaidLessonHint": "Нажмите неоплаченный урок журнала на сетке недели.",
+  "pickLessonHint": "Нажмите урок журнала на сетке недели.",
+  "noLessonsThisWeek": "На этой неделе подходящих уроков нет. Попробуйте другую неделю.",
+  "clearLesson": "Очистить",
+  "premium": "Premium",
+  "paywallTitle": "Учите без ограничений",
+  "paywallSubtitle": "Откройте полный набор инструментов для роста практики.",
+  "paywallReasonStudents": "Достигнут лимит бесплатного плана: 4 активных ученика.",
+  "paywallReasonSchedule": "Достигнут лимит бесплатного плана: 24 урока в расписании.",
+  "paywallReasonJournal": "Достигнут лимит бесплатного плана: 24 урока в журнале.",
+  "paywallFeatureStudents": "Неограниченное число учеников",
+  "paywallFeatureSchedule": "Неограниченное расписание",
+  "paywallFeatureJournal": "Неограниченный журнал",
+  "planWeekly": "Неделя",
+  "planMonthly": "Месяц",
+  "planYearly": "Год",
+  "planWeeklyHint": "Гибкая оплата",
+  "planMonthlyHint": "Ежемесячно",
+  "planYearlyHint": "Выгоднее за год",
+  "popular": "Популярный",
+  "bestValue": "Лучшая цена",
+  "continueToPremium": "Открыть Premium",
+  "restorePurchases": "Восстановить покупки",
+  "paywallProductsUnavailable": "Товары App Store ещё не загрузились. Проверьте RevenueCat и ID продуктов.",
+  "paywallNoPurchases": "Покупки для восстановления не найдены.",
+  "paywallLegal": "Оплата списывается с аккаунта App Store. Управляйте подписками в Настройках.",
+  "choosePlan": "Выберите план",
+  "freePlanUsage": "Текущее использование бесплатного плана",
+  "usageStudents": "Ученики: {used}/{limit}",
+  "@usageStudents": {
+    "placeholders": {
+      "used": {"type": "int"},
+      "limit": {"type": "int"}
+    }
+  },
+  "usageSchedule": "Уроки в расписании: {used}/{limit}",
+  "@usageSchedule": {
+    "placeholders": {
+      "used": {"type": "int"},
+      "limit": {"type": "int"}
+    }
+  },
+  "usageJournal": "Уроки в журнале: {used}/{limit}",
+  "@usageJournal": {
+    "placeholders": {
+      "used": {"type": "int"},
+      "limit": {"type": "int"}
+    }
+  },
+  "manageSubscription": "Подписка",
+  "premiumActive": "Premium активен",
+  "premiumFree": "Бесплатный план",
+  "upgradeToPremium": "Перейти на Premium"
+}

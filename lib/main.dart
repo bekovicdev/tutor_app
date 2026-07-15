@@ -123,7 +123,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         GlobalMaterialLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
-      // Device language; unsupported → English. Add Locale('ru') when Russian lands.
+      // Device language; unsupported → English.
       localeResolutionCallback:
           (Locale? locale, Iterable<Locale> supportedLocales) {
         if (locale == null) {

@@ -573,8 +573,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String get prepaidLessons => 'Ön ödemeli dersler';
 
   @override
-  String collectedLabel(String amount) {
-    return 'TRY $amount Tahsil';
+  String collectedLabel(String amount, String currency) {
+    return '$amount $currency tahsil';
   }
 
   @override
@@ -785,6 +785,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get languageTurkish => 'Türkçe';
 
   @override
+  String get languageRussian => 'Rusça';
+
+  @override
   String get appVersion => 'Sürüm';
 
   @override
@@ -802,9 +805,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get costPlaceholder => 'Örn. 500';
-
-  @override
-  String get currencyTry => 'TRY';
 
   @override
   String signedInWith(String provider) {

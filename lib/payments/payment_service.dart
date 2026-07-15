@@ -290,7 +290,7 @@ class PaymentsOverview {
         (json['earned'] as Map<String, dynamic>?) ?? <String, dynamic>{};
 
     return PaymentsOverview(
-      currency: (json['currency'] as String?) ?? 'TRY',
+      currency: (json['currency'] as String?) ?? 'USD',
       billableCount: _asInt(lessons['billable_count']) ?? 0,
       freeCount: _asInt(lessons['free_count']) ?? 0,
       unpaid: StatusAmountBucket.fromJson(

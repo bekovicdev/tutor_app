@@ -117,7 +117,11 @@ class FcmService {
     } on MissingPluginException {
       return null;
     } catch (error) {
-      debugPrint('FCM token fetch failed: $error');
+      final String message = error.toString();
+      // Simulator / pre-APNS cold start — not actionable noise.
+      if (!message.contains('apns-token-not-set')) {
+        debugPrint('FCM token fetch failed: $error');
+      }
       return null;
     }
   }

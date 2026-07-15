@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_en.dart';
+import 'app_localizations_ru.dart';
 import 'app_localizations_tr.dart';
 
 // ignore_for_file: type=lint
@@ -95,6 +96,7 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
+    Locale('ru'),
     Locale('tr'),
   ];
 
@@ -1151,8 +1153,8 @@ abstract class AppLocalizations {
   /// No description provided for @collectedLabel.
   ///
   /// In en, this message translates to:
-  /// **'TRY {amount} Collected'**
-  String collectedLabel(String amount);
+  /// **'{amount} {currency} Collected'**
+  String collectedLabel(String amount, String currency);
 
   /// No description provided for @cashNetLine.
   ///
@@ -1544,6 +1546,12 @@ abstract class AppLocalizations {
   /// **'Turkish'**
   String get languageTurkish;
 
+  /// No description provided for @languageRussian.
+  ///
+  /// In en, this message translates to:
+  /// **'Russian'**
+  String get languageRussian;
+
   /// No description provided for @appVersion.
   ///
   /// In en, this message translates to:
@@ -1579,12 +1587,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'e.g. 500'**
   String get costPlaceholder;
-
-  /// No description provided for @currencyTry.
-  ///
-  /// In en, this message translates to:
-  /// **'TRY'**
-  String get currencyTry;
 
   /// No description provided for @signedInWith.
   ///
@@ -1988,7 +1990,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en', 'tr'].contains(locale.languageCode);
+      <String>['en', 'ru', 'tr'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -1999,6 +2001,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   switch (locale.languageCode) {
     case 'en':
       return AppLocalizationsEn();
+    case 'ru':
+      return AppLocalizationsRu();
     case 'tr':
       return AppLocalizationsTr();
   }

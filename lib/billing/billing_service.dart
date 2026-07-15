@@ -91,7 +91,6 @@ class BillingService {
         ? _iosApiKey
         : (Platform.isAndroid ? _androidApiKey : '');
     if (apiKey.isEmpty) {
-      debugPrint('RevenueCat API key missing; purchase UI still works offline.');
       return;
     }
 

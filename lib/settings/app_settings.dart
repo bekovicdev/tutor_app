@@ -74,7 +74,7 @@ class AppSettings {
     }
   }
 
-  /// Whole TRY amounts only — strips decimals like `500.0` → `500`.
+  /// Whole dollar amounts only — strips decimals like `500.0` → `500`.
   static String? _asWholeNumberText(String? raw) {
     if (raw == null) {
       return null;

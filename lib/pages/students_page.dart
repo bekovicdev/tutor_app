@@ -1802,7 +1802,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
     if (balance == null) {
       return Center(child: Text(l10n.noPaymentData));
     }
-    final String currency = balance.currency.isEmpty ? 'TRY' : balance.currency;
+    final String currency = context.currencyLabel();
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),

@@ -742,7 +742,10 @@ class _PaymentPageState extends State<PaymentPage> {
               ),
               const SizedBox(height: 4),
               Text(
-                l10n.collectedLabel(_formatGrouped(monthCollected)),
+                l10n.collectedLabel(
+                  _formatGrouped(monthCollected),
+                  context.currencyLabel(),
+                ),
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
@@ -843,22 +846,22 @@ class _PaymentPageState extends State<PaymentPage> {
                 _rowMetricColored(
                   l10n.collected,
                   selectedDayPoint.collected,
-                  'TRY',
+                  _currency,
                   chartColor,
                 ),
                 _rowMetric(
                   l10n.paidLessons,
                   selectedDayPoint.paidAmount,
-                  'TRY',
+                  _currency,
                 ),
                 _rowMetric(
                   l10n.prepaidLessons,
                   selectedDayPoint.prepaidAmount,
-                  'TRY',
+                  _currency,
                 ),
-                _rowMetric(l10n.unpaid, selectedDayPoint.unpaidAmount, 'TRY'),
+                _rowMetric(l10n.unpaid, selectedDayPoint.unpaidAmount, _currency),
                 if (selectedDayPoint.refunded > 0)
-                  _rowMetric(l10n.refunded, selectedDayPoint.refunded, 'TRY'),
+                  _rowMetric(l10n.refunded, selectedDayPoint.refunded, _currency),
               ],
             ),
           ),
@@ -876,10 +879,10 @@ class _PaymentPageState extends State<PaymentPage> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                _rowMetric(l10n.paid, summary.paidAmount, 'TRY'),
-                _rowMetric(l10n.prepaid, summary.prepaidAmount, 'TRY'),
-                _rowMetric(l10n.unpaid, summary.unpaidAmount, 'TRY'),
-                _rowMetric(l10n.settled, summary.settledAmount, 'TRY'),
+                _rowMetric(l10n.paid, summary.paidAmount, _currency),
+                _rowMetric(l10n.prepaid, summary.prepaidAmount, _currency),
+                _rowMetric(l10n.unpaid, summary.unpaidAmount, _currency),
+                _rowMetric(l10n.settled, summary.settledAmount, _currency),
                 const SizedBox(height: 8),
                 Text(
                   l10n.cashNetLine(
@@ -1017,7 +1020,7 @@ class _PaymentPageState extends State<PaymentPage> {
       children: <Widget>[
         _metricCard(
           label: '${l10n.total} ${l10n.receivables.toLowerCase()}',
-          value: _money(data.totalAmount, 'TRY'),
+          value: _money(data.totalAmount),
           subtitle: l10n.unpaidLessonsCount(data.lessonCount),
           color: CupertinoColors.systemOrange,
         ),
@@ -1099,7 +1102,7 @@ class _PaymentPageState extends State<PaymentPage> {
         _metricCard(
           label: l10n.unallocatedCreditTotal,
           value: _formatNum(unallocatedTotal),
-          subtitle: 'TRY',
+          subtitle: _currency,
           color: CupertinoColors.systemPurple,
         ),
         const SizedBox(height: 12),
@@ -1459,7 +1462,7 @@ class _PaymentPageState extends State<PaymentPage> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: <Widget>[
               Text(
-                '${payment.kind == PaymentKind.refund ? '-' : ''}${_money(payment.amount, _overview?.currency ?? context.l10n.currencyTry)}',
+                '${payment.kind == PaymentKind.refund ? '-' : ''}${_money(payment.amount)}',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   color: payment.kind == PaymentKind.refund
@@ -1532,8 +1535,10 @@ class _PaymentPageState extends State<PaymentPage> {
     }
   }
 
-  String _money(num amount, String currency) =>
-      '${_formatNum(amount)} $currency';
+  String get _currency => kCurrencyLabel;
+
+  String _money(num amount, [String? _]) =>
+      '${_formatNum(amount)} $_currency';
 
   String _formatNum(num value) {
     if (value == value.roundToDouble()) {

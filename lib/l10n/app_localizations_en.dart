@@ -573,8 +573,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prepaidLessons => 'Prepaid lessons';
 
   @override
-  String collectedLabel(String amount) {
-    return 'TRY $amount Collected';
+  String collectedLabel(String amount, String currency) {
+    return '$amount $currency Collected';
   }
 
   @override
@@ -785,6 +785,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageTurkish => 'Turkish';
 
   @override
+  String get languageRussian => 'Russian';
+
+  @override
   String get appVersion => 'Version';
 
   @override
@@ -802,9 +805,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get costPlaceholder => 'e.g. 500';
-
-  @override
-  String get currencyTry => 'TRY';
 
   @override
   String signedInWith(String provider) {

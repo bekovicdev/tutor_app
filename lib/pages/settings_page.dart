@@ -55,7 +55,7 @@ class _SettingsPageState extends State<SettingsPage> {
     super.dispose();
   }
 
-  /// Default lesson costs are whole TRY amounts — no decimals.
+  /// Default lesson costs are whole dollar amounts — no decimals.
   String _costAsIntText(String? raw) {
     if (raw == null) {
       return '';
@@ -308,6 +308,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return switch (code) {
       'tr' => l10n.languageTurkish,
       'en' => l10n.languageEnglish,
+      'ru' => l10n.languageRussian,
       _ => code.toUpperCase(),
     };
   }
@@ -765,7 +766,7 @@ class _SettingsPageState extends State<SettingsPage> {
               suffix: Padding(
                 padding: const EdgeInsets.only(right: 10),
                 child: Text(
-                  context.l10n.currencyTry,
+                  kCurrencyLabel,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
