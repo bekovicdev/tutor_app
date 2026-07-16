@@ -261,6 +261,7 @@
   "logoutConfirmMessage": "Devam etmek için tekrar giriş yapmanız gerekir.",
   "costPlaceholder": "Örn. 500",
   "currency": "Para birimi",
+  "lessonDetail": "Ders detayı",
   "signedInWith": "{provider} ile giriş yapıldı",
   "support": "Destek",
   "supportMessage": "Soru veya geri bildirim için bize yazabilirsiniz.",

@@ -421,10 +421,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                               widget.user.isPremium == true)
                                           ? l10n.premiumActive
                                           : l10n.premiumFree,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
-                                        color: CupertinoColors.label,
+                                        color: CupertinoColors.label
+                                            .resolveFrom(context),
                                       ),
                                     ),
                                   ],

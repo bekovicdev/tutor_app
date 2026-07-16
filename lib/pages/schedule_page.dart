@@ -3,9 +3,7 @@ import 'package:intl/intl.dart' as intl;
 import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/create_lesson_page.dart';
-import 'package:tutor_app/pages/paywall_page.dart';
-import 'package:tutor_app/payments/payment_service.dart';
-import 'package:tutor_app/theme/app_dialogs.dart';
+import 'package:tutor_app/pages/lesson_detail_page.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
 import 'package:tutor_app/widgets/settings_nav_button.dart';
 
@@ -29,7 +27,6 @@ class _SchedulePageState extends State<SchedulePage> {
   static const int _hoursInDay = 24;
 
   late final LessonService _lessonService;
-  late final PaymentService _paymentService;
   final ScrollController _gridScrollController = ScrollController();
 
   DateTime _weekStart = _mondayOf(DateTime.now());
@@ -49,7 +46,6 @@ class _SchedulePageState extends State<SchedulePage> {
   void initState() {
     super.initState();
     _lessonService = LessonService(token: widget.token);
-    _paymentService = PaymentService(token: widget.token);
     _loadWeek();
   }
 
@@ -491,127 +487,12 @@ class _SchedulePageState extends State<SchedulePage> {
   }
 
   Future<void> _onLessonTap(Lesson lesson) async {
-    final AppLocalizations l10n = context.l10n;
-    final String? action = await showAppActionSheet<String>(
-      context: context,
-      title: lesson.displayTitle,
-      message:
-          '${lesson.date} · ${lesson.startAt} · ${l10n.minutes(lesson.durationMinutes)}\n'
-          '${lesson.displaySubtitle}',
-      cancelLabel: l10n.cancel,
-      actions: <AppSheetAction>[
-        AppSheetAction(
-          label: l10n.markLessonDone,
-          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop('done'),
-        ),
-        AppSheetAction(
-          label: l10n.editLessonAction,
-          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop('edit'),
-        ),
-      ],
-    );
-    if (action == 'done') {
-      await _markLessonDone(lesson);
-    } else if (action == 'edit') {
-      await _openLessonEditor(lesson);
-    }
-  }
-
-  Future<void> _markLessonDone(Lesson lesson) async {
-    final AppLocalizations l10n = context.l10n;
-    String paymentChoice = 'unpaid';
-    if (lesson.isFree != true) {
-      final String? picked = await showAppActionSheet<String>(
-        context: context,
-        title: l10n.settlePaymentTitle,
-        message: lesson.displayTitle,
-        cancelLabel: l10n.cancel,
-        actions: <AppSheetAction>[
-          AppSheetAction(
-            label: l10n.leaveUnpaid,
-            onPressed: (BuildContext ctx) => Navigator.of(ctx).pop('unpaid'),
-          ),
-          AppSheetAction(
-            label: l10n.markPaidNow,
-            onPressed: (BuildContext ctx) => Navigator.of(ctx).pop('paid'),
-          ),
-          AppSheetAction(
-            label: l10n.applyPrepaidCredit,
-            onPressed: (BuildContext ctx) => Navigator.of(ctx).pop('prepaid'),
-          ),
-        ],
-      );
-      if (picked == null) {
-        return;
-      }
-      paymentChoice = picked;
-    }
-
-    try {
-      await _lessonService.completeFromSchedule(lesson.id);
-      if (paymentChoice != 'unpaid' && lesson.isFree != true) {
-        await _paymentService.markLessonPayment(
-          lessonId: lesson.id,
-          request: LessonPaymentRequest(paymentStatus: paymentChoice),
-        );
-      }
-      if (!mounted) {
-        return;
-      }
-      await showAppAlert<void>(
-        context: context,
-        title: l10n.markLessonDone,
-        message: l10n.movedToJournal,
-        actions: <AppAlertAction>[
-          AppAlertAction(label: l10n.ok, style: AppAlertStyle.primary),
-        ],
-      );
-      await _loadWeek();
-    } on LessonServiceException catch (error) {
-      if (!mounted) {
-        return;
-      }
-      if (error.isQuota) {
-        await openPaywall(
-          context,
-          token: widget.token,
-          reasonCode: error.code,
-        );
-        return;
-      }
-      await showAppAlert<void>(
-        context: context,
-        title: l10n.schedule,
-        message: error.message,
-        actions: <AppAlertAction>[
-          AppAlertAction(label: l10n.ok, style: AppAlertStyle.primary),
-        ],
-      );
-    } on PaymentServiceException catch (error) {
-      if (!mounted) {
-        return;
-      }
-      await _loadWeek();
-      await showAppAlert<void>(
-        context: context,
-        title: l10n.schedule,
-        message: error.message,
-        actions: <AppAlertAction>[
-          AppAlertAction(label: l10n.ok, style: AppAlertStyle.primary),
-        ],
-      );
-    }
-  }
-
-  Future<void> _openLessonEditor(Lesson lesson) async {
-    final bool? changed = await Navigator.of(context).push<bool>(
-      CupertinoPageRoute<bool>(
-        builder: (BuildContext context) => CreateLessonPage(
-          token: widget.token,
-          source: LessonSource.schedule,
-          lesson: lesson,
-        ),
-      ),
+    final bool? changed = await openLessonDetailPage(
+      context,
+      token: widget.token,
+      lessonId: lesson.id,
+      lesson: lesson,
+      preferredSource: LessonSource.schedule,
     );
     if (changed == true) {
       await _loadWeek();
@@ -724,12 +605,13 @@ class _DayColumn extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: cancelled
-                              ? CupertinoColors.systemGrey5
+                              ? CupertinoColors.systemGrey5.resolveFrom(context)
                               : accent.withValues(alpha: 0.22),
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
                             color: cancelled
                                 ? CupertinoColors.systemGrey3
+                                    .resolveFrom(context)
                                 : accent,
                             width: 0.8,
                           ),

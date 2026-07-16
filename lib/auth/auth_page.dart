@@ -80,8 +80,8 @@ class _AuthPageState extends State<AuthPage> {
             const SizedBox(height: 6),
             Text(
               l10n.authSubtitle,
-              style: const TextStyle(
-                color: CupertinoColors.systemGrey,
+              style: TextStyle(
+                color: CupertinoColors.secondaryLabel.resolveFrom(context),
                 fontSize: 15,
               ),
             ),
@@ -114,7 +114,7 @@ class _AuthPageState extends State<AuthPage> {
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: Text(
                       l10n.orContinueWith,
-                      style: const TextStyle(color: CupertinoColors.systemGrey),
+                      style: TextStyle(color: CupertinoColors.secondaryLabel.resolveFrom(context)),
                     ),
                   ),
                   Expanded(child: _separatorLine(context)),
@@ -146,7 +146,7 @@ class _AuthPageState extends State<AuthPage> {
                 children: <Widget>[
                   Text(
                     l10n.dontHaveAccount,
-                    style: const TextStyle(color: CupertinoColors.systemGrey),
+                    style: TextStyle(color: CupertinoColors.secondaryLabel.resolveFrom(context)),
                   ),
                   CupertinoButton(
                     padding: const EdgeInsets.only(left: 6, right: 0),
@@ -174,7 +174,7 @@ class _AuthPageState extends State<AuthPage> {
                 children: <Widget>[
                   Text(
                     l10n.alreadyHaveAccount,
-                    style: const TextStyle(color: CupertinoColors.systemGrey),
+                    style: TextStyle(color: CupertinoColors.secondaryLabel.resolveFrom(context)),
                   ),
                   CupertinoButton(
                     padding: const EdgeInsets.only(left: 6, right: 0),
@@ -366,10 +366,10 @@ class _AuthPageState extends State<AuthPage> {
           if (title != null) ...<Widget>[
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: CupertinoColors.systemGrey,
+                color: CupertinoColors.secondaryLabel.resolveFrom(context),
               ),
             ),
             const SizedBox(height: 10),
@@ -452,7 +452,7 @@ class _AuthPageState extends State<AuthPage> {
       placeholder: placeholder,
       prefix: Padding(
         padding: const EdgeInsets.only(left: 12, right: 8),
-        child: Icon(prefixIcon, size: 18, color: CupertinoColors.systemGrey),
+        child: Icon(prefixIcon, size: 18, color: CupertinoColors.secondaryLabel.resolveFrom(context)),
       ),
       keyboardType: keyboardType,
       obscureText: obscureText,

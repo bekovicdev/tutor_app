@@ -810,6 +810,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get currency => 'Currency';
 
   @override
+  String get lessonDetail => 'Lesson detail';
+
+  @override
   String signedInWith(String provider) {
     return 'Signed in with $provider';
   }

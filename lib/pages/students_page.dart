@@ -11,6 +11,7 @@ import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/create_payment_page.dart';
 import 'package:tutor_app/pages/group_detail_page.dart';
+import 'package:tutor_app/pages/lesson_detail_page.dart';
 import 'package:tutor_app/pages/paywall_page.dart';
 import 'package:tutor_app/payments/payment_service.dart';
 import 'package:tutor_app/settings/app_settings.dart';
@@ -1688,9 +1689,9 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
               const SizedBox(height: 4),
               Text(
                 l10n.lessonsWithStatusCompleted,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
-                  color: CupertinoColors.systemGrey,
+                  color: CupertinoColors.secondaryLabel.resolveFrom(context),
                 ),
               ),
               if (summary != null) ...<Widget>[
@@ -1718,9 +1719,10 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                   const SizedBox(height: 10),
                   Text(
                     l10n.lastLesson(_formatDisplayDate(summary.lastLessonDate)),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: CupertinoColors.systemGrey,
+                      color: CupertinoColors.secondaryLabel
+                          .resolveFrom(context),
                     ),
                   ),
                 ],
@@ -1740,41 +1742,53 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
               : _completedLessons.isEmpty
               ? Text(
                   l10n.noCompletedLessonsYet,
-                  style: const TextStyle(color: CupertinoColors.systemGrey),
+                  style: TextStyle(color: CupertinoColors.secondaryLabel.resolveFrom(context)),
                 )
               : Column(
                   children: _completedLessons.map((Lesson lesson) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10),
-                      child: Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Text(
-                                  lesson.displayTitle,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => _openLessonDetail(lesson),
+                        child: Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Text(
+                                    lesson.displayTitle,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
-                                ),
-                                Text(
-                                  '${_formatDisplayDate(lesson.date)} · ${_formatDisplayTime(lesson.startAt)}'
-                                  '${lesson.price != null && lesson.price!.isNotEmpty ? ' · ${lesson.price}' : ''}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: CupertinoColors.systemGrey,
+                                  Text(
+                                    '${_formatDisplayDate(lesson.date)} · ${_formatDisplayTime(lesson.startAt)}'
+                                    '${lesson.price != null && lesson.price!.isNotEmpty ? ' · ${lesson.price}' : ''}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: CupertinoColors.secondaryLabel
+                                          .resolveFrom(context),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                          const Icon(
-                            CupertinoIcons.checkmark_circle_fill,
-                            size: 18,
-                            color: CupertinoColors.activeGreen,
-                          ),
-                        ],
+                            const Icon(
+                              CupertinoIcons.checkmark_circle_fill,
+                              size: 18,
+                              color: CupertinoColors.activeGreen,
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              CupertinoIcons.chevron_right,
+                              size: 14,
+                              color: CupertinoColors.tertiaryLabel
+                                  .resolveFrom(context),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   }).toList(),
@@ -1782,6 +1796,19 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
         ),
       ],
     );
+  }
+
+  Future<void> _openLessonDetail(Lesson lesson) async {
+    final bool? changed = await openLessonDetailPage(
+      context,
+      token: widget.studentService.token,
+      lessonId: lesson.id,
+      lesson: lesson,
+      preferredSource: LessonSource.journal,
+    );
+    if (changed == true) {
+      await _loadDetail();
+    }
   }
 
   Widget _buildPaymentsTab() {
@@ -1880,10 +1907,10 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
         children: <Widget>[
           Text(
             l10n.packageCredit,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: CupertinoColors.systemGrey,
+              color: CupertinoColors.secondaryLabel.resolveFrom(context),
             ),
           ),
           const SizedBox(height: 6),
@@ -1899,9 +1926,9 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
             const SizedBox(height: 4),
             Text(
               l10n.approxLessonsLeft(approxLessons),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: CupertinoColors.systemGrey,
+                color: CupertinoColors.secondaryLabel.resolveFrom(context),
               ),
             ),
           ],
@@ -2807,7 +2834,7 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
                 width: 88,
                 height: 88,
                 decoration: BoxDecoration(
-                  color: _selectedAvatarColor.withOpacity(0.2),
+                  color: _selectedAvatarColor.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                   border: Border.all(color: _selectedAvatarColor, width: 2),
                 ),
@@ -2828,9 +2855,14 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: CupertinoColors.secondarySystemBackground,
+                  color: CupertinoColors.secondarySystemGroupedBackground
+                      .resolveFrom(context),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: CupertinoColors.systemGrey4),
+                  border: Border.all(
+                    color: CupertinoColors.separator
+                        .resolveFrom(context)
+                        .withValues(alpha: 0.35),
+                  ),
                 ),
                 child: Row(
                   children: <Widget>[
@@ -2840,22 +2872,26 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
                       decoration: BoxDecoration(
                         color: _selectedAvatarColor,
                         shape: BoxShape.circle,
-                        border: Border.all(color: CupertinoColors.systemGrey4),
+                        border: Border.all(
+                          color: CupertinoColors.separator
+                              .resolveFrom(context)
+                              .withValues(alpha: 0.45),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         l10n.pickAColor,
-                        style: const TextStyle(
-                          color: CupertinoColors.label,
+                        style: TextStyle(
+                          color: CupertinoColors.label.resolveFrom(context),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
-                    const Icon(
+                    Icon(
                       CupertinoIcons.slider_horizontal_3,
-                      color: CupertinoColors.systemGrey,
+                      color: CupertinoColors.secondaryLabel.resolveFrom(context),
                     ),
                   ],
                 ),
@@ -2885,14 +2921,20 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
                   vertical: 13,
                 ),
                 decoration: BoxDecoration(
-                  color: CupertinoColors.systemGrey6.resolveFrom(context),
+                  color: CupertinoColors.secondarySystemGroupedBackground
+                      .resolveFrom(context),
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: CupertinoColors.separator
+                        .resolveFrom(context)
+                        .withValues(alpha: 0.35),
+                  ),
                 ),
                 child: Row(
                   children: <Widget>[
-                    const Icon(
+                    Icon(
                       CupertinoIcons.calendar,
-                      color: CupertinoColors.systemOrange,
+                      color: AppBrand.primary,
                       size: 18,
                     ),
                     const SizedBox(width: 8),
@@ -2904,15 +2946,15 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
                                 _formatBirthdayDisplay(_selectedBirthday!),
                               ),
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: CupertinoColors.systemOrange,
+                        style: TextStyle(
+                          color: AppBrand.primary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
-                    const Icon(
+                    Icon(
                       CupertinoIcons.chevron_down,
-                      color: CupertinoColors.systemGrey,
+                      color: CupertinoColors.secondaryLabel.resolveFrom(context),
                       size: 16,
                     ),
                   ],
@@ -2923,16 +2965,21 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: CupertinoColors.secondarySystemBackground,
+                color: CupertinoColors.secondarySystemGroupedBackground
+                    .resolveFrom(context),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: CupertinoColors.systemGrey4),
+                border: Border.all(
+                  color: CupertinoColors.separator
+                      .resolveFrom(context)
+                      .withValues(alpha: 0.35),
+                ),
               ),
               child: Row(
                 children: <Widget>[
                   Text(
                     l10n.lessonCostColon,
-                    style: const TextStyle(
-                      color: CupertinoColors.systemPurple,
+                    style: TextStyle(
+                      color: CupertinoColors.label.resolveFrom(context),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -2949,8 +2996,17 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
                         horizontal: 10,
                         vertical: 8,
                       ),
+                      style: TextStyle(
+                        color: CupertinoColors.label.resolveFrom(context),
+                        fontWeight: FontWeight.w500,
+                      ),
+                      placeholderStyle: TextStyle(
+                        color: CupertinoColors.placeholderText
+                            .resolveFrom(context),
+                      ),
                       decoration: BoxDecoration(
-                        color: CupertinoColors.systemGrey6.resolveFrom(context),
+                        color: CupertinoColors.tertiarySystemFill
+                            .resolveFrom(context),
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
@@ -2982,10 +3038,24 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
       minLines: minLines,
       maxLines: maxLines,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      style: TextStyle(
+        color: CupertinoColors.label.resolveFrom(context),
+        fontWeight: FontWeight.w500,
+      ),
+      placeholderStyle: TextStyle(
+        color: CupertinoColors.placeholderText.resolveFrom(context),
+        fontWeight: FontWeight.w400,
+      ),
       decoration: BoxDecoration(
-        color: CupertinoColors.secondarySystemBackground,
+        color: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(
+          context,
+        ),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: CupertinoColors.systemGrey4),
+        border: Border.all(
+          color: CupertinoColors.separator
+              .resolveFrom(context)
+              .withValues(alpha: 0.35),
+        ),
       ),
     );
   }
@@ -3125,7 +3195,9 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
                         color: tempColor,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: CupertinoColors.systemGrey4,
+                          color: CupertinoColors.separator
+                              .resolveFrom(context)
+                              .withValues(alpha: 0.45),
                           width: 2,
                         ),
                       ),
@@ -3133,10 +3205,11 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
                     const SizedBox(height: 8),
                     Text(
                       _hexFromColor(tempColor),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: CupertinoColors.systemGrey,
+                        color:
+                            CupertinoColors.secondaryLabel.resolveFrom(context),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -3144,7 +3217,9 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: CupertinoColors.secondarySystemBackground,
+                          color: CupertinoColors
+                              .secondarySystemGroupedBackground
+                              .resolveFrom(context),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Material(

@@ -808,6 +808,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get currency => 'Валюта';
 
   @override
+  String get lessonDetail => 'Детали урока';
+
+  @override
   String signedInWith(String provider) {
     return 'Вход через $provider';
   }

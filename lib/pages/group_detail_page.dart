@@ -96,7 +96,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       return Center(
         child: Text(
           context.l10n.noStudentsInGroup,
-          style: const TextStyle(color: CupertinoColors.systemGrey),
+          style: TextStyle(color: CupertinoColors.secondaryLabel.resolveFrom(context)),
         ),
       );
     }
@@ -187,8 +187,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                           const SizedBox(height: 4),
                           Text(
                             student.phone!,
-                            style: const TextStyle(
-                              color: CupertinoColors.systemGrey,
+                            style: TextStyle(
+                              color: CupertinoColors.secondaryLabel
+                                  .resolveFrom(context),
                             ),
                           ),
                         ],
@@ -567,9 +568,14 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: CupertinoColors.secondarySystemBackground,
+                  color: CupertinoColors.secondarySystemGroupedBackground
+                      .resolveFrom(context),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: CupertinoColors.systemGrey4),
+                  border: Border.all(
+                    color: CupertinoColors.separator
+                        .resolveFrom(context)
+                        .withValues(alpha: 0.35),
+                  ),
                 ),
                 child: Row(
                   children: <Widget>[
@@ -579,22 +585,26 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                       decoration: BoxDecoration(
                         color: _selectedColor,
                         shape: BoxShape.circle,
-                        border: Border.all(color: CupertinoColors.systemGrey4),
+                        border: Border.all(
+                          color: CupertinoColors.separator
+                              .resolveFrom(context)
+                              .withValues(alpha: 0.45),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         l10n.pickAColor,
-                        style: const TextStyle(
-                          color: CupertinoColors.label,
+                        style: TextStyle(
+                          color: CupertinoColors.label.resolveFrom(context),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
-                    const Icon(
+                    Icon(
                       CupertinoIcons.slider_horizontal_3,
-                      color: CupertinoColors.systemGrey,
+                      color: CupertinoColors.secondaryLabel.resolveFrom(context),
                     ),
                   ],
                 ),
@@ -606,10 +616,22 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
               placeholder: l10n.groupName,
               textAlign: TextAlign.center,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              style: TextStyle(
+                color: CupertinoColors.label.resolveFrom(context),
+                fontWeight: FontWeight.w500,
+              ),
+              placeholderStyle: TextStyle(
+                color: CupertinoColors.placeholderText.resolveFrom(context),
+              ),
               decoration: BoxDecoration(
-                color: CupertinoColors.secondarySystemBackground,
+                color: CupertinoColors.secondarySystemGroupedBackground
+                    .resolveFrom(context),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: CupertinoColors.systemGrey4),
+                border: Border.all(
+                  color: CupertinoColors.separator
+                      .resolveFrom(context)
+                      .withValues(alpha: 0.35),
+                ),
               ),
             ),
           ],
@@ -675,7 +697,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                         color: tempColor,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: CupertinoColors.systemGrey4,
+                          color: CupertinoColors.separator
+                              .resolveFrom(context)
+                              .withValues(alpha: 0.45),
                           width: 2,
                         ),
                       ),
@@ -683,10 +707,11 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                     const SizedBox(height: 8),
                     Text(
                       _hexFromColor(tempColor),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: CupertinoColors.systemGrey,
+                        color:
+                            CupertinoColors.secondaryLabel.resolveFrom(context),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -694,7 +719,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: CupertinoColors.secondarySystemBackground,
+                          color: CupertinoColors
+                              .secondarySystemGroupedBackground
+                              .resolveFrom(context),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Material(

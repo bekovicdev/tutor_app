@@ -1594,6 +1594,12 @@ abstract class AppLocalizations {
   /// **'Currency'**
   String get currency;
 
+  /// No description provided for @lessonDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Lesson detail'**
+  String get lessonDetail;
+
   /// No description provided for @signedInWith.
   ///
   /// In en, this message translates to:

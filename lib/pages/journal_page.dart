@@ -5,7 +5,7 @@ import 'package:intl/intl.dart' as intl;
 import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/create_lesson_page.dart';
-import 'package:tutor_app/theme/app_dialogs.dart';
+import 'package:tutor_app/pages/lesson_detail_page.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
 import 'package:tutor_app/widgets/settings_nav_button.dart';
 
@@ -336,7 +336,7 @@ class _JournalPageState extends State<JournalPage> {
               Text(
                 _errorMessage!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: CupertinoColors.systemGrey),
+                style: TextStyle(color: CupertinoColors.secondaryLabel.resolveFrom(context)),
               ),
               const SizedBox(height: 12),
               CupertinoButton(
@@ -572,7 +572,7 @@ class _JournalPageState extends State<JournalPage> {
       right: 2,
       height: height - 4,
       child: GestureDetector(
-        onTap: () => _showLessonDetails(lesson),
+        onTap: () => _openLessonDetail(lesson),
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: surface,
@@ -764,141 +764,16 @@ class _JournalPageState extends State<JournalPage> {
     );
   }
 
-  String _statusLabel(AppLocalizations l10n, String status) {
-    switch (status) {
-      case 'completed':
-        return l10n.completed;
-      case 'cancelled':
-        return l10n.cancelled;
-      case 'scheduled':
-      default:
-        return l10n.scheduled;
-    }
-  }
-
-  Future<void> _showLessonDetails(Lesson lesson) async {
-    final AppLocalizations l10n = context.l10n;
-    final StringBuffer message = StringBuffer()
-      ..writeln(
-        '${lesson.date} · ${lesson.startAt} · ${l10n.minutes(lesson.durationMinutes)}',
-      )
-      ..writeln(lesson.displaySubtitle)
-      ..write('${l10n.status}: ${_statusLabel(l10n, lesson.status)}');
-    if (lesson.notes != null && lesson.notes!.isNotEmpty) {
-      message.write('\n${lesson.notes}');
-    }
-    if (lesson.isGroup && lesson.studentNotes.isNotEmpty) {
-      message.write('\n\n${l10n.lessonNotesSummary}:');
-      for (final LessonStudentNote note in lesson.studentNotes) {
-        final String name = note.studentName ?? '#${note.studentId}';
-        if (note.notes.trim().isEmpty) {
-          continue;
-        }
-        message.write('\n· $name: ${note.notes}');
-      }
-    }
-    await showAppActionSheet<void>(
-      context: context,
-      title: lesson.displayTitle,
-      message: message.toString(),
-      cancelLabel: l10n.close,
-      actions: <AppSheetAction>[
-        AppSheetAction(
-          label: l10n.editLessonAction,
-          onPressed: (BuildContext ctx) async {
-            Navigator.of(ctx).pop();
-            final bool? changed = await Navigator.of(context).push<bool>(
-              CupertinoPageRoute<bool>(
-                builder: (BuildContext context) => CreateLessonPage(
-                  token: widget.token,
-                  source: LessonSource.journal,
-                  lesson: lesson,
-                ),
-              ),
-            );
-            if (changed == true) {
-              await _loadWeek();
-            }
-          },
-        ),
-        if (lesson.status == 'scheduled')
-          AppSheetAction(
-            label: l10n.markCompleted,
-            onPressed: (BuildContext ctx) async {
-              Navigator.of(ctx).pop();
-              await _updateStatus(lesson, 'completed');
-            },
-          ),
-        if (lesson.status != 'cancelled')
-          AppSheetAction(
-            label: l10n.cancelLesson,
-            isDestructive: true,
-            onPressed: (BuildContext ctx) async {
-              Navigator.of(ctx).pop();
-              await _updateStatus(lesson, 'cancelled');
-            },
-          ),
-        AppSheetAction(
-          label: l10n.delete,
-          isDestructive: true,
-          onPressed: (BuildContext ctx) async {
-            Navigator.of(ctx).pop();
-            await _confirmDelete(lesson);
-          },
-        ),
-      ],
+  Future<void> _openLessonDetail(Lesson lesson) async {
+    final bool? changed = await openLessonDetailPage(
+      context,
+      token: widget.token,
+      lessonId: lesson.id,
+      lesson: lesson,
+      preferredSource: LessonSource.journal,
     );
-  }
-
-  Future<void> _updateStatus(Lesson lesson, String status) async {
-    try {
-      await _lessonService.updateLesson(
-        id: lesson.id,
-        body: <String, dynamic>{'status': status},
-      );
+    if (changed == true) {
       await _loadWeek();
-    } on LessonServiceException catch (error) {
-      await _showError(error.message);
     }
-  }
-
-  Future<void> _confirmDelete(Lesson lesson) async {
-    final bool? confirmed = await showAppAlert<bool>(
-      context: context,
-      title: context.l10n.deleteLesson,
-      message: context.l10n.deleteLessonConfirm(lesson.displayTitle),
-      actions: <AppAlertAction>[
-        AppAlertAction(
-          label: context.l10n.cancel,
-          style: AppAlertStyle.cancel,
-          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(false),
-        ),
-        AppAlertAction(
-          label: context.l10n.delete,
-          style: AppAlertStyle.destructive,
-          onPressed: (BuildContext ctx) => Navigator.of(ctx).pop(true),
-        ),
-      ],
-    );
-    if (confirmed != true) {
-      return;
-    }
-    try {
-      await _lessonService.deleteLesson(lesson.id);
-      await _loadWeek();
-    } on LessonServiceException catch (error) {
-      await _showError(error.message);
-    }
-  }
-
-  Future<void> _showError(String message) {
-    return showAppAlert<void>(
-      context: context,
-      title: context.l10n.journal,
-      message: message,
-      actions: <AppAlertAction>[
-        AppAlertAction(label: context.l10n.ok, style: AppAlertStyle.primary),
-      ],
-    );
   }
 }

@@ -452,6 +452,8 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                   CupertinoTextField(
                     controller: _titleController,
                     padding: const EdgeInsets.all(12),
+                    style: _fieldTextStyle,
+                    placeholderStyle: _fieldPlaceholderStyle,
                     decoration: _fieldDecoration(context),
                   ),
                   const SizedBox(height: 16),
@@ -478,6 +480,8 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                         decimal: true,
                       ),
                       padding: const EdgeInsets.all(12),
+                      style: _fieldTextStyle,
+                      placeholderStyle: _fieldPlaceholderStyle,
                       decoration: _fieldDecoration(context),
                     ),
                   ],
@@ -487,8 +491,9 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                     if (_groupMembers.isEmpty)
                       Text(
                         l10n.noGroupMembers,
-                        style: const TextStyle(
-                          color: CupertinoColors.systemGrey,
+                        style: TextStyle(
+                          color: CupertinoColors.secondaryLabel
+                              .resolveFrom(context),
                           fontSize: 13,
                         ),
                       )
@@ -508,15 +513,18 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                             minLines: 1,
                             maxLines: 3,
                             padding: const EdgeInsets.all(12),
+                            style: _fieldTextStyle,
+                            placeholderStyle: _fieldPlaceholderStyle,
                             decoration: _fieldDecoration(context),
                             prefix: Padding(
                               padding: const EdgeInsets.only(left: 10),
                               child: Text(
                                 member.name.split(' ').first,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 13,
-                                  color: CupertinoColors.systemGrey,
+                                  color: CupertinoColors.secondaryLabel
+                                      .resolveFrom(context),
                                 ),
                               ),
                             ),
@@ -531,6 +539,8 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                       minLines: 2,
                       maxLines: 4,
                       padding: const EdgeInsets.all(12),
+                      style: _fieldTextStyle,
+                      placeholderStyle: _fieldPlaceholderStyle,
                       decoration: _fieldDecoration(context),
                     ),
                   ] else ...<Widget>[
@@ -541,6 +551,8 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                       minLines: 2,
                       maxLines: 4,
                       padding: const EdgeInsets.all(12),
+                      style: _fieldTextStyle,
+                      placeholderStyle: _fieldPlaceholderStyle,
                       decoration: _fieldDecoration(context),
                     ),
                   ],
@@ -586,6 +598,9 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     required String label,
     required VoidCallback? onPressed,
   }) {
+    final Color muted =
+        CupertinoColors.secondaryLabel.resolveFrom(context);
+    final Color labelColor = CupertinoColors.label.resolveFrom(context);
     return CupertinoButton(
       padding: EdgeInsets.zero,
       onPressed: onPressed,
@@ -599,16 +614,15 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
               child: Text(
                 label,
                 style: TextStyle(
-                  color: onPressed == null
-                      ? CupertinoColors.systemGrey
-                      : CupertinoColors.label,
+                  color: onPressed == null ? muted : labelColor,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
-            const Icon(
+            Icon(
               CupertinoIcons.chevron_down,
               size: 16,
-              color: CupertinoColors.systemGrey,
+              color: muted,
             ),
           ],
         ),
@@ -622,9 +636,22 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
         context,
       ),
       borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: CupertinoColors.systemGrey4),
+      border: Border.all(
+        color: CupertinoColors.separator
+            .resolveFrom(context)
+            .withValues(alpha: 0.35),
+      ),
     );
   }
+
+  TextStyle get _fieldTextStyle => TextStyle(
+        color: CupertinoColors.label.resolveFrom(context),
+        fontWeight: FontWeight.w500,
+      );
+
+  TextStyle get _fieldPlaceholderStyle => TextStyle(
+        color: CupertinoColors.placeholderText.resolveFrom(context),
+      );
 
   Future<void> _pickStudent() async {
     await showAppActionSheet<void>(

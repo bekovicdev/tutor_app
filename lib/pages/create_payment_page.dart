@@ -158,6 +158,8 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
                       decimal: true,
                     ),
                     padding: const EdgeInsets.all(12),
+                    style: _fieldTextStyle,
+                    placeholderStyle: _fieldPlaceholderStyle,
                     decoration: _fieldDecoration(context),
                   ),
                   const SizedBox(height: 16),
@@ -247,7 +249,10 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
                   if (_students.isEmpty)
                     Text(
                       l10n.noStudentsAvailable,
-                      style: const TextStyle(color: CupertinoColors.systemGrey),
+                      style: TextStyle(
+                        color: CupertinoColors.secondaryLabel
+                            .resolveFrom(context),
+                      ),
                     )
                   else if (widget.lockStudent && widget.initialStudent != null)
                     _lockedField(
@@ -311,6 +316,8 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
                     minLines: 2,
                     maxLines: 4,
                     padding: const EdgeInsets.all(12),
+                    style: _fieldTextStyle,
+                    placeholderStyle: _fieldPlaceholderStyle,
                     decoration: _fieldDecoration(context),
                   ),
                 ],
@@ -324,6 +331,8 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
     required VoidCallback onPressed,
     IconData trailing = CupertinoIcons.chevron_down,
   }) {
+    final Color labelColor = CupertinoColors.label.resolveFrom(context);
+    final Color muted = CupertinoColors.secondaryLabel.resolveFrom(context);
     return CupertinoButton(
       padding: EdgeInsets.zero,
       onPressed: onPressed,
@@ -336,13 +345,16 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(color: CupertinoColors.label),
+                style: TextStyle(
+                  color: labelColor,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
             Icon(
               trailing,
               size: 16,
-              color: CupertinoColors.systemGrey,
+              color: muted,
             ),
           ],
         ),
@@ -355,7 +367,13 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: _fieldDecoration(context),
-      child: Text(label, style: const TextStyle(color: CupertinoColors.label)),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: CupertinoColors.label.resolveFrom(context),
+          fontWeight: FontWeight.w500,
+        ),
+      ),
     );
   }
 
@@ -375,9 +393,22 @@ class _CreatePaymentPageState extends State<CreatePaymentPage> {
         context,
       ),
       borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: CupertinoColors.systemGrey4),
+      border: Border.all(
+        color: CupertinoColors.separator
+            .resolveFrom(context)
+            .withValues(alpha: 0.35),
+      ),
     );
   }
+
+  TextStyle get _fieldTextStyle => TextStyle(
+        color: CupertinoColors.label.resolveFrom(context),
+        fontWeight: FontWeight.w500,
+      );
+
+  TextStyle get _fieldPlaceholderStyle => TextStyle(
+        color: CupertinoColors.placeholderText.resolveFrom(context),
+      );
 
   String _lessonLabel(Lesson lesson) {
     final String who = lesson.displaySubtitle;

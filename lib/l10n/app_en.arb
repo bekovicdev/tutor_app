@@ -373,6 +373,7 @@
   "logoutConfirmMessage": "You will need to sign in again to continue.",
   "costPlaceholder": "e.g. 500",
   "currency": "Currency",
+  "lessonDetail": "Lesson detail",
   "signedInWith": "Signed in with {provider}",
   "@signedInWith": {
     "placeholders": {

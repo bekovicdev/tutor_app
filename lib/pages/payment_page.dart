@@ -576,7 +576,7 @@ class _PaymentPageState extends State<PaymentPage> {
                   overview.billableCount,
                   overview.freeCount,
                 ),
-                style: const TextStyle(color: CupertinoColors.systemGrey),
+                style: TextStyle(color: CupertinoColors.secondaryLabel.resolveFrom(context)),
               ),
               const SizedBox(height: 10),
               Row(
@@ -890,9 +890,9 @@ class _PaymentPageState extends State<PaymentPage> {
                     _formatNum(summary.refunded),
                     _formatNum(summary.net),
                   ),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: CupertinoColors.systemGrey,
+                    color: CupertinoColors.secondaryLabel.resolveFrom(context),
                   ),
                 ),
               ],
@@ -1032,7 +1032,7 @@ class _PaymentPageState extends State<PaymentPage> {
         if (data.byGroup.isEmpty)
           Text(
             l10n.noGroupReceivables,
-            style: const TextStyle(color: CupertinoColors.systemGrey),
+            style: TextStyle(color: CupertinoColors.secondaryLabel.resolveFrom(context)),
           )
         else
           ...data.byGroup.map(_breakdownTile),
@@ -1053,9 +1053,10 @@ class _PaymentPageState extends State<PaymentPage> {
                       Text(
                         '${lesson.date} · '
                         '${lesson.studentName ?? lesson.groupName ?? ''}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: CupertinoColors.systemGrey,
+                          color: CupertinoColors.secondaryLabel
+                              .resolveFrom(context),
                         ),
                       ),
                     ],
@@ -1093,9 +1094,9 @@ class _PaymentPageState extends State<PaymentPage> {
       children: <Widget>[
         Text(
           l10n.prepaidWalletHint,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
-            color: CupertinoColors.systemGrey,
+            color: CupertinoColors.secondaryLabel.resolveFrom(context),
           ),
         ),
         const SizedBox(height: 12),
@@ -1132,7 +1133,7 @@ class _PaymentPageState extends State<PaymentPage> {
         if (data.unallocatedCredits.isEmpty)
           Text(
             l10n.noUnallocatedPrepaid,
-            style: const TextStyle(color: CupertinoColors.systemGrey),
+            style: TextStyle(color: CupertinoColors.secondaryLabel.resolveFrom(context)),
           )
         else
           ...data.unallocatedCredits.map(
@@ -1227,7 +1228,7 @@ class _PaymentPageState extends State<PaymentPage> {
           children: <Widget>[
             Text(
               context.l10n.noPaymentsYet,
-              style: const TextStyle(color: CupertinoColors.systemGrey),
+              style: TextStyle(color: CupertinoColors.secondaryLabel.resolveFrom(context)),
             ),
             CupertinoButton(
               onPressed: _openCreatePayment,
@@ -1286,9 +1287,9 @@ class _PaymentPageState extends State<PaymentPage> {
                 ),
                 Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: CupertinoColors.systemGrey,
+                    color: CupertinoColors.secondaryLabel.resolveFrom(context),
                   ),
                 ),
               ],
@@ -1351,9 +1352,9 @@ class _PaymentPageState extends State<PaymentPage> {
           const SizedBox(height: 2),
           Text(
             subtitle,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
-              color: CupertinoColors.systemGrey,
+              color: CupertinoColors.secondaryLabel.resolveFrom(context),
             ),
           ),
         ],
@@ -1382,9 +1383,9 @@ class _PaymentPageState extends State<PaymentPage> {
       children: <Widget>[
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11,
-            color: CupertinoColors.systemGrey,
+            color: CupertinoColors.secondaryLabel.resolveFrom(context),
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -1395,9 +1396,9 @@ class _PaymentPageState extends State<PaymentPage> {
         ),
         Text(
           _formatNum(bucket.amount),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11,
-            color: CupertinoColors.systemGrey,
+            color: CupertinoColors.secondaryLabel.resolveFrom(context),
           ),
         ),
       ],
@@ -1440,9 +1441,9 @@ class _PaymentPageState extends State<PaymentPage> {
                   '${_paymentKindLabel(payment.kind)}'
                   '${payment.method != null ? ' · ${_paymentMethodLabel(payment.method!)}' : ''}'
                   '${payment.paidAt != null ? ' · ${_shortDate(payment.paidAt!)}' : ''}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: CupertinoColors.systemGrey,
+                    color: CupertinoColors.secondaryLabel.resolveFrom(context),
                   ),
                 ),
                 if (payment.notes != null && payment.notes!.isNotEmpty)
@@ -1450,9 +1451,9 @@ class _PaymentPageState extends State<PaymentPage> {
                     payment.notes!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
-                      color: CupertinoColors.systemGrey2,
+                      color: CupertinoColors.secondaryLabel.resolveFrom(context),
                     ),
                   ),
               ],

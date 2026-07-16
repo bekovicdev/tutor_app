@@ -810,6 +810,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get currency => 'Para birimi';
 
   @override
+  String get lessonDetail => 'Ders detayı';
+
+  @override
   String signedInWith(String provider) {
     return '$provider ile giriş yapıldı';
   }

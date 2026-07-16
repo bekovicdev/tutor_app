@@ -373,6 +373,7 @@
   "logoutConfirmMessage": "Чтобы продолжить, нужно будет войти снова.",
   "costPlaceholder": "напр. 500",
   "currency": "Валюта",
+  "lessonDetail": "Детали урока",
   "signedInWith": "Вход через {provider}",
   "@signedInWith": {
     "placeholders": {
