@@ -1,6 +1,6 @@
 {
   "@@locale": "ru",
-  "appTitle": "Tutor App",
+  "appTitle": "Lessify",
   "tabStudents": "Ученики",
   "tabSchedule": "Расписание",
   "tabJournal": "Журнал",
@@ -25,7 +25,7 @@
   "oauthError": "Ошибка OAuth",
   "oauthLoginFailed": "Не удалось войти через OAuth.",
   "authTitle": "Вход",
-  "welcomeTitle": "Добро пожаловать в Tutor App",
+  "welcomeTitle": "Добро пожаловать в Lessify",
   "createAccountTitle": "Создайте аккаунт",
   "authSubtitle": "Планируйте уроки, ведите заметки и управляйте репетиторством.",
   "login": "Войти",

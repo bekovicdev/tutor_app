@@ -1,0 +1,9 @@
+{
+  "aps": {
+    "alert": {
+      "title": "Ders hatırlatması",
+      "body": "15 dakika sonra dersin var"
+    },
+    "sound": "default"
+  }
+}

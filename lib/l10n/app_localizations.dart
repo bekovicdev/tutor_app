@@ -103,7 +103,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'Tutor App'**
+  /// **'Lessify'**
   String get appTitle;
 
   /// No description provided for @tabStudents.
@@ -253,7 +253,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeTitle.
   ///
   /// In en, this message translates to:
-  /// **'Welcome to Tutor App'**
+  /// **'Welcome to Lessify'**
   String get welcomeTitle;
 
   /// No description provided for @createAccountTitle.

@@ -9,7 +9,7 @@ class AppLocalizationsRu extends AppLocalizations {
   AppLocalizationsRu([String locale = 'ru']) : super(locale);
 
   @override
-  String get appTitle => 'Tutor App';
+  String get appTitle => 'Lessify';
 
   @override
   String get tabStudents => 'Ученики';
@@ -84,7 +84,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get authTitle => 'Вход';
 
   @override
-  String get welcomeTitle => 'Добро пожаловать в Tutor App';
+  String get welcomeTitle => 'Добро пожаловать в Lessify';
 
   @override
   String get createAccountTitle => 'Создайте аккаунт';

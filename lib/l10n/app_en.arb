@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appTitle": "Tutor App",
+  "appTitle": "Lessify",
   "tabStudents": "Students",
   "tabSchedule": "Schedule",
   "tabJournal": "Journal",
@@ -25,7 +25,7 @@
   "oauthError": "OAuth Error",
   "oauthLoginFailed": "OAuth login failed.",
   "authTitle": "Auth",
-  "welcomeTitle": "Welcome to Tutor App",
+  "welcomeTitle": "Welcome to Lessify",
   "createAccountTitle": "Create your account",
   "authSubtitle": "Plan lessons, track notes, and manage your tutoring workflow.",
   "login": "Login",

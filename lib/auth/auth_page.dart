@@ -12,7 +12,7 @@ class AuthPage extends StatefulWidget {
   const AuthPage({
     required this.authService,
     required this.onAuthenticated,
-    this.initialMode = AuthMode.login,
+    this.initialMode = AuthMode.register,
     super.key,
   });
 
@@ -140,13 +140,17 @@ class _AuthPageState extends State<AuthPage> {
               ),
             ],
             const SizedBox(height: 16),
-            if (!isRegister)
+            if (isRegister)
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Text(
-                    l10n.dontHaveAccount,
-                    style: TextStyle(color: CupertinoColors.secondaryLabel.resolveFrom(context)),
+                    l10n.alreadyHaveAccount,
+                    style: TextStyle(
+                      color: CupertinoColors.secondaryLabel.resolveFrom(
+                        context,
+                      ),
+                    ),
                   ),
                   CupertinoButton(
                     padding: const EdgeInsets.only(left: 6, right: 0),
@@ -159,30 +163,48 @@ class _AuthPageState extends State<AuthPage> {
                                 builder: (BuildContext context) => AuthPage(
                                   authService: widget.authService,
                                   onAuthenticated: widget.onAuthenticated,
-                                  initialMode: AuthMode.register,
+                                  initialMode: AuthMode.login,
                                 ),
                               ),
                             );
                           },
-                    child: Text(l10n.register),
+                    child: Text(l10n.login),
                   ),
                 ],
               ),
-            if (isRegister)
+            if (!isRegister)
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Text(
-                    l10n.alreadyHaveAccount,
-                    style: TextStyle(color: CupertinoColors.secondaryLabel.resolveFrom(context)),
+                    l10n.dontHaveAccount,
+                    style: TextStyle(
+                      color: CupertinoColors.secondaryLabel.resolveFrom(
+                        context,
+                      ),
+                    ),
                   ),
                   CupertinoButton(
                     padding: const EdgeInsets.only(left: 6, right: 0),
                     minSize: 0,
                     onPressed: _isLoading
                         ? null
-                        : () => Navigator.of(context).pop(),
-                    child: Text(l10n.login),
+                        : () {
+                            if (Navigator.of(context).canPop()) {
+                              Navigator.of(context).pop();
+                              return;
+                            }
+                            Navigator.of(context).push(
+                              CupertinoPageRoute<void>(
+                                builder: (BuildContext context) => AuthPage(
+                                  authService: widget.authService,
+                                  onAuthenticated: widget.onAuthenticated,
+                                  initialMode: AuthMode.register,
+                                ),
+                              ),
+                            );
+                          },
+                    child: Text(l10n.register),
                   ),
                 ],
               ),

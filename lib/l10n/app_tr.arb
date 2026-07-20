@@ -1,6 +1,6 @@
 {
   "@@locale": "tr",
-  "appTitle": "Tutor App",
+  "appTitle": "Lessify",
   "tabStudents": "Öğrenciler",
   "tabSchedule": "Program",
   "tabJournal": "Günlük",
@@ -25,7 +25,7 @@
   "oauthError": "OAuth Hatası",
   "oauthLoginFailed": "OAuth girişi başarısız.",
   "authTitle": "Giriş",
-  "welcomeTitle": "Tutor App'e hoş geldiniz",
+  "welcomeTitle": "Lessify'ye hoş geldiniz",
   "createAccountTitle": "Hesabınızı oluşturun",
   "authSubtitle": "Dersleri planlayın, notları takip edin ve özel ders işlerinizi yönetin.",
   "login": "Giriş yap",
