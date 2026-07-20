@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:tutor_app/config/api_config.dart';
 
 class BillingStatus {
   const BillingStatus({
@@ -52,12 +53,7 @@ class BillingStatus {
 }
 
 class BillingService {
-  BillingService({String? baseUrl})
-      : _baseUrl = baseUrl ??
-            const String.fromEnvironment(
-              'API_BASE_URL',
-              defaultValue: 'http://localhost:8000/api',
-            );
+  BillingService({String? baseUrl}) : _baseUrl = baseUrl ?? ApiConfig.baseUrl;
 
   final String _baseUrl;
 

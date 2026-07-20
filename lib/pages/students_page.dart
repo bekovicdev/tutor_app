@@ -2990,7 +2990,6 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
-                      placeholder: '200',
                       textAlign: TextAlign.left,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
@@ -2999,10 +2998,6 @@ class _CreateStudentPageState extends State<_CreateStudentPage> {
                       style: TextStyle(
                         color: CupertinoColors.label.resolveFrom(context),
                         fontWeight: FontWeight.w500,
-                      ),
-                      placeholderStyle: TextStyle(
-                        color: CupertinoColors.placeholderText
-                            .resolveFrom(context),
                       ),
                       decoration: BoxDecoration(
                         color: CupertinoColors.tertiarySystemFill

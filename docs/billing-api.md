@@ -5,6 +5,7 @@
 | Resource | Limit |
 |----------|--------|
 | Active students (`status=1`) | 4 |
+| Groups | 4 |
 | Schedule lessons (`source` null/empty/`schedule`, not cancelled) | 24 |
 | Journal lessons (`source=journal`, not cancelled) | 24 |
 
@@ -78,7 +79,9 @@ Student/lesson create (and schedule→journal update) return **402**:
 }
 ```
 
-Codes: `quota_students`, `quota_schedule_lessons`, `quota_journal_lessons`.
+Codes: `quota_students`, `quota_groups`, `quota_schedule_lessons`, `quota_journal_lessons`.
+
+Group create returns the same **402** shape with `"code": "quota_groups"`.
 
 ## App Store / RevenueCat setup
 

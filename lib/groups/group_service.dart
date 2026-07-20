@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:tutor_app/config/api_config.dart';
 import 'package:tutor_app/students/student_service.dart';
 
 class TutorGroup {
@@ -9,12 +10,14 @@ class TutorGroup {
     required this.name,
     this.status,
     this.color,
+    this.lessonCost,
   });
 
   final int id;
   final String name;
   final int? status;
   final String? color;
+  final String? lessonCost;
 
   factory TutorGroup.fromJson(Map<String, dynamic> json) {
     return TutorGroup(
@@ -22,6 +25,7 @@ class TutorGroup {
       name: (json['name'] as String?) ?? '',
       status: (json['status'] as num?)?.toInt(),
       color: json['color'] as String?,
+      lessonCost: json['lesson_cost']?.toString(),
     );
   }
 }
@@ -31,11 +35,13 @@ class GroupCreateRequest {
     required this.name,
     this.color,
     this.status,
+    this.lessonCost,
   });
 
   final String name;
   final String? color;
   final int? status;
+  final String? lessonCost;
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> payload = <String, dynamic>{'name': name};
@@ -44,6 +50,9 @@ class GroupCreateRequest {
     }
     if (status != null) {
       payload['status'] = status;
+    }
+    if (lessonCost != null && lessonCost!.isNotEmpty) {
+      payload['lesson_cost'] = lessonCost;
     }
     return payload;
   }
@@ -72,11 +81,7 @@ class GroupService {
   GroupService({
     required this.token,
     String? baseUrl,
-  }) : _baseUrl = baseUrl ??
-            const String.fromEnvironment(
-              'API_BASE_URL',
-              defaultValue: 'http://localhost:8000/api',
-            );
+  }) : _baseUrl = baseUrl ?? ApiConfig.baseUrl;
 
   final String token;
   final String _baseUrl;
@@ -245,7 +250,11 @@ class GroupService {
           jsonDecode(responseBody) as Map<String, dynamic>;
 
       if (json['success'] != true) {
-        throw GroupServiceException(_extractErrorMessage(json));
+        throw GroupServiceException(
+          _extractErrorMessage(json),
+          code: json['code'] as String?,
+          statusCode: response.statusCode,
+        );
       }
       return json;
     } on SocketException {
@@ -270,7 +279,11 @@ class GroupService {
 }
 
 class GroupServiceException implements Exception {
-  const GroupServiceException(this.message);
+  const GroupServiceException(this.message, {this.code, this.statusCode});
 
   final String message;
+  final String? code;
+  final int? statusCode;
+
+  bool get isQuota => code == 'quota_groups';
 }

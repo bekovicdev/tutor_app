@@ -409,7 +409,7 @@ abstract class AppLocalizations {
   /// No description provided for @oauthInvalidGrantHint.
   ///
   /// In en, this message translates to:
-  /// **'Google sign-in expired or the redirect URI does not match. Close the browser, confirm Google Cloud has http://127.0.0.1:8000/api/auth/google/callback, then try again from the app.'**
+  /// **'Google sign-in expired or the redirect URI does not match. Close the browser, confirm Google Cloud has https://getlessify.com/api/auth/google/callback, then try again from the app.'**
   String get oauthInvalidGrantHint;
 
   /// No description provided for @settings.
@@ -1828,6 +1828,12 @@ abstract class AppLocalizations {
   /// **'You’ve reached the free limit of 4 active students.'**
   String get paywallReasonStudents;
 
+  /// No description provided for @paywallReasonGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'You’ve reached the free limit of 4 groups.'**
+  String get paywallReasonGroups;
+
   /// No description provided for @paywallReasonSchedule.
   ///
   /// In en, this message translates to:
@@ -1857,6 +1863,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unlimited journal lessons'**
   String get paywallFeatureJournal;
+
+  /// No description provided for @paywallFeatureGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited groups'**
+  String get paywallFeatureGroups;
 
   /// No description provided for @planWeekly.
   ///

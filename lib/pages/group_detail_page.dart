@@ -3,7 +3,9 @@ import 'package:flutter/material.dart' show Material, MaterialType;
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:tutor_app/groups/group_service.dart';
 import 'package:tutor_app/l10n/l10n_ext.dart';
+import 'package:tutor_app/pages/paywall_page.dart';
 import 'package:tutor_app/pages/students_page.dart';
+import 'package:tutor_app/settings/app_settings.dart';
 import 'package:tutor_app/students/student_service.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
@@ -469,6 +471,7 @@ class CreateGroupPage extends StatefulWidget {
 
 class _CreateGroupPageState extends State<CreateGroupPage> {
   late final TextEditingController _nameController;
+  late final TextEditingController _lessonCostController;
   late int _red;
   late int _green;
   late int _blue;
@@ -479,15 +482,35 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     super.initState();
     final TutorGroup? group = widget.group;
     _nameController = TextEditingController(text: group?.name ?? '');
+    _lessonCostController = TextEditingController(
+      text: group?.lessonCost?.trim() ?? '',
+    );
     final Color initial = _parseHexColor(group?.color);
     _red = (initial.r * 255.0).round() & 0xff;
     _green = (initial.g * 255.0).round() & 0xff;
     _blue = (initial.b * 255.0).round() & 0xff;
+    if (!widget.isEditing) {
+      _loadDefaultLessonCost();
+    }
+  }
+
+  Future<void> _loadDefaultLessonCost() async {
+    final String? cost = await AppSettings.groupLessonCost();
+    if (!mounted || cost == null || cost.isEmpty) {
+      return;
+    }
+    if (_lessonCostController.text.trim().isNotEmpty) {
+      return;
+    }
+    setState(() {
+      _lessonCostController.text = cost;
+    });
   }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _lessonCostController.dispose();
     super.dispose();
   }
 
@@ -634,6 +657,54 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                 ),
               ),
             ),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: CupertinoColors.secondarySystemGroupedBackground
+                    .resolveFrom(context),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: CupertinoColors.separator
+                      .resolveFrom(context)
+                      .withValues(alpha: 0.35),
+                ),
+              ),
+              child: Row(
+                children: <Widget>[
+                  Text(
+                    l10n.lessonCostColon,
+                    style: TextStyle(
+                      color: CupertinoColors.label.resolveFrom(context),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: CupertinoTextField(
+                      controller: _lessonCostController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      textAlign: TextAlign.left,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      style: TextStyle(
+                        color: CupertinoColors.label.resolveFrom(context),
+                        fontWeight: FontWeight.w500,
+                      ),
+                      decoration: BoxDecoration(
+                        color: CupertinoColors.tertiarySystemFill
+                            .resolveFrom(context),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -766,6 +837,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     });
     final String name = _nameController.text.trim();
     final String color = _hexFromColor(_selectedColor);
+    final String lessonCost = _lessonCostController.text.trim();
     try {
       if (widget.isEditing) {
         final TutorGroup existing = widget.group!;
@@ -775,6 +847,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
             name: name,
             color: color,
             status: existing.status,
+            lessonCost: lessonCost,
           ),
         );
         if (!mounted) {
@@ -786,6 +859,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
             name: name,
             color: color,
             status: existing.status,
+            lessonCost: lessonCost.isEmpty ? null : lessonCost,
           ),
         );
       } else {
@@ -794,6 +868,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
             name: name,
             color: color,
             status: 1,
+            lessonCost: lessonCost,
           ),
         );
         if (!mounted) {
@@ -802,7 +877,15 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
         Navigator.of(context).pop(true);
       }
     } on GroupServiceException catch (error) {
-      await _showMessage(error.message);
+      if (error.isQuota) {
+        await openPaywall(
+          context,
+          token: widget.groupService.token,
+          reasonCode: error.code,
+        );
+      } else {
+        await _showMessage(error.message);
+      }
     } finally {
       if (mounted) {
         setState(() {

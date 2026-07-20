@@ -257,6 +257,11 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
       return;
     }
     if (_isGroup) {
+      final String? groupCost = _selectedGroup?.lessonCost?.trim();
+      if (groupCost != null && groupCost.isNotEmpty) {
+        _priceController.text = groupCost;
+        return;
+      }
       final String? groupDefault = _defaultGroupCost;
       if (groupDefault != null && groupDefault.isNotEmpty) {
         _priceController.text = groupDefault;

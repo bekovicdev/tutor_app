@@ -240,7 +240,10 @@ class _AppRootState extends State<AppRoot> {
   }
 
   Future<void> _handleDeepLink(Uri uri) async {
-    if (uri.host != 'auth-callback') {
+    final bool isAuthCallback = uri.host == 'auth-callback' ||
+        uri.pathSegments.contains('auth-callback') ||
+        (uri.scheme == 'app' && uri.host == 'auth-callback');
+    if (!isAuthCallback) {
       return;
     }
 
@@ -252,6 +255,10 @@ class _AppRootState extends State<AppRoot> {
 
     final String? token = uri.queryParameters['token'];
     if (token == null || token.isEmpty) {
+      if (!mounted) {
+        return;
+      }
+      await _showAuthErrorDialog(context.l10n.oauthLoginFailed);
       return;
     }
 
@@ -294,6 +301,8 @@ class _AppRootState extends State<AppRoot> {
 
   Future<void> _onAuthenticated(AuthSession session) async {
     await _authStorage.saveToken(session.token);
+    await AppSettings.setIndividualLessonCost(session.user.individualLessonCost);
+    await AppSettings.setGroupLessonCost(session.user.groupLessonCost);
     await BillingService.configure(appUserId: '${session.user.id}');
     try {
       await BillingService().syncFromStore(session.token);

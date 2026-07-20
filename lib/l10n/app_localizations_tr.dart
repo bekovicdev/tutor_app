@@ -167,7 +167,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get oauthInvalidGrantHint =>
-      'Google girişi süresi doldu veya yönlendirme adresi uyuşmuyor. Tarayıcıyı kapat, Google Cloud\'da http://127.0.0.1:8000/api/auth/google/callback adresinin kayıtlı olduğundan emin ol, sonra uygulamadan tekrar dene.';
+      'Google girişi süresi doldu veya yönlendirme adresi uyuşmuyor. Tarayıcıyı kapat, Google Cloud\'da https://getlessify.com/api/auth/google/callback adresinin kayıtlı olduğundan emin ol, sonra uygulamadan tekrar dene.';
 
   @override
   String get settings => 'Ayarlar';
@@ -943,6 +943,9 @@ class AppLocalizationsTr extends AppLocalizations {
       'Ücretsiz planda 4 aktif öğrenci limitine ulaştın.';
 
   @override
+  String get paywallReasonGroups => 'Ücretsiz planda 4 grup limitine ulaştın.';
+
+  @override
   String get paywallReasonSchedule =>
       'Ücretsiz planda 24 program dersi limitine ulaştın.';
 
@@ -958,6 +961,9 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get paywallFeatureJournal => 'Sınırsız günlük dersi';
+
+  @override
+  String get paywallFeatureGroups => 'Sınırsız grup';
 
   @override
   String get planWeekly => 'Haftalık';

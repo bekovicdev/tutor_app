@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:tutor_app/config/api_config.dart';
+
 /// Where a lesson belongs in the app UI.
 class LessonSource {
   static const String schedule = 'schedule';
@@ -275,11 +277,7 @@ class LessonService {
   LessonService({
     required this.token,
     String? baseUrl,
-  }) : _baseUrl = baseUrl ??
-            const String.fromEnvironment(
-              'API_BASE_URL',
-              defaultValue: 'http://localhost:8000/api',
-            );
+  }) : _baseUrl = baseUrl ?? ApiConfig.baseUrl;
 
   final String token;
   final String _baseUrl;
@@ -594,6 +592,7 @@ class LessonServiceException implements Exception {
 
   bool get isQuota =>
       code == 'quota_students' ||
+      code == 'quota_groups' ||
       code == 'quota_schedule_lessons' ||
       code == 'quota_journal_lessons';
 }

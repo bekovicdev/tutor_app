@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:tutor_app/config/api_config.dart';
+
 class AuthSession {
   const AuthSession({
     required this.token,
@@ -138,12 +140,7 @@ class RegisterRequest {
 }
 
 class AuthService {
-  AuthService({String? baseUrl})
-      : _baseUrl = baseUrl ??
-            const String.fromEnvironment(
-              'API_BASE_URL',
-              defaultValue: 'http://localhost:8000/api',
-            );
+  AuthService({String? baseUrl}) : _baseUrl = baseUrl ?? ApiConfig.baseUrl;
 
   final String _baseUrl;
 
@@ -248,16 +245,47 @@ class AuthService {
   }
 
   Future<String> oauthRedirectUrl(String provider) async {
-    final Map<String, dynamic> json = await _request(
-      method: 'GET',
-      endpoint: '/auth/$provider/redirect',
-    );
-    final Map<String, dynamic>? data = json['data'] as Map<String, dynamic>?;
-    final String? url = data?['url'] as String?;
-    if (url == null || url.isEmpty) {
-      throw const AuthException('OAuth redirect url is missing in response.');
+    final HttpClient client = HttpClient();
+    try {
+      final Uri uri = Uri.parse('$_baseUrl/auth/$provider/redirect');
+      final HttpClientRequest request = await client.getUrl(uri);
+      request.headers.set(HttpHeaders.acceptHeader, 'application/json');
+      request.followRedirects = false;
+
+      final HttpClientResponse response = await request.close();
+      final String responseBody =
+          await response.transform(utf8.decoder).join();
+
+      if (response.statusCode >= 300 && response.statusCode < 400) {
+        final String? location =
+            response.headers.value(HttpHeaders.locationHeader);
+        if (location != null && location.isNotEmpty) {
+          return location;
+        }
+      }
+
+      final Map<String, dynamic> json =
+          jsonDecode(responseBody) as Map<String, dynamic>;
+      if (json['success'] != true) {
+        throw AuthException(_extractErrorMessage(json));
+      }
+      final Map<String, dynamic>? data = json['data'] as Map<String, dynamic>?;
+      final String? url = data?['url'] as String?;
+      if (url == null || url.isEmpty) {
+        throw const AuthException('OAuth redirect url is missing in response.');
+      }
+      return url;
+    } on SocketException {
+      throw const AuthException('Cannot connect to server.');
+    } on FormatException {
+      throw const AuthException('Invalid server response format.');
+    } on AuthException {
+      rethrow;
+    } catch (_) {
+      throw const AuthException('OAuth redirect failed.');
+    } finally {
+      client.close(force: true);
     }
-    return url;
   }
 
   Future<AuthSession> _post({

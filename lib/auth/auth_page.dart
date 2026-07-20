@@ -12,7 +12,7 @@ class AuthPage extends StatefulWidget {
   const AuthPage({
     required this.authService,
     required this.onAuthenticated,
-    this.initialMode = AuthMode.register,
+    this.initialMode = AuthMode.login,
     super.key,
   });
 
@@ -105,40 +105,40 @@ class _AuthPageState extends State<AuthPage> {
                 ),
               ),
             if (isRegister) _buildRegisterActions(),
-            if (!isRegister) ...<Widget>[
-              const SizedBox(height: 18),
-              Row(
-                children: <Widget>[
-                  Expanded(child: _separatorLine(context)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Text(
-                      l10n.orContinueWith,
-                      style: TextStyle(color: CupertinoColors.secondaryLabel.resolveFrom(context)),
+            const SizedBox(height: 18),
+            Row(
+              children: <Widget>[
+                Expanded(child: _separatorLine(context)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Text(
+                    l10n.orContinueWith,
+                    style: TextStyle(
+                      color: CupertinoColors.secondaryLabel.resolveFrom(context),
                     ),
                   ),
-                  Expanded(child: _separatorLine(context)),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _oauthButton(
-                context: context,
-                icon: FontAwesomeIcons.google,
-                label: l10n.continueWithGoogle,
-                backgroundColor: CupertinoColors.white,
-                foregroundColor: CupertinoColors.black,
-                onPressed: _isLoading ? null : () => _startOAuth('google'),
-              ),
-              const SizedBox(height: 10),
-              _oauthButton(
-                context: context,
-                icon: FontAwesomeIcons.apple,
-                label: l10n.continueWithApple,
-                backgroundColor: CupertinoColors.black,
-                foregroundColor: CupertinoColors.white,
-                onPressed: _isLoading ? null : () => _startOAuth('apple'),
-              ),
-            ],
+                ),
+                Expanded(child: _separatorLine(context)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _oauthButton(
+              context: context,
+              icon: FontAwesomeIcons.google,
+              label: l10n.continueWithGoogle,
+              backgroundColor: CupertinoColors.white,
+              foregroundColor: CupertinoColors.black,
+              onPressed: _isLoading ? null : () => _startOAuth('google'),
+            ),
+            const SizedBox(height: 10),
+            _oauthButton(
+              context: context,
+              icon: FontAwesomeIcons.apple,
+              label: l10n.continueWithApple,
+              backgroundColor: CupertinoColors.black,
+              foregroundColor: CupertinoColors.white,
+              onPressed: _isLoading ? null : () => _startOAuth('apple'),
+            ),
             const SizedBox(height: 16),
             if (isRegister)
               Row(

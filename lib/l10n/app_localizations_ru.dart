@@ -168,7 +168,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get oauthInvalidGrantHint =>
-      'Сессия Google истекла или redirect URI не совпадает. Закройте браузер, проверьте в Google Cloud адрес http://127.0.0.1:8000/api/auth/google/callback и попробуйте снова из приложения.';
+      'Сессия Google истекла или redirect URI не совпадает. Закройте браузер, проверьте в Google Cloud адрес https://getlessify.com/api/auth/google/callback и попробуйте снова из приложения.';
 
   @override
   String get settings => 'Настройки';
@@ -941,6 +941,10 @@ class AppLocalizationsRu extends AppLocalizations {
       'Достигнут лимит бесплатного плана: 4 активных ученика.';
 
   @override
+  String get paywallReasonGroups =>
+      'Достигнут лимит бесплатного плана: 4 группы.';
+
+  @override
   String get paywallReasonSchedule =>
       'Достигнут лимит бесплатного плана: 24 урока в расписании.';
 
@@ -956,6 +960,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get paywallFeatureJournal => 'Неограниченный журнал';
+
+  @override
+  String get paywallFeatureGroups => 'Неограниченное число групп';
 
   @override
   String get planWeekly => 'Неделя';

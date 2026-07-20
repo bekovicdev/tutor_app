@@ -60,6 +60,8 @@ class _PaywallPageState extends State<PaywallPage> {
     switch (widget.reasonCode) {
       case 'quota_students':
         return l10n.paywallReasonStudents;
+      case 'quota_groups':
+        return l10n.paywallReasonGroups;
       case 'quota_schedule_lessons':
         return l10n.paywallReasonSchedule;
       case 'quota_journal_lessons':
@@ -336,6 +338,10 @@ class _PaywallPageState extends State<PaywallPage> {
       (
         icon: CupertinoIcons.person_2_fill,
         label: l10n.paywallFeatureStudents,
+      ),
+      (
+        icon: CupertinoIcons.person_3_fill,
+        label: l10n.paywallFeatureGroups,
       ),
       (
         icon: CupertinoIcons.calendar,

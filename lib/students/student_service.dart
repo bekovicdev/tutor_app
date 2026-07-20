@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:tutor_app/config/api_config.dart';
+
 class Student {
   const Student({
     required this.id,
@@ -116,11 +118,7 @@ class StudentService {
   StudentService({
     required this.token,
     String? baseUrl,
-  }) : _baseUrl = baseUrl ??
-            const String.fromEnvironment(
-              'API_BASE_URL',
-              defaultValue: 'http://localhost:8000/api',
-            );
+  }) : _baseUrl = baseUrl ?? ApiConfig.baseUrl;
 
   final String token;
   final String _baseUrl;
@@ -469,6 +467,7 @@ class StudentServiceException implements Exception {
 
   bool get isQuota =>
       code == 'quota_students' ||
+      code == 'quota_groups' ||
       code == 'quota_schedule_lessons' ||
       code == 'quota_journal_lessons';
 }

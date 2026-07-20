@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:tutor_app/config/api_config.dart';
+
 num? _asNum(dynamic value) {
   if (value == null) {
     return null;
@@ -518,11 +520,7 @@ class PaymentService {
   PaymentService({
     required this.token,
     String? baseUrl,
-  }) : _baseUrl = baseUrl ??
-            const String.fromEnvironment(
-              'API_BASE_URL',
-              defaultValue: 'http://localhost:8000/api',
-            );
+  }) : _baseUrl = baseUrl ?? ApiConfig.baseUrl;
 
   final String token;
   final String _baseUrl;

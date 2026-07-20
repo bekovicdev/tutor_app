@@ -47,7 +47,8 @@ Create a new group.
 {
   "name": "Beginner Group",
   "color": "#33FF57",
-  "status": 1
+  "status": 1,
+  "lesson_cost": 400
 }
 ```
 
@@ -57,6 +58,7 @@ Create a new group.
 **Optional Fields:**
 - `color` (string, max 7, hex color code)
 - `status` (integer, 0 or 1, default: 1)
+- `lesson_cost` (numeric, min: 0)
 
 **Response:**
 ```json
@@ -95,7 +97,8 @@ Update a group's information.
 ```json
 {
   "name": "Advanced Group",
-  "color": "#5733FF"
+  "color": "#5733FF",
+  "lesson_cost": 450
 }
 ```
 
@@ -103,6 +106,7 @@ Update a group's information.
 - `name` (string, max 255)
 - `color` (string, max 7, hex color code)
 - `status` (integer, 0 or 1)
+- `lesson_cost` (numeric, min: 0)
 
 **Response:**
 ```json

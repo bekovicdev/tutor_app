@@ -168,7 +168,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get oauthInvalidGrantHint =>
-      'Google sign-in expired or the redirect URI does not match. Close the browser, confirm Google Cloud has http://127.0.0.1:8000/api/auth/google/callback, then try again from the app.';
+      'Google sign-in expired or the redirect URI does not match. Close the browser, confirm Google Cloud has https://getlessify.com/api/auth/google/callback, then try again from the app.';
 
   @override
   String get settings => 'Settings';
@@ -942,6 +942,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'You’ve reached the free limit of 4 active students.';
 
   @override
+  String get paywallReasonGroups =>
+      'You’ve reached the free limit of 4 groups.';
+
+  @override
   String get paywallReasonSchedule =>
       'You’ve reached the free limit of 24 schedule lessons.';
 
@@ -957,6 +961,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paywallFeatureJournal => 'Unlimited journal lessons';
+
+  @override
+  String get paywallFeatureGroups => 'Unlimited groups';
 
   @override
   String get planWeekly => 'Weekly';
