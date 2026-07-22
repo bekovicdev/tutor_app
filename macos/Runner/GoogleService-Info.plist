@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.getlessify.app</string>
+	<string>com.example.tutorApp</string>
 	<key>PROJECT_ID</key>
 	<string>lessify-ccc12</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:969081971153:ios:dfc66eee9d1983c14c00f0</string>
+	<string>1:969081971153:ios:6b39876649e4ce764c00f0</string>
 </dict>
 </plist>
