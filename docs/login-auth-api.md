@@ -81,6 +81,48 @@ Notes:
 - `invalid_grant` usually means: code reused/refreshed, or redirect URI mismatch, or expired code.
   Close the browser and start Google login again from the app; do not reload the callback URL.
 - After changing `.env`, run `php artisan config:clear` and restart the API.
+- Missing Apple/Google env vars → **503** (Apple currently fails on production until `APPLE_*` is set).
+
+### Apple OAuth setup (required for “Continue with Apple”)
+
+Apple button in the app calls `GET /api/auth/apple/redirect`. If Apple is not configured, API returns **503**.
+
+1. **Apple Developer → Certificates, Identifiers & Profiles**
+   - Identifiers → **App IDs**: enable **Sign In with Apple** for `com.getlessify.app`
+   - Identifiers → **Services IDs**: create one (e.g. `com.getlessify.app.web`) — this is `APPLE_CLIENT_ID`
+   - Configure that Services ID → Sign In with Apple → Domains: `getlessify.com`
+   - Return URLs: `https://getlessify.com/api/auth/apple/callback` (must match `APPLE_REDIRECT_URI` exactly)
+   - Keys → create a key with **Sign In with Apple**, download `AuthKey_XXXXX.p8` once
+   - Note **Key ID**, **Team ID**
+
+2. **API `.env` (production)** — prefer key-based secret (auto-refreshed by Socialite provider):
+
+```env
+APPLE_CLIENT_ID=com.getlessify.app.web
+APPLE_KEY_ID=XXXXXXXXXX
+APPLE_TEAM_ID=XXXXXXXXXX
+APPLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+APPLE_REDIRECT_URI=https://getlessify.com/api/auth/apple/callback
+OAUTH_FRONTEND_REDIRECT=app://auth-callback
+```
+
+Or put the `.p8` file on the server and set `APPLE_PRIVATE_KEY` to its absolute path (depending on how SocialiteProviders/Apple is configured on your deploy).
+
+3. Deploy / clear config:
+
+```bash
+php artisan config:clear
+```
+
+4. Verify:
+
+```bash
+curl -sS -H "Accept: application/json" "https://getlessify.com/api/auth/apple/redirect"
+```
+
+Expect `{"success":true,"data":{"url":"https://appleid.apple.com/..."}}` (not 503).
+
+Flutter app needs no code change for this web OAuth path.
 
 ### Current User
 
