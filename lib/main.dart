@@ -14,7 +14,7 @@ import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/notifications/fcm_service.dart';
 import 'package:tutor_app/pages/journal_page.dart';
 import 'package:tutor_app/pages/payment_page.dart';
-import 'package:tutor_app/pages/schedule_page.dart';
+import 'package:tutor_app/pages/calendar_page.dart';
 import 'package:tutor_app/pages/settings_page.dart';
 import 'package:tutor_app/pages/students_page.dart';
 import 'package:tutor_app/payments/payment_service.dart';
@@ -481,7 +481,7 @@ class _AppShellState extends State<AppShell> {
         token: widget.session.token,
         onOpenSettings: _openSettings,
       ),
-      SchedulePage(
+      CalendarPage(
         token: widget.session.token,
         onOpenSettings: _openSettings,
       ),
@@ -592,7 +592,7 @@ class _AppShellState extends State<AppShell> {
         BottomNavigationBarItem(
           icon: const Icon(CupertinoIcons.calendar),
           activeIcon: const Icon(CupertinoIcons.calendar_today),
-          label: l10n.tabSchedule,
+          label: l10n.tabCalendar,
         ),
         BottomNavigationBarItem(
           icon: const Icon(CupertinoIcons.book),

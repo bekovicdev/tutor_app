@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:intl/intl.dart' as intl;
 import 'package:tutor_app/groups/group_service.dart';
 import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
@@ -298,6 +299,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: Text(_pageTitle),
+        border: appNavigationBarBorderOf(context),
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () => Navigator.of(context).pop(false),
@@ -308,279 +310,200 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
           onPressed: _isSubmitting ? null : _submit,
           child: _isSubmitting
               ? const CupertinoActivityIndicator()
-              : Text(l10n.save),
+              : Text(
+                  l10n.save,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
         ),
       ),
       child: SafeArea(
         child: _isLoading
             ? const Center(child: CupertinoActivityIndicator())
             : ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
                 children: <Widget>[
-                  _sectionTitle(l10n.target),
-                  CupertinoSlidingSegmentedControl<bool>(
-                    groupValue: _isGroup,
-                    children: <bool, Widget>{
-                      false: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 6,
-                        ),
-                        child: Text(l10n.student),
-                      ),
-                      true: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 6,
-                        ),
-                        child: Text(l10n.group),
-                      ),
-                    },
-                    onValueChanged: (bool? value) {
-                      if (value == null) {
-                        return;
-                      }
-                      setState(() {
-                        _isGroup = value;
-                        _fillDefaultPrice(force: true);
-                      });
-                      if (value && _selectedGroup != null) {
-                        _loadGroupMembersAndNotes(_selectedGroup);
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  if (_isGroup)
-                    _pickerButton(
-                      label: _selectedGroup?.name ?? l10n.selectGroup,
-                      onPressed: _groups.isEmpty ? null : _pickGroup,
-                    )
-                  else
-                    _pickerButton(
-                      label: _selectedStudent?.name ?? l10n.selectStudent,
-                      onPressed: _students.isEmpty ? null : _pickStudent,
+                  _sectionLabel(l10n.target),
+                  AppGlassCard(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                    child: Column(
+                      children: <Widget>[
+                        _typeToggle(l10n),
+                        const SizedBox(height: 12),
+                        _personPicker(l10n),
+                      ],
                     ),
-                  const SizedBox(height: 16),
-                  if (widget.lockDateTime && !widget.isEditing) ...<Widget>[
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppBrand.primary.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppBrand.primary.withValues(alpha: 0.25),
-                        ),
-                      ),
-                      child: Row(
-                        children: <Widget>[
-                          const Icon(
-                            CupertinoIcons.calendar,
-                            size: 18,
-                            color: AppBrand.primary,
+                  ),
+                  const SizedBox(height: 22),
+                  _sectionLabel(l10n.date),
+                  AppGlassCard(
+                    padding: const EdgeInsets.fromLTRB(4, 6, 4, 6),
+                    child: Column(
+                      children: <Widget>[
+                        if (widget.lockDateTime && !widget.isEditing) ...<Widget>[
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+                            child: _slotBanner(l10n),
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              l10n.selectedSlot(
-                                _formatDate(_date),
-                                _formatTimeDisplay(_startTime),
-                              ),
-                              style: const TextStyle(
+                          _rowDivider(),
+                        ] else ...<Widget>[
+                          _settingsRow(
+                            icon: CupertinoIcons.calendar,
+                            iconColor: AppBrand.primary.resolveFrom(context),
+                            label: l10n.date,
+                            value: _formatDateDisplay(_date),
+                            onPressed: _pickDate,
+                          ),
+                          _rowDivider(),
+                          _settingsRow(
+                            icon: CupertinoIcons.clock,
+                            iconColor: CupertinoColors.activeBlue.resolveFrom(
+                              context,
+                            ),
+                            label: l10n.startTime,
+                            value: _formatTimeDisplay(_startTime),
+                            onPressed: _pickTime,
+                          ),
+                          _rowDivider(),
+                        ],
+                        _settingsRow(
+                          icon: CupertinoIcons.timer,
+                          iconColor: CupertinoColors.systemOrange.resolveFrom(
+                            context,
+                          ),
+                          label: l10n.duration,
+                          value: l10n.minutes(_durationMinutes),
+                          onPressed: _pickDuration,
+                        ),
+                        if (widget.source == LessonSource.journal) ...<Widget>[
+                          _rowDivider(),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                _inlineLabel(l10n.status),
+                                const SizedBox(height: 8),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: CupertinoSlidingSegmentedControl<String>(
+                                    groupValue: _status,
+                                    children: <String, Widget>{
+                                      'scheduled': _segmentLabel(l10n.scheduled),
+                                      'completed': _segmentLabel(l10n.completed),
+                                      'cancelled': _segmentLabel(l10n.cancelled),
+                                    },
+                                    onValueChanged: (String? value) {
+                                      if (value == null) {
+                                        return;
+                                      }
+                                      setState(() {
+                                        _status = value;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  _sectionLabel(l10n.lessonFee),
+                  AppGlassCard(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        _inlineLabel(l10n.titleOptional),
+                        const SizedBox(height: 8),
+                        _textField(
+                          controller: _titleController,
+                          placeholder: l10n.titleOptional,
+                        ),
+                        const SizedBox(height: 14),
+                        _switchRow(
+                          label: l10n.freeLesson,
+                          value: _isFree,
+                          onChanged: (bool value) {
+                            setState(() {
+                              _isFree = value;
+                            });
+                          },
+                        ),
+                        if (!_isFree) ...<Widget>[
+                          const SizedBox(height: 14),
+                          _inlineLabel(l10n.price),
+                          const SizedBox(height: 8),
+                          _textField(
+                            controller: _priceController,
+                        placeholder: l10n.eg500,
+                            keyboardType:
+                                const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            suffix: Text(
+                              context.currencyLabel(),
+                              style: TextStyle(
                                 fontWeight: FontWeight.w700,
-                                fontSize: 15,
+                                color: CupertinoColors.secondaryLabel
+                                    .resolveFrom(context),
                               ),
                             ),
                           ),
                         ],
-                      ),
+                      ],
                     ),
-                  ] else ...<Widget>[
-                    _sectionTitle(l10n.date),
-                    _pickerButton(
-                      label: _formatDate(_date),
-                      onPressed: _pickDate,
-                    ),
-                    const SizedBox(height: 16),
-                    _sectionTitle(l10n.startTime),
-                  _pickerButton(
-                    label: _formatTimeDisplay(_startTime),
-                    onPressed: _pickTime,
                   ),
-                  ],
-                  const SizedBox(height: 16),
-                  _sectionTitle(l10n.duration),
-                  _pickerButton(
-                    label: l10n.minutes(_durationMinutes),
-                    onPressed: _pickDuration,
-                  ),
-                  if (widget.source == LessonSource.journal) ...<Widget>[
-                    const SizedBox(height: 16),
-                    _sectionTitle(l10n.status),
-                    CupertinoSlidingSegmentedControl<String>(
-                      groupValue: _status,
-                      children: <String, Widget>{
-                        'scheduled': Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 6,
-                          ),
-                          child: Text(l10n.scheduled),
-                        ),
-                        'completed': Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 6,
-                          ),
-                          child: Text(l10n.completed),
-                        ),
-                        'cancelled': Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 6,
-                          ),
-                          child: Text(l10n.cancelled),
-                        ),
-                      },
-                      onValueChanged: (String? value) {
-                        if (value == null) {
-                          return;
-                        }
-                        setState(() {
-                          _status = value;
-                        });
-                      },
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  _sectionTitle(l10n.titleOptional),
-                  CupertinoTextField(
-                    controller: _titleController,
-                    padding: const EdgeInsets.all(12),
-                    style: _fieldTextStyle,
-                    placeholderStyle: _fieldPlaceholderStyle,
-                    decoration: _fieldDecoration(context),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: <Widget>[
-                      Expanded(child: Text(l10n.freeLesson)),
-                      CupertinoSwitch(
-                        value: _isFree,
-                        onChanged: (bool value) {
-                          setState(() {
-                            _isFree = value;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                  if (!_isFree) ...<Widget>[
-                    const SizedBox(height: 12),
-                    _sectionTitle(l10n.price),
-                    CupertinoTextField(
-                      controller: _priceController,
-                      placeholder: '500',
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      padding: const EdgeInsets.all(12),
-                      style: _fieldTextStyle,
-                      placeholderStyle: _fieldPlaceholderStyle,
-                      decoration: _fieldDecoration(context),
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  if (_isGroup) ...<Widget>[
-                    _sectionTitle(l10n.studentNotes),
-                    if (_groupMembers.isEmpty)
-                      Text(
-                        l10n.noGroupMembers,
-                        style: TextStyle(
-                          color: CupertinoColors.secondaryLabel
-                              .resolveFrom(context),
-                          fontSize: 13,
-                        ),
-                      )
-                    else
-                      ..._groupMembers.map((Student member) {
-                        final TextEditingController controller =
-                            _studentNoteControllers.putIfAbsent(
-                          member.id,
-                          TextEditingController.new,
-                        );
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: CupertinoTextField(
-                            controller: controller,
-                            placeholder:
-                                l10n.studentNotePlaceholder(member.name),
-                            minLines: 1,
-                            maxLines: 3,
-                            padding: const EdgeInsets.all(12),
-                            style: _fieldTextStyle,
-                            placeholderStyle: _fieldPlaceholderStyle,
-                            decoration: _fieldDecoration(context),
-                            prefix: Padding(
-                              padding: const EdgeInsets.only(left: 10),
-                              child: Text(
-                                member.name.split(' ').first,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
-                                  color: CupertinoColors.secondaryLabel
-                                      .resolveFrom(context),
-                                ),
+                  const SizedBox(height: 22),
+                  _sectionLabel(l10n.notes),
+                  AppGlassCard(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        if (_isGroup) ...<Widget>[
+                          _inlineLabel(l10n.studentNotes),
+                          const SizedBox(height: 8),
+                          if (_groupMembers.isEmpty)
+                            Text(
+                              l10n.noGroupMembers,
+                              style: TextStyle(
+                                color: CupertinoColors.secondaryLabel
+                                    .resolveFrom(context),
+                                fontSize: 13,
                               ),
-                            ),
-                          ),
-                        );
-                      }),
-                    const SizedBox(height: 8),
-                    _sectionTitle(l10n.notes),
-                    CupertinoTextField(
-                      controller: _notesController,
-                      placeholder: l10n.optionalNotes,
-                      minLines: 2,
-                      maxLines: 4,
-                      padding: const EdgeInsets.all(12),
-                      style: _fieldTextStyle,
-                      placeholderStyle: _fieldPlaceholderStyle,
-                      decoration: _fieldDecoration(context),
+                            )
+                          else
+                            ..._groupMembers.map(_studentNoteField),
+                          const SizedBox(height: 14),
+                          _inlineLabel(l10n.notes),
+                          const SizedBox(height: 8),
+                        ],
+                        _textField(
+                          controller: _notesController,
+                          placeholder: l10n.optionalNotes,
+                          minLines: 3,
+                          maxLines: 5,
+                        ),
+                      ],
                     ),
-                  ] else ...<Widget>[
-                    _sectionTitle(l10n.notes),
-                    CupertinoTextField(
-                      controller: _notesController,
-                      placeholder: l10n.optionalNotes,
-                      minLines: 2,
-                      maxLines: 4,
-                      padding: const EdgeInsets.all(12),
-                      style: _fieldTextStyle,
-                      placeholderStyle: _fieldPlaceholderStyle,
-                      decoration: _fieldDecoration(context),
-                    ),
-                  ],
+                  ),
                   if (widget.isEditing &&
                       widget.source == LessonSource.schedule) ...<Widget>[
-                    const SizedBox(height: 20),
-                    CupertinoButton.filled(
+                    const SizedBox(height: 22),
+                    _filledAction(
+                      label: l10n.markLessonDone,
+                      icon: CupertinoIcons.checkmark_circle_fill,
                       onPressed: _isSubmitting ? null : _markLessonDone,
-                      child: Text(l10n.markLessonDone),
                     ),
                   ],
                   if (widget.isEditing) ...<Widget>[
                     const SizedBox(height: 12),
-                    CupertinoButton(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    _destructiveAction(
+                      label: l10n.deleteLesson,
                       onPressed: _isSubmitting ? null : _confirmDelete,
-                      child: Text(
-                        l10n.deleteLesson,
-                        style: const TextStyle(
-                          color: CupertinoColors.systemRed,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
                     ),
                   ],
                 ],
@@ -589,45 +512,128 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     );
   }
 
-  Widget _sectionTitle(String text) {
+  Widget _sectionLabel(String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
       child: Text(
-        text,
-        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+        text.toUpperCase(),
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.6,
+          color: CupertinoColors.secondaryLabel.resolveFrom(context),
+        ),
       ),
     );
   }
 
-  Widget _pickerButton({
+  Widget _inlineLabel(String text) {
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        color: CupertinoColors.secondaryLabel.resolveFrom(context),
+      ),
+    );
+  }
+
+  Widget _segmentLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
+      child: Text(text, textAlign: TextAlign.center),
+    );
+  }
+
+  Widget _typeToggle(AppLocalizations l10n) {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: _typeChip(
+            selected: !_isGroup,
+            icon: CupertinoIcons.person_fill,
+            label: l10n.student,
+            onTap: () {
+              if (!_isGroup) {
+                return;
+              }
+              setState(() {
+                _isGroup = false;
+                _fillDefaultPrice(force: true);
+              });
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _typeChip(
+            selected: _isGroup,
+            icon: CupertinoIcons.person_2_fill,
+            label: l10n.group,
+            onTap: () {
+              if (_isGroup) {
+                return;
+              }
+              setState(() {
+                _isGroup = true;
+                _fillDefaultPrice(force: true);
+              });
+              if (_selectedGroup != null) {
+                _loadGroupMembersAndNotes(_selectedGroup);
+              }
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _typeChip({
+    required bool selected,
+    required IconData icon,
     required String label,
-    required VoidCallback? onPressed,
+    required VoidCallback onTap,
   }) {
-    final Color muted =
-        CupertinoColors.secondaryLabel.resolveFrom(context);
-    final Color labelColor = CupertinoColors.label.resolveFrom(context);
-    return CupertinoButton(
-      padding: EdgeInsets.zero,
-      onPressed: onPressed,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(12),
-        decoration: _fieldDecoration(context),
+    final Color selectedColor = AppBrand.primary.resolveFrom(context);
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: selected
+              ? selectedColor.withValues(alpha: 0.16)
+              : CupertinoColors.secondarySystemGroupedBackground
+                  .resolveFrom(context),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected
+                ? selectedColor.withValues(alpha: 0.45)
+                : CupertinoColors.separator
+                    .resolveFrom(context)
+                    .withValues(alpha: 0.28),
+          ),
+        ),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: onPressed == null ? muted : labelColor,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
             Icon(
-              CupertinoIcons.chevron_down,
+              icon,
               size: 16,
-              color: muted,
+              color: selected
+                  ? selectedColor
+                  : CupertinoColors.secondaryLabel.resolveFrom(context),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                color: selected
+                    ? selectedColor
+                    : CupertinoColors.label.resolveFrom(context),
+              ),
             ),
           ],
         ),
@@ -635,28 +641,429 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     );
   }
 
-  BoxDecoration _fieldDecoration(BuildContext context) {
-    return BoxDecoration(
-      color: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(
-        context,
-      ),
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(
-        color: CupertinoColors.separator
-            .resolveFrom(context)
-            .withValues(alpha: 0.35),
+  Widget _personPicker(AppLocalizations l10n) {
+    final String name = _isGroup
+        ? (_selectedGroup?.name ?? l10n.selectGroup)
+        : (_selectedStudent?.name ?? l10n.selectStudent);
+    final Color accent = _parseHexColor(
+      _isGroup ? _selectedGroup?.color : _selectedStudent?.color,
+    );
+    final bool enabled =
+        _isGroup ? _groups.isNotEmpty : _students.isNotEmpty;
+    final String? pictureUrl =
+        _isGroup ? null : _selectedStudent?.profilePictureUrl;
+
+    return CupertinoButton(
+      padding: EdgeInsets.zero,
+      onPressed: enabled
+          ? (_isGroup ? _pickGroup : _pickStudent)
+          : null,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(10, 10, 12, 10),
+        decoration: BoxDecoration(
+          color: CupertinoColors.secondarySystemGroupedBackground
+              .resolveFrom(context),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: <Widget>[
+            _avatar(
+              name: name,
+              color: accent,
+              pictureUrl: pictureUrl,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: enabled
+                          ? CupertinoColors.label.resolveFrom(context)
+                          : CupertinoColors.secondaryLabel.resolveFrom(context),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _isGroup ? l10n.group : l10n.student,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              CupertinoIcons.chevron_right,
+              size: 16,
+              color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  TextStyle get _fieldTextStyle => TextStyle(
-        color: CupertinoColors.label.resolveFrom(context),
-        fontWeight: FontWeight.w500,
-      );
+  Widget _avatar({
+    required String name,
+    required Color color,
+    String? pictureUrl,
+  }) {
+    final bool hasPhoto = pictureUrl != null && pictureUrl.isNotEmpty;
+    return Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(14),
+        image: hasPhoto
+            ? DecorationImage(
+                image: NetworkImage(pictureUrl),
+                fit: BoxFit.cover,
+              )
+            : null,
+      ),
+      alignment: Alignment.center,
+      child: hasPhoto
+          ? null
+          : Text(
+              _initials(name),
+              style: const TextStyle(
+                color: CupertinoColors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+              ),
+            ),
+    );
+  }
 
-  TextStyle get _fieldPlaceholderStyle => TextStyle(
+  Widget _slotBanner(AppLocalizations l10n) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+      decoration: BoxDecoration(
+        color: AppBrand.primary.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: <Widget>[
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppBrand.primary.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              CupertinoIcons.calendar_today,
+              size: 18,
+              color: AppBrand.primary.resolveFrom(context),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              l10n.selectedSlot(
+                _formatDateDisplay(_date),
+                _formatTimeDisplay(_startTime),
+              ),
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _settingsRow({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required String value,
+    required VoidCallback? onPressed,
+  }) {
+    final Color muted = CupertinoColors.secondaryLabel.resolveFrom(context);
+    return CupertinoButton(
+      padding: EdgeInsets.zero,
+      onPressed: onPressed,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          children: <Widget>[
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: Icon(icon, size: 16, color: iconColor),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: muted,
+              ),
+            ),
+            if (onPressed != null) ...<Widget>[
+              const SizedBox(width: 4),
+              Icon(
+                CupertinoIcons.chevron_right,
+                size: 14,
+                color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _rowDivider() {
+    return Padding(
+      padding: const EdgeInsets.only(left: 56),
+      child: Container(
+        height: 0.5,
+        color: CupertinoColors.separator.resolveFrom(context).withValues(
+          alpha: 0.45,
+        ),
+      ),
+    );
+  }
+
+  Widget _switchRow({
+    required String label,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: CupertinoColors.secondarySystemGroupedBackground
+            .resolveFrom(context),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          CupertinoSwitch(value: value, onChanged: onChanged),
+        ],
+      ),
+    );
+  }
+
+  Widget _textField({
+    required TextEditingController controller,
+    required String placeholder,
+    TextInputType? keyboardType,
+    int minLines = 1,
+    int maxLines = 1,
+    Widget? suffix,
+  }) {
+    return CupertinoTextField(
+      controller: controller,
+      placeholder: placeholder,
+      keyboardType: keyboardType,
+      minLines: minLines,
+      maxLines: maxLines,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: CupertinoColors.label.resolveFrom(context),
+      ),
+      placeholderStyle: TextStyle(
         color: CupertinoColors.placeholderText.resolveFrom(context),
-      );
+      ),
+      suffix: suffix == null
+          ? null
+          : Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: suffix,
+            ),
+      decoration: BoxDecoration(
+        color: CupertinoColors.secondarySystemGroupedBackground
+            .resolveFrom(context),
+        borderRadius: BorderRadius.circular(12),
+      ),
+    );
+  }
+
+  Widget _studentNoteField(Student member) {
+    final TextEditingController controller =
+        _studentNoteControllers.putIfAbsent(
+      member.id,
+      TextEditingController.new,
+    );
+    final Color accent = _parseHexColor(member.color);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: CupertinoTextField(
+        controller: controller,
+        placeholder: context.l10n.studentNotePlaceholder(member.name),
+        minLines: 1,
+        maxLines: 3,
+        padding: const EdgeInsets.fromLTRB(8, 12, 12, 12),
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+          color: CupertinoColors.label.resolveFrom(context),
+        ),
+        placeholderStyle: TextStyle(
+          color: CupertinoColors.placeholderText.resolveFrom(context),
+        ),
+        prefix: Padding(
+          padding: const EdgeInsets.only(left: 6, right: 8),
+          child: _avatar(name: member.name, color: accent),
+        ),
+        decoration: BoxDecoration(
+          color: CupertinoColors.secondarySystemGroupedBackground
+              .resolveFrom(context),
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
+
+  Widget _filledAction({
+    required String label,
+    required IconData icon,
+    required VoidCallback? onPressed,
+  }) {
+    return CupertinoButton(
+      padding: EdgeInsets.zero,
+      onPressed: onPressed,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: AppBrand.primary.resolveFrom(context),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Icon(icon, size: 18, color: CupertinoColors.white),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                color: CupertinoColors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _destructiveAction({
+    required String label,
+    required VoidCallback? onPressed,
+  }) {
+    return CupertinoButton(
+      padding: EdgeInsets.zero,
+      onPressed: onPressed,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: CupertinoColors.systemRed.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: CupertinoColors.systemRed.withValues(alpha: 0.18),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            const Icon(
+              CupertinoIcons.trash,
+              size: 18,
+              color: CupertinoColors.systemRed,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                color: CupertinoColors.systemRed,
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _initials(String name) {
+    final List<String> parts = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((String part) => part.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) {
+      return '?';
+    }
+    if (parts.length == 1) {
+      return parts.first.substring(0, 1).toUpperCase();
+    }
+    return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
+  }
+
+  Color _parseHexColor(String? hex) {
+    if (hex == null || hex.isEmpty) {
+      return AppBrand.primary.resolveFrom(context);
+    }
+    final String value = hex.replaceAll('#', '').trim();
+    if (value.length != 6) {
+      return AppBrand.primary.resolveFrom(context);
+    }
+    final int? rgb = int.tryParse(value, radix: 16);
+    if (rgb == null) {
+      return AppBrand.primary.resolveFrom(context);
+    }
+    return Color.fromARGB(
+      255,
+      (rgb >> 16) & 0xFF,
+      (rgb >> 8) & 0xFF,
+      rgb & 0xFF,
+    );
+  }
 
   Future<void> _pickStudent() async {
     await showAppActionSheet<void>(
@@ -814,7 +1221,10 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     final AppLocalizations l10n = context.l10n;
     return Container(
       height: 300,
-      color: CupertinoColors.systemBackground.resolveFrom(context),
+      decoration: BoxDecoration(
+        color: CupertinoColors.systemBackground.resolveFrom(context),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       child: SafeArea(
         top: false,
         child: Column(
@@ -1097,6 +1507,11 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     final String m = date.month.toString().padLeft(2, '0');
     final String d = date.day.toString().padLeft(2, '0');
     return '${date.year}-$m-$d';
+  }
+
+  String _formatDateDisplay(DateTime date) {
+    final String locale = Localizations.localeOf(context).toLanguageTag();
+    return intl.DateFormat.yMMMEd(locale).format(date);
   }
 
   String _formatTime(Duration time) {

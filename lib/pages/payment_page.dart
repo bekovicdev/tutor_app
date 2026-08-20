@@ -511,110 +511,507 @@ class _PaymentPageState extends State<PaymentPage> {
     if (overview == null) {
       return Center(child: Text(l10n.noOverviewData));
     }
+
+    final Color orange = CupertinoColors.systemOrange.resolveFrom(context);
+    final Color green = CupertinoColors.activeGreen.resolveFrom(context);
+    final Color gold = AppBrand.primary.resolveFrom(context);
+    final Color purple = CupertinoColors.systemPurple.resolveFrom(context);
+    final Color red = CupertinoColors.systemRed.resolveFrom(context);
+    final double rate = (overview.collectionRatePercent / 100)
+        .clamp(0.0, 1.0)
+        .toDouble();
+
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
       children: <Widget>[
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: _metricCard(
-                label: l10n.receivables,
-                value: _money(overview.receivablesAmount, overview.currency),
-                subtitle: l10n.lessonsCount(overview.receivablesLessonCount),
-                color: CupertinoColors.systemOrange,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _metricCard(
-                label: l10n.settled,
-                value: _money(overview.settledAmount, overview.currency),
-                subtitle:
-                    '${overview.collectionRatePercent.toStringAsFixed(0)}% rate',
-                color: CupertinoColors.activeGreen,
-              ),
-            ),
-          ],
+        _overviewHero(
+          l10n: l10n,
+          overview: overview,
+          accent: orange,
+          rate: rate,
+          onTap: () {
+            setState(() {
+              _tab = _PaymentTab.receivables;
+            });
+          },
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
         Row(
           children: <Widget>[
             Expanded(
-              child: _metricCard(
+              child: _overviewMiniStat(
+                icon: CupertinoIcons.money_dollar,
+                color: gold,
                 label: l10n.net,
                 value: _money(overview.cashNet, overview.currency),
                 subtitle: l10n.cashLine(
                   _formatNum(overview.cashCollected),
                   _formatNum(overview.cashRefunded),
                 ),
-                color: AppBrand.primary,
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: _metricCard(
+              child: _overviewMiniStat(
+                icon: CupertinoIcons.checkmark_seal_fill,
+                color: green,
+                label: l10n.settled,
+                value: _money(overview.settledAmount, overview.currency),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _overviewMiniStat(
+                icon: CupertinoIcons.creditcard_fill,
+                color: purple,
                 label: l10n.prepaid,
                 value: _money(overview.prepaidAmount, overview.currency),
                 subtitle: l10n.lessonsCount(overview.prepaidLessonCount),
-                color: CupertinoColors.systemPurple,
+                onTap: () {
+                  setState(() {
+                    _tab = _PaymentTab.prepaid;
+                  });
+                },
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        _card(
+        const SizedBox(height: 22),
+        _overviewSectionLabel(l10n.lessonSettlement),
+        AppGlassCard(
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(
-                l10n.lessonSettlement,
-                style: const TextStyle(fontWeight: FontWeight.w700),
+              _settlementBar(
+                unpaid: overview.unpaid.amount,
+                paid: overview.paid.amount,
+                prepaid: overview.prepaid.amount,
+                unpaidColor: red,
+                paidColor: green,
+                prepaidColor: purple,
+              ),
+              const SizedBox(height: 14),
+              _settlementLegendRow(
+                color: red,
+                label: l10n.unpaid,
+                bucket: overview.unpaid,
+                currency: overview.currency,
               ),
               const SizedBox(height: 10),
+              _settlementLegendRow(
+                color: green,
+                label: l10n.paid,
+                bucket: overview.paid,
+                currency: overview.currency,
+              ),
+              const SizedBox(height: 10),
+              _settlementLegendRow(
+                color: purple,
+                label: l10n.prepaid,
+                bucket: overview.prepaid,
+                currency: overview.currency,
+              ),
+              const SizedBox(height: 12),
               Text(
                 l10n.billableFreeCounts(
                   overview.billableCount,
                   overview.freeCount,
                 ),
-                style: TextStyle(color: CupertinoColors.secondaryLabel.resolveFrom(context)),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: <Widget>[
-                  _statusChip(l10n.unpaid, overview.unpaid),
-                  _statusChip(l10n.paid, overview.paid),
-                  _statusChip(l10n.prepaid, overview.prepaid),
-                ],
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 12),
-        _card(
+        const SizedBox(height: 22),
+        _overviewSectionLabel(l10n.earned),
+        AppGlassCard(
+          padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(
-                l10n.earned,
-                style: const TextStyle(fontWeight: FontWeight.w700),
+              _earnedRow(
+                color: green,
+                label: l10n.paid,
+                amount: overview.paidAmount,
+                currency: overview.currency,
               ),
-              const SizedBox(height: 8),
-              _rowMetric(l10n.paid, overview.paidAmount, overview.currency),
-              _rowMetric(
-                l10n.prepaid,
-                overview.prepaidEarnedAmount,
-                overview.currency,
+              _overviewRowDivider(),
+              _earnedRow(
+                color: purple,
+                label: l10n.prepaid,
+                amount: overview.prepaidEarnedAmount,
+                currency: overview.currency,
               ),
-              _rowMetric(
-                l10n.settled,
-                overview.settledAmount,
-                overview.currency,
+              _overviewRowDivider(),
+              _earnedRow(
+                color: gold,
+                label: l10n.settled,
+                amount: overview.settledAmount,
+                currency: overview.currency,
+                emphasize: true,
               ),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _overviewHero({
+    required AppLocalizations l10n,
+    required PaymentsOverview overview,
+    required Color accent,
+    required double rate,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AppGlassCard(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    CupertinoIcons.exclamationmark_circle_fill,
+                    color: accent,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        l10n.receivables.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.7,
+                          color: accent,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        l10n.lessonsCount(overview.receivablesLessonCount),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: CupertinoColors.secondaryLabel
+                              .resolveFrom(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  CupertinoIcons.chevron_right,
+                  size: 16,
+                  color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Text(
+              _money(overview.receivablesAmount, overview.currency),
+              style: const TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.8,
+                height: 1.05,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    l10n.collectionRate,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                    ),
+                  ),
+                ),
+                Text(
+                  '${overview.collectionRatePercent.toStringAsFixed(0)}%',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: AppBrand.primary.resolveFrom(context),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(99),
+              child: SizedBox(
+                height: 8,
+                child: Stack(
+                  children: <Widget>[
+                    ColoredBox(
+                      color: CupertinoColors.systemGrey5.resolveFrom(context),
+                      child: const SizedBox.expand(),
+                    ),
+                    FractionallySizedBox(
+                      widthFactor: rate,
+                      child: ColoredBox(
+                        color: AppBrand.primary.resolveFrom(context),
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _overviewMiniStat({
+    required IconData icon,
+    required Color color,
+    required String label,
+    required String value,
+    String? subtitle,
+    VoidCallback? onTap,
+  }) {
+    final Widget content = AppGlassCard(
+      padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 15, color: color),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: CupertinoColors.secondaryLabel.resolveFrom(context),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.3,
+            ),
+          ),
+          if (subtitle != null) ...<Widget>[
+            const SizedBox(height: 3),
+            Text(
+              subtitle,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10,
+                height: 1.2,
+                color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+    if (onTap == null) {
+      return content;
+    }
+    return GestureDetector(onTap: onTap, child: content);
+  }
+
+  Widget _overviewSectionLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+      child: Text(
+        text.toUpperCase(),
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.6,
+          color: CupertinoColors.secondaryLabel.resolveFrom(context),
+        ),
+      ),
+    );
+  }
+
+  Widget _settlementBar({
+    required num unpaid,
+    required num paid,
+    required num prepaid,
+    required Color unpaidColor,
+    required Color paidColor,
+    required Color prepaidColor,
+  }) {
+    final double unpaidValue = unpaid < 0 ? 0 : unpaid.toDouble();
+    final double paidValue = paid < 0 ? 0 : paid.toDouble();
+    final double prepaidValue = prepaid < 0 ? 0 : prepaid.toDouble();
+    final double total = unpaidValue + paidValue + prepaidValue;
+    if (total <= 0) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(99),
+        child: ColoredBox(
+          color: CupertinoColors.systemGrey5.resolveFrom(context),
+          child: const SizedBox(height: 10, width: double.infinity),
+        ),
+      );
+    }
+
+    Widget segment(Color color, double value) {
+      if (value <= 0) {
+        return const SizedBox.shrink();
+      }
+      return Expanded(
+        flex: math.max(1, (value / total * 1000).round()),
+        child: ColoredBox(color: color),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(99),
+      child: SizedBox(
+        height: 10,
+        child: Row(
+          children: <Widget>[
+            segment(unpaidColor, unpaidValue),
+            if (unpaidValue > 0 && (paidValue > 0 || prepaidValue > 0))
+              const SizedBox(width: 2),
+            segment(paidColor, paidValue),
+            if (paidValue > 0 && prepaidValue > 0) const SizedBox(width: 2),
+            segment(prepaidColor, prepaidValue),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _settlementLegendRow({
+    required Color color,
+    required String label,
+    required StatusAmountBucket bucket,
+    required String currency,
+  }) {
+    return Row(
+      children: <Widget>[
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          ),
+        ),
+        Text(
+          '${bucket.count}',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: CupertinoColors.secondaryLabel.resolveFrom(context),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          _money(bucket.amount, currency),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+        ),
+      ],
+    );
+  }
+
+  Widget _earnedRow({
+    required Color color,
+    required String label,
+    required num amount,
+    required String currency,
+    bool emphasize = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+      child: Row(
+        children: <Widget>[
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Center(
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: emphasize ? FontWeight.w700 : FontWeight.w600,
+              ),
+            ),
+          ),
+          Text(
+            _money(amount, currency),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: emphasize
+                  ? color
+                  : CupertinoColors.label.resolveFrom(context),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _overviewRowDivider() {
+    return Padding(
+      padding: const EdgeInsets.only(left: 48),
+      child: Container(
+        height: 0.5,
+        color: CupertinoColors.separator.resolveFrom(context).withValues(
+          alpha: 0.45,
+        ),
+      ),
     );
   }
 
@@ -1375,33 +1772,6 @@ class _PaymentPageState extends State<PaymentPage> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _statusChip(String label, StatusAmountBucket bucket) {
-    return Column(
-      children: <Widget>[
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            color: CupertinoColors.secondaryLabel.resolveFrom(context),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '${bucket.count}',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-        ),
-        Text(
-          _formatNum(bucket.amount),
-          style: TextStyle(
-            fontSize: 11,
-            color: CupertinoColors.secondaryLabel.resolveFrom(context),
-          ),
-        ),
-      ],
     );
   }
 

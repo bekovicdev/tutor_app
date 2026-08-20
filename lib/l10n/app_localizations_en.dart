@@ -15,7 +15,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabStudents => 'Students';
 
   @override
-  String get tabSchedule => 'Schedule';
+  String get tabCalendar => 'Calendar';
 
   @override
   String get tabJournal => 'Journal';
@@ -455,7 +455,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addGroupTitle => 'Add Group';
 
   @override
-  String get schedule => 'Schedule';
+  String get calendar => 'Calendar';
+
+  @override
+  String get schedule => 'Program';
 
   @override
   String get journal => 'Journal';
@@ -479,6 +482,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get overview => 'Overview';
+
+  @override
+  String get collectionRate => 'Collection rate';
 
   @override
   String get monthly => 'Monthly';

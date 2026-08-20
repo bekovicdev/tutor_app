@@ -112,11 +112,11 @@ abstract class AppLocalizations {
   /// **'Students'**
   String get tabStudents;
 
-  /// No description provided for @tabSchedule.
+  /// No description provided for @tabCalendar.
   ///
   /// In en, this message translates to:
-  /// **'Schedule'**
-  String get tabSchedule;
+  /// **'Calendar'**
+  String get tabCalendar;
 
   /// No description provided for @tabJournal.
   ///
@@ -934,10 +934,16 @@ abstract class AppLocalizations {
   /// **'Add Group'**
   String get addGroupTitle;
 
+  /// No description provided for @calendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get calendar;
+
   /// No description provided for @schedule.
   ///
   /// In en, this message translates to:
-  /// **'Schedule'**
+  /// **'Program'**
   String get schedule;
 
   /// No description provided for @journal.
@@ -981,6 +987,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Overview'**
   String get overview;
+
+  /// No description provided for @collectionRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Collection rate'**
+  String get collectionRate;
 
   /// No description provided for @monthly.
   ///

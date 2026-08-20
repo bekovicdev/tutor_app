@@ -15,7 +15,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get tabStudents => 'Öğrenciler';
 
   @override
-  String get tabSchedule => 'Program';
+  String get tabCalendar => 'Takvim';
 
   @override
   String get tabJournal => 'Günlük';
@@ -455,6 +455,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get addGroupTitle => 'Grup Ekle';
 
   @override
+  String get calendar => 'Takvim';
+
+  @override
   String get schedule => 'Program';
 
   @override
@@ -479,6 +482,9 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get overview => 'Özet';
+
+  @override
+  String get collectionRate => 'Tahsilat oranı';
 
   @override
   String get monthly => 'Aylık';

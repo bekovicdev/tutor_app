@@ -15,7 +15,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get tabStudents => 'Ученики';
 
   @override
-  String get tabSchedule => 'Расписание';
+  String get tabCalendar => 'Календарь';
 
   @override
   String get tabJournal => 'Журнал';
@@ -453,7 +453,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get addGroupTitle => 'Новая группа';
 
   @override
-  String get schedule => 'Расписание';
+  String get calendar => 'Календарь';
+
+  @override
+  String get schedule => 'Программа';
 
   @override
   String get journal => 'Журнал';
@@ -477,6 +480,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get overview => 'Обзор';
+
+  @override
+  String get collectionRate => 'Доля оплат';
 
   @override
   String get monthly => 'По месяцам';
