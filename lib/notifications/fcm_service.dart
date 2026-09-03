@@ -9,13 +9,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:tutor_app/auth/auth_service.dart';
 import 'package:tutor_app/auth/auth_storage.dart';
+import 'package:tutor_app/firebase_options.dart';
 import 'package:tutor_app/settings/app_settings.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
     if (Firebase.apps.isEmpty) {
-      await Firebase.initializeApp();
+      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     }
   } catch (_) {}
 }

@@ -1,9 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:tutor_app/billing/billing_service.dart';
+import 'package:tutor_app/config/legal_config.dart';
 import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PaywallPage extends StatefulWidget {
   const PaywallPage({
@@ -145,6 +147,19 @@ class _PaywallPageState extends State<PaywallPage> {
         AppAlertAction(label: context.l10n.ok, style: AppAlertStyle.primary),
       ],
     );
+  }
+
+  Future<void> _openLegalUrl(String url) async {
+    final Uri uri = Uri.tryParse(url) ?? Uri();
+    bool launched = false;
+    try {
+      launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      launched = false;
+    }
+    if (!launched && mounted) {
+      await _showError(context.l10n.couldNotOpenLink);
+    }
   }
 
   String _priceLabel(String productId) {
@@ -609,6 +624,47 @@ class _PaywallPageState extends State<PaywallPage> {
               height: 1.35,
               color: CupertinoColors.tertiaryLabel.resolveFrom(context),
             ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              CupertinoButton(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                minSize: 0,
+                onPressed: () => _openLegalUrl(LegalConfig.privacyPolicyUrl),
+                child: Text(
+                  l10n.privacyPolicy,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    decoration: TextDecoration.underline,
+                    color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                  ),
+                ),
+              ),
+              Text(
+                '·',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                ),
+              ),
+              CupertinoButton(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                minSize: 0,
+                onPressed: () => _openLegalUrl(LegalConfig.termsOfUseUrl),
+                child: Text(
+                  l10n.termsOfUse,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    decoration: TextDecoration.underline,
+                    color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

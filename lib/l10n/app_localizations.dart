@@ -1627,8 +1627,68 @@ abstract class AppLocalizations {
   /// No description provided for @supportMessage.
   ///
   /// In en, this message translates to:
-  /// **'Questions or feedback? Email us anytime.'**
+  /// **'Questions or feedback? Email us at bekovicdev@gmail.com.'**
   String get supportMessage;
+
+  /// No description provided for @emailSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Email support'**
+  String get emailSupport;
+
+  /// No description provided for @couldNotOpenEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the mail app.'**
+  String get couldNotOpenEmail;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicy;
+
+  /// No description provided for @termsOfUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Use'**
+  String get termsOfUse;
+
+  /// No description provided for @couldNotOpenLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the link.'**
+  String get couldNotOpenLink;
+
+  /// No description provided for @deleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get deleteAccount;
+
+  /// No description provided for @deleteAccountConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete your account?'**
+  String get deleteAccountConfirmTitle;
+
+  /// No description provided for @deleteAccountConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This action is permanent and cannot be undone. All your students, lessons, and payment records will be deleted.'**
+  String get deleteAccountConfirmMessage;
+
+  /// No description provided for @deleteAccountUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Account deletion isn\'t available yet. Please email bekovicdev@gmail.com to request deletion of your account and data.'**
+  String get deleteAccountUnavailable;
+
+  /// No description provided for @accountDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account has been deleted.'**
+  String get accountDeleted;
 
   /// No description provided for @teachingDefaultsHint.
   ///

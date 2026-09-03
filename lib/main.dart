@@ -10,6 +10,7 @@ import 'package:tutor_app/auth/auth_page.dart';
 import 'package:tutor_app/auth/auth_service.dart';
 import 'package:tutor_app/auth/auth_storage.dart';
 import 'package:tutor_app/billing/billing_service.dart';
+import 'package:tutor_app/firebase_options.dart';
 import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/notifications/fcm_service.dart';
 import 'package:tutor_app/pages/journal_page.dart';
@@ -44,7 +45,7 @@ Future<bool> _initFirebase() async {
     if (Firebase.apps.isNotEmpty) {
       return true;
     }
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     return Firebase.apps.isNotEmpty;
   } catch (error) {
     debugPrint('Firebase.initializeApp failed: $error');

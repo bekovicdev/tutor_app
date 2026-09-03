@@ -826,7 +826,39 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get supportMessage =>
-      'Вопросы или отзывы? Напишите нам в любое время.';
+      'Есть вопросы или отзывы? Напишите на bekovicdev@gmail.com.';
+
+  @override
+  String get emailSupport => 'Написать в поддержку';
+
+  @override
+  String get couldNotOpenEmail => 'Не удалось открыть почтовое приложение.';
+
+  @override
+  String get privacyPolicy => 'Политика конфиденциальности';
+
+  @override
+  String get termsOfUse => 'Условия использования';
+
+  @override
+  String get couldNotOpenLink => 'Не удалось открыть ссылку.';
+
+  @override
+  String get deleteAccount => 'Удалить аккаунт';
+
+  @override
+  String get deleteAccountConfirmTitle => 'Удалить ваш аккаунт?';
+
+  @override
+  String get deleteAccountConfirmMessage =>
+      'Это действие необратимо. Все ваши ученики, уроки и платежи будут удалены.';
+
+  @override
+  String get deleteAccountUnavailable =>
+      'Удаление аккаунта пока недоступно. Напишите на bekovicdev@gmail.com, чтобы запросить удаление аккаунта и данных.';
+
+  @override
+  String get accountDeleted => 'Ваш аккаунт удалён.';
 
   @override
   String get teachingDefaultsHint =>

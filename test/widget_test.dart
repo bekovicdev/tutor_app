@@ -1,30 +1,19 @@
-// This is a basic Flutter widget test.
+// Basic smoke test for the Lessify app root widget.
 //
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// The full app talks to Firebase, shared_preferences, and the network on
+// startup, so this test only asserts that `MyApp` builds a `CupertinoApp`
+// without throwing. Deeper localization coverage lives in `l10n_test.dart`.
 
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:tutor_app/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  testWidgets('MyApp boots and renders a CupertinoApp root',
+      (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
+    await tester.pump(const Duration(milliseconds: 100));
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.byType(CupertinoApp), findsOneWidget);
   });
 }

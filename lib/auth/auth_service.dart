@@ -244,6 +244,21 @@ class AuthService {
     );
   }
 
+  /// Permanently deletes the signed-in user's account.
+  ///
+  /// TODO: Confirm the real endpoint once the backend implements account
+  /// deletion (Apple Guideline 5.1.1(v) requires this for apps that support
+  /// account creation). This currently targets `DELETE /user` to match the
+  /// existing `PUT /user` profile endpoint; update if the backend uses a
+  /// different route.
+  Future<void> deleteAccount(String token) async {
+    await _request(
+      method: 'DELETE',
+      endpoint: '/user',
+      token: token,
+    );
+  }
+
   Future<String> oauthRedirectUrl(String provider) async {
     final HttpClient client = HttpClient();
     try {
@@ -329,6 +344,8 @@ class AuthService {
         request = await client.postUrl(uri);
       } else if (method == 'PUT') {
         request = await client.putUrl(uri);
+      } else if (method == 'DELETE') {
+        request = await client.deleteUrl(uri);
       } else {
         throw const AuthException('Unsupported request method.');
       }

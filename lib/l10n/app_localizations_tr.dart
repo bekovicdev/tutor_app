@@ -828,7 +828,39 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get supportMessage =>
-      'Soru veya geri bildirim için bize yazabilirsiniz.';
+      'Soru veya geri bildirim için bekovicdev@gmail.com adresine yazabilirsiniz.';
+
+  @override
+  String get emailSupport => 'E-posta gönder';
+
+  @override
+  String get couldNotOpenEmail => 'Mail uygulaması açılamadı.';
+
+  @override
+  String get privacyPolicy => 'Gizlilik Politikası';
+
+  @override
+  String get termsOfUse => 'Kullanım Şartları';
+
+  @override
+  String get couldNotOpenLink => 'Bağlantı açılamadı.';
+
+  @override
+  String get deleteAccount => 'Hesabı Sil';
+
+  @override
+  String get deleteAccountConfirmTitle => 'Hesabın silinsin mi?';
+
+  @override
+  String get deleteAccountConfirmMessage =>
+      'Bu işlem kalıcıdır ve geri alınamaz. Tüm öğrencilerin, derslerin ve ödeme kayıtların silinecek.';
+
+  @override
+  String get deleteAccountUnavailable =>
+      'Hesap silme henüz kullanılamıyor. Hesabının ve verilerinin silinmesini talep etmek için bekovicdev@gmail.com adresine e-posta gönder.';
+
+  @override
+  String get accountDeleted => 'Hesabın silindi.';
 
   @override
   String get teachingDefaultsHint =>

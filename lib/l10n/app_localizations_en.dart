@@ -827,7 +827,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get support => 'Support';
 
   @override
-  String get supportMessage => 'Questions or feedback? Email us anytime.';
+  String get supportMessage =>
+      'Questions or feedback? Email us at bekovicdev@gmail.com.';
+
+  @override
+  String get emailSupport => 'Email support';
+
+  @override
+  String get couldNotOpenEmail => 'Could not open the mail app.';
+
+  @override
+  String get privacyPolicy => 'Privacy Policy';
+
+  @override
+  String get termsOfUse => 'Terms of Use';
+
+  @override
+  String get couldNotOpenLink => 'Could not open the link.';
+
+  @override
+  String get deleteAccount => 'Delete Account';
+
+  @override
+  String get deleteAccountConfirmTitle => 'Delete your account?';
+
+  @override
+  String get deleteAccountConfirmMessage =>
+      'This action is permanent and cannot be undone. All your students, lessons, and payment records will be deleted.';
+
+  @override
+  String get deleteAccountUnavailable =>
+      'Account deletion isn\'t available yet. Please email bekovicdev@gmail.com to request deletion of your account and data.';
+
+  @override
+  String get accountDeleted => 'Your account has been deleted.';
 
   @override
   String get teachingDefaultsHint =>

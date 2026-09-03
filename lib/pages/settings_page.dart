@@ -1,7 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:tutor_app/auth/auth_service.dart';
 import 'package:tutor_app/billing/billing_service.dart';
+import 'package:tutor_app/config/legal_config.dart';
 import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/notifications/fcm_service.dart';
 import 'package:tutor_app/pages/paywall_page.dart';
@@ -9,6 +11,7 @@ import 'package:tutor_app/settings/app_currency.dart';
 import 'package:tutor_app/settings/app_settings.dart';
 import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({
@@ -42,8 +45,10 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _notificationsEnabled = true;
   bool _loadingPrefs = true;
   bool _savingCosts = false;
+  bool _deletingAccount = false;
   BillingStatus? _billingStatus;
   late String _currencyCode;
+  String _appVersionLabel = '';
   final TextEditingController _individualCostController =
       TextEditingController();
   final TextEditingController _groupCostController = TextEditingController();
@@ -53,6 +58,23 @@ class _SettingsPageState extends State<SettingsPage> {
     super.initState();
     _currencyCode = widget.currencyCode;
     _loadPrefs();
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final PackageInfo info = await PackageInfo.fromPlatform();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _appVersionLabel = info.buildNumber.isEmpty
+            ? info.version
+            : '${info.version} (${info.buildNumber})';
+      });
+    } catch (_) {
+      // Keep the placeholder empty; not critical.
+    }
   }
 
   @override
@@ -313,9 +335,141 @@ class _SettingsPageState extends State<SettingsPage> {
       message: l10n.supportMessage,
       icon: CupertinoIcons.mail,
       actions: <AppAlertAction>[
-        AppAlertAction(label: l10n.ok, style: AppAlertStyle.primary),
+        AppAlertAction(label: l10n.cancel, style: AppAlertStyle.cancel),
+        AppAlertAction(
+          label: l10n.emailSupport,
+          style: AppAlertStyle.primary,
+          onPressed: (BuildContext dialogContext) async {
+            Navigator.of(dialogContext).pop();
+            await _emailSupport();
+          },
+        ),
       ],
     );
+  }
+
+  Future<void> _emailSupport() async {
+    final Uri uri = Uri(
+      scheme: 'mailto',
+      path: LegalConfig.supportEmail,
+      query: 'subject=${Uri.encodeComponent('Lessify Support')}',
+    );
+    bool launched = false;
+    try {
+      launched = await launchUrl(uri);
+    } catch (_) {
+      launched = false;
+    }
+    if (!launched && mounted) {
+      await showAppAlert<void>(
+        context: context,
+        title: context.l10n.support,
+        message: context.l10n.couldNotOpenEmail,
+        actions: <AppAlertAction>[
+          AppAlertAction(label: context.l10n.ok, style: AppAlertStyle.primary),
+        ],
+      );
+    }
+  }
+
+  Future<void> _openLegalUrl(String url) async {
+    final Uri uri = Uri.tryParse(url) ?? Uri();
+    bool launched = false;
+    try {
+      launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      launched = false;
+    }
+    if (!launched && mounted) {
+      await showAppAlert<void>(
+        context: context,
+        title: context.l10n.about,
+        message: context.l10n.couldNotOpenLink,
+        actions: <AppAlertAction>[
+          AppAlertAction(label: context.l10n.ok, style: AppAlertStyle.primary),
+        ],
+      );
+    }
+  }
+
+  Future<void> _confirmDeleteAccount() async {
+    final AppLocalizations l10n = context.l10n;
+    final bool? confirmed = await showAppAlert<bool>(
+      context: context,
+      title: l10n.deleteAccountConfirmTitle,
+      message: l10n.deleteAccountConfirmMessage,
+      icon: CupertinoIcons.trash_circle_fill,
+      actions: <AppAlertAction>[
+        AppAlertAction(
+          label: l10n.cancel,
+          style: AppAlertStyle.cancel,
+          onPressed: (BuildContext dialogContext) {
+            Navigator.of(dialogContext).pop(false);
+          },
+        ),
+        AppAlertAction(
+          label: l10n.deleteAccount,
+          style: AppAlertStyle.destructive,
+          onPressed: (BuildContext dialogContext) {
+            Navigator.of(dialogContext).pop(true);
+          },
+        ),
+      ],
+    );
+    if (confirmed != true || _deletingAccount) {
+      return;
+    }
+
+    setState(() {
+      _deletingAccount = true;
+    });
+    try {
+      // NOTE: backend does not yet expose an account-deletion endpoint.
+      // This call is wired ahead of time so it starts working the moment
+      // the API adds support; until then it will surface
+      // [deleteAccountUnavailable] below.
+      await _authService.deleteAccount(widget.token);
+      if (!mounted) {
+        return;
+      }
+      await showAppAlert<void>(
+        context: context,
+        title: l10n.deleteAccount,
+        message: l10n.accountDeleted,
+        actions: <AppAlertAction>[
+          AppAlertAction(label: l10n.ok, style: AppAlertStyle.primary),
+        ],
+      );
+      if (!mounted) {
+        return;
+      }
+      await widget.onLogout();
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      await showAppAlert<void>(
+        context: context,
+        title: l10n.deleteAccount,
+        message: l10n.deleteAccountUnavailable,
+        actions: <AppAlertAction>[
+          AppAlertAction(
+            label: l10n.emailSupport,
+            style: AppAlertStyle.primary,
+            onPressed: (BuildContext dialogContext) async {
+              Navigator.of(dialogContext).pop();
+              await _emailSupport();
+            },
+          ),
+        ],
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _deletingAccount = false;
+        });
+      }
+    }
   }
 
   String _languageLabel(AppLocalizations l10n) {
@@ -576,7 +730,9 @@ class _SettingsPageState extends State<SettingsPage> {
                         icon: CupertinoIcons.info_circle_fill,
                         iconColor: CupertinoColors.systemGrey,
                         title: l10n.appVersion,
-                        value: '1.0.0',
+                        value: _appVersionLabel.isEmpty
+                            ? '—'
+                            : _appVersionLabel,
                       ),
                       _divider(),
                       _navRow(
@@ -585,6 +741,23 @@ class _SettingsPageState extends State<SettingsPage> {
                         title: l10n.support,
                         showChevron: true,
                         onTap: _showSupport,
+                      ),
+                      _divider(),
+                      _navRow(
+                        icon: CupertinoIcons.doc_text_fill,
+                        iconColor: const Color(0xFF5856D6),
+                        title: l10n.privacyPolicy,
+                        showChevron: true,
+                        onTap: () =>
+                            _openLegalUrl(LegalConfig.privacyPolicyUrl),
+                      ),
+                      _divider(),
+                      _navRow(
+                        icon: CupertinoIcons.doc_plaintext,
+                        iconColor: const Color(0xFF5856D6),
+                        title: l10n.termsOfUse,
+                        showChevron: true,
+                        onTap: () => _openLegalUrl(LegalConfig.termsOfUseUrl),
                       ),
                     ],
                   ),
@@ -615,6 +788,36 @@ class _SettingsPageState extends State<SettingsPage> {
                                 ),
                               ),
                             ),
+                          ],
+                        ),
+                      ),
+                      _divider(),
+                      CupertinoButton(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 14,
+                        ),
+                        onPressed:
+                            _deletingAccount ? null : _confirmDeleteAccount,
+                        child: Row(
+                          children: <Widget>[
+                            _iconBadge(
+                              CupertinoIcons.trash_fill,
+                              CupertinoColors.systemRed,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                l10n.deleteAccount,
+                                style: const TextStyle(
+                                  color: CupertinoColors.systemRed,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                            if (_deletingAccount)
+                              const CupertinoActivityIndicator(),
                           ],
                         ),
                       ),
