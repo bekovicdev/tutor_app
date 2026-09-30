@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:tutor_app/config/api_config.dart';
+import 'package:tutor_app/config/http_client.dart';
 
 class BillingStatus {
   const BillingStatus({
@@ -250,7 +251,7 @@ class BillingService {
     required String token,
     Map<String, dynamic>? body,
   }) async {
-    final HttpClient client = HttpClient();
+    final HttpClient client = sharedApiHttpClient;
     try {
       final Uri uri = Uri.parse('$_baseUrl$endpoint');
       late final HttpClientRequest request;
@@ -281,8 +282,6 @@ class BillingService {
       throw const BillingException('Cannot connect to server.');
     } on FormatException {
       throw const BillingException('Invalid server response format.');
-    } finally {
-      client.close(force: true);
     }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:tutor_app/l10n/l10n_ext.dart';
+import 'package:tutor_app/lessons/lesson_events.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/create_lesson_page.dart';
 import 'package:tutor_app/pages/paywall_page.dart';
@@ -557,6 +558,7 @@ class _LessonDetailPageState extends State<LessonDetailPage> {
     );
     if (changed == true) {
       _changed = true;
+      LessonEvents.notifyChanged();
       await _load();
     }
   }
@@ -604,6 +606,7 @@ class _LessonDetailPageState extends State<LessonDetailPage> {
         return;
       }
       _changed = true;
+      LessonEvents.notifyChanged();
       await showAppAlert<void>(
         context: context,
         title: l10n.markLessonDone,
@@ -631,6 +634,7 @@ class _LessonDetailPageState extends State<LessonDetailPage> {
         return;
       }
       _changed = true;
+      LessonEvents.notifyChanged();
       await _load();
       await _showError(error.message);
     } finally {
@@ -651,6 +655,7 @@ class _LessonDetailPageState extends State<LessonDetailPage> {
         return;
       }
       _changed = true;
+      LessonEvents.notifyChanged();
       await _load();
     } on LessonServiceException catch (error) {
       if (!mounted) {
@@ -689,6 +694,7 @@ class _LessonDetailPageState extends State<LessonDetailPage> {
     setState(() => _busy = true);
     try {
       await _lessonService.deleteLesson(lesson.id);
+      LessonEvents.notifyChanged();
       if (!mounted) {
         return;
       }

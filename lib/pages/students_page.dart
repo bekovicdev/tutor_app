@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:tutor_app/groups/group_service.dart';
 import 'package:tutor_app/l10n/l10n_ext.dart';
+import 'package:tutor_app/lessons/lesson_events.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/create_lesson_page.dart';
 import 'package:tutor_app/pages/create_payment_page.dart';
@@ -889,11 +890,20 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
   @override
   void initState() {
     super.initState();
+    LessonEvents.listenable.addListener(_onLessonsChangedElsewhere);
+    _loadDetail();
+  }
+
+  void _onLessonsChangedElsewhere() {
+    if (!mounted) {
+      return;
+    }
     _loadDetail();
   }
 
   @override
   void dispose() {
+    LessonEvents.listenable.removeListener(_onLessonsChangedElsewhere);
     _nameController.dispose();
     _phoneController.dispose();
     _lessonCostController.dispose();
@@ -2608,25 +2618,28 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
   }
 
   Future<void> _loadDetail() async {
-    try {
-      final StudentDetail detail = await widget.studentService.getStudentDetail(
-        widget.studentId,
-      );
+    // Kick off all three independent requests concurrently instead of
+    // sequentially awaiting one after another, so the page loads in the
+    // time of the slowest single call instead of the sum of all three.
+    String? paymentsError;
+    String? lessonsError;
+    final Future<StudentDetail> detailFuture = widget.studentService
+        .getStudentDetail(widget.studentId);
 
-      StudentBalance? balance;
-      String? paymentsError;
+    Future<StudentBalance?> loadBalance() async {
       try {
-        balance = await widget.studentService.getStudentBalance(
+        return await widget.studentService.getStudentBalance(
           widget.studentId,
         );
       } on StudentServiceException catch (error) {
         paymentsError = error.message;
+        return null;
       }
+    }
 
-      List<Lesson> completed = <Lesson>[];
-      String? lessonsError;
+    Future<List<Lesson>> loadCompletedLessons() async {
       try {
-        completed = await _lessonService.listLessons(
+        return await _lessonService.listLessons(
           studentId: widget.studentId,
           status: 'completed',
           source: LessonSource.journal,
@@ -2635,7 +2648,17 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
         );
       } on LessonServiceException catch (error) {
         lessonsError = error.message;
+        return <Lesson>[];
       }
+    }
+
+    final Future<StudentBalance?> balanceFuture = loadBalance();
+    final Future<List<Lesson>> lessonsFuture = loadCompletedLessons();
+
+    try {
+      final StudentDetail detail = await detailFuture;
+      final StudentBalance? balance = await balanceFuture;
+      final List<Lesson> completed = await lessonsFuture;
 
       if (!mounted) {
         return;

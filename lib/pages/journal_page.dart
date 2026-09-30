@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:tutor_app/l10n/l10n_ext.dart';
+import 'package:tutor_app/lessons/lesson_events.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/create_lesson_page.dart';
 import 'package:tutor_app/pages/lesson_detail_page.dart';
@@ -61,11 +62,56 @@ class _JournalPageState extends State<JournalPage> {
         _now = DateTime.now();
       });
     });
+    LessonEvents.listenable.addListener(_onLessonsChangedElsewhere);
+    _loadWeek().then((_) {
+      if (!mounted) {
+        return;
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _centerOnNowLine();
+      });
+    });
+  }
+
+  /// Scrolls the day timeline so the red "now" line sits in the vertical
+  /// center of the viewport, instead of the default top-of-day (00:00)
+  /// position. Only applies when today is the selected/visible day.
+  void _centerOnNowLine({bool animate = false}) {
+    if (!_dayScrollController.hasClients) {
+      return;
+    }
+    if (!_isSameDay(_selectedDay, _now)) {
+      return;
+    }
+    final int gridStartMinutes = _startHour * 60;
+    final int nowMinutes = _now.hour * 60 + _now.minute;
+    final double nowTop = (nowMinutes - gridStartMinutes) / 60 * _hourHeight;
+    final ScrollPosition position = _dayScrollController.position;
+    final double target = (nowTop - position.viewportDimension / 2).clamp(
+      0.0,
+      position.maxScrollExtent,
+    );
+    if (animate) {
+      _dayScrollController.animateTo(
+        target,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      _dayScrollController.jumpTo(target);
+    }
+  }
+
+  void _onLessonsChangedElsewhere() {
+    if (!mounted) {
+      return;
+    }
     _loadWeek();
   }
 
   @override
   void dispose() {
+    LessonEvents.listenable.removeListener(_onLessonsChangedElsewhere);
     _nowTicker?.cancel();
     _dayScrollController.dispose();
     super.dispose();
@@ -149,7 +195,14 @@ class _JournalPageState extends State<JournalPage> {
       _weekStart = _mondayOf(today);
       _selectedDay = DateTime(today.year, today.month, today.day);
     });
-    _loadWeek();
+    _loadWeek().then((_) {
+      if (!mounted) {
+        return;
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _centerOnNowLine(animate: true);
+      });
+    });
   }
 
   Future<void> _openCreateLesson() async {
@@ -328,6 +381,7 @@ class _JournalPageState extends State<JournalPage> {
         id: lesson.id,
         body: <String, dynamic>{'start_at': _formatStartAt(targetStartMinutes)},
       );
+      LessonEvents.notifyChanged();
       if (!mounted) {
         return;
       }

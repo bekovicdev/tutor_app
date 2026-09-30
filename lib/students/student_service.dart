@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:tutor_app/config/api_config.dart';
+import 'package:tutor_app/config/http_client.dart';
 
 class Student {
   const Student({
@@ -210,7 +211,7 @@ class StudentService {
     required File file,
   }) async {
     final Uri uri = Uri.parse('$_baseUrl/students/$id/profile-picture');
-    final HttpClient client = HttpClient();
+    final HttpClient client = sharedApiHttpClient;
     try {
       final List<int> bytes = await file.readAsBytes();
       if (bytes.length > 5 * 1024 * 1024) {
@@ -276,8 +277,6 @@ class StudentService {
       rethrow;
     } catch (error) {
       throw StudentServiceException(error.toString());
-    } finally {
-      client.close(force: true);
     }
   }
 
@@ -315,7 +314,7 @@ class StudentService {
     required Uri uri,
     Map<String, dynamic>? body,
   }) async {
-    final HttpClient client = HttpClient();
+    final HttpClient client = sharedApiHttpClient;
     try {
       late final HttpClientRequest request;
       if (method == 'GET') {
@@ -354,8 +353,6 @@ class StudentService {
       throw const StudentServiceException('Cannot connect to server.');
     } on FormatException {
       throw const StudentServiceException('Invalid server response format.');
-    } finally {
-      client.close(force: true);
     }
   }
 

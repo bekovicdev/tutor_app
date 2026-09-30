@@ -69,6 +69,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get today => 'Today';
 
   @override
+  String get yesterday => 'Yesterday';
+
+  @override
+  String get tomorrow => 'Tomorrow';
+
+  @override
+  String get tabHome => 'Home';
+
+  @override
+  String get totalIncome => 'Total income';
+
+  @override
+  String get noLessonsForDay => 'No lessons for this day.';
+
+  @override
+  String get unpaidAmount => 'Unpaid amount';
+
+  @override
   String get loading => 'Loading…';
 
   @override

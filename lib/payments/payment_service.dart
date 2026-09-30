@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:tutor_app/config/api_config.dart';
+import 'package:tutor_app/config/http_client.dart';
 
 num? _asNum(dynamic value) {
   if (value == null) {
@@ -684,8 +685,7 @@ class PaymentService {
     required Uri uri,
     Map<String, dynamic>? body,
   }) async {
-    final HttpClient client = HttpClient()
-      ..connectionTimeout = const Duration(seconds: 15);
+    final HttpClient client = sharedApiHttpClient;
     try {
       late final HttpClientRequest request;
       if (method == 'GET') {
@@ -725,8 +725,6 @@ class PaymentService {
       throw const PaymentServiceException('Invalid server response format.');
     } on TypeError {
       throw const PaymentServiceException('Invalid server response format.');
-    } finally {
-      client.close(force: true);
     }
   }
 

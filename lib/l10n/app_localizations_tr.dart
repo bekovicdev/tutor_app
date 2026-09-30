@@ -69,6 +69,24 @@ class AppLocalizationsTr extends AppLocalizations {
   String get today => 'Bugün';
 
   @override
+  String get yesterday => 'Dün';
+
+  @override
+  String get tomorrow => 'Yarın';
+
+  @override
+  String get tabHome => 'Ana Sayfa';
+
+  @override
+  String get totalIncome => 'Toplam gelir';
+
+  @override
+  String get noLessonsForDay => 'Bu gün için ders yok.';
+
+  @override
+  String get unpaidAmount => 'Ödenmemiş tutar';
+
+  @override
   String get loading => 'Yükleniyor…';
 
   @override

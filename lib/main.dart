@@ -13,11 +13,13 @@ import 'package:tutor_app/auth/auth_storage.dart';
 import 'package:tutor_app/billing/billing_service.dart';
 import 'package:tutor_app/firebase_options.dart';
 import 'package:tutor_app/l10n/l10n_ext.dart';
+import 'package:tutor_app/lessons/lesson_events.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/notifications/fcm_service.dart';
 import 'package:tutor_app/pages/journal_page.dart';
 import 'package:tutor_app/pages/payment_page.dart';
 import 'package:tutor_app/pages/calendar_page.dart';
+import 'package:tutor_app/pages/home_page.dart';
 import 'package:tutor_app/pages/settings_page.dart';
 import 'package:tutor_app/pages/students_page.dart';
 import 'package:tutor_app/payments/payment_service.dart';
@@ -468,7 +470,7 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
-  static const int _paymentTabIndex = 3;
+  static const int _paymentTabIndex = 4;
 
   final CupertinoTabController _tabController = CupertinoTabController();
   late final List<Widget> _tabPages;
@@ -481,6 +483,7 @@ class _AppShellState extends State<AppShell> {
     _tabPages = <Widget>[
       StudentsPage(token: widget.session.token, onOpenSettings: _openSettings),
       CalendarPage(token: widget.session.token, onOpenSettings: _openSettings),
+      HomePage(token: widget.session.token, onOpenSettings: _openSettings),
       JournalPage(token: widget.session.token, onOpenSettings: _openSettings),
       PaymentPage(
         token: widget.session.token,
@@ -559,6 +562,9 @@ class _AppShellState extends State<AppShell> {
       } catch (_) {
         // Ignore; will be asked again next time the app opens.
       }
+    }
+    if (anyResolved) {
+      LessonEvents.notifyChanged();
     }
     if (anyResolved && mounted) {
       await _refreshPaymentBadge();
@@ -699,6 +705,11 @@ class _AppShellState extends State<AppShell> {
           icon: const Icon(CupertinoIcons.calendar),
           activeIcon: const Icon(CupertinoIcons.calendar_today),
           label: l10n.tabCalendar,
+        ),
+        BottomNavigationBarItem(
+          icon: const Icon(CupertinoIcons.house),
+          activeIcon: const Icon(CupertinoIcons.house_fill),
+          label: l10n.tabHome,
         ),
         BottomNavigationBarItem(
           icon: const Icon(CupertinoIcons.book),

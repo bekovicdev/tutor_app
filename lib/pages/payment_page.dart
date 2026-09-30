@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:tutor_app/l10n/l10n_ext.dart';
+import 'package:tutor_app/lessons/lesson_events.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/create_payment_page.dart';
 import 'package:tutor_app/payments/payment_service.dart';
@@ -50,13 +52,36 @@ class _PaymentPageState extends State<PaymentPage> {
   bool _isLoadingDaily = false;
   String? _dailyError;
 
+  /// Receivable lesson ids currently animating out of the list after being
+  /// marked as paid (see [_markLessonPaid]).
+  final Set<int> _removingReceivableLessonIds = <int>{};
+
+  /// True while this page is broadcasting its own optimistic change via
+  /// [LessonEvents], so its own listener doesn't immediately undo the
+  /// animation with a full-page reload.
+  bool _suppressLessonEventsReload = false;
+
   @override
   void initState() {
     super.initState();
     _paymentService = PaymentService(token: widget.token);
     _studentService = StudentService(token: widget.token);
     _lessonService = LessonService(token: widget.token);
+    LessonEvents.listenable.addListener(_onLessonsChangedElsewhere);
     _load();
+  }
+
+  void _onLessonsChangedElsewhere() {
+    if (_suppressLessonEventsReload || !mounted) {
+      return;
+    }
+    _load();
+  }
+
+  @override
+  void dispose() {
+    LessonEvents.listenable.removeListener(_onLessonsChangedElsewhere);
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -369,9 +394,65 @@ class _PaymentPageState extends State<PaymentPage> {
           recordPayment: true,
         ),
       );
-      await _load();
+      if (!mounted) {
+        return;
+      }
+      // Optimistically animate the row out instead of reloading the whole
+      // page. Other tabs (Home's unpaid stat, payment badge, ...) are still
+      // notified, but this page's own listener is suppressed for that one
+      // broadcast so it doesn't immediately undo the animation.
+      setState(() {
+        _removingReceivableLessonIds.add(lesson.id);
+      });
+      _suppressLessonEventsReload = true;
+      LessonEvents.notifyChanged();
+      _suppressLessonEventsReload = false;
+      widget.onSettlementsChanged?.call();
+      Future.delayed(const Duration(milliseconds: 260), () {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _removingReceivableLessonIds.remove(lesson.id);
+          final ReceivablesAnalytics? current = _receivables;
+          if (current != null) {
+            _receivables = ReceivablesAnalytics(
+              totalAmount: current.totalAmount - lesson.amount,
+              lessonCount: current.lessonCount > 0
+                  ? current.lessonCount - 1
+                  : 0,
+              byStudent: current.byStudent,
+              byGroup: current.byGroup,
+              lessons: current.lessons
+                  .where((ReceivableLesson item) => item.id != lesson.id)
+                  .toList(),
+            );
+          }
+        });
+        // Reconcile aggregate breakdowns (by student/group) with the server
+        // only after the animation has finished, so a fast response can't
+        // cut the removal animation short.
+        unawaited(_silentlyRefreshReceivables());
+      });
     } on PaymentServiceException catch (error) {
       await _showMessage(error.message);
+    }
+  }
+
+  /// Refetches receivables analytics quietly in the background (no loading
+  /// spinner) to reconcile aggregate breakdowns after an optimistic local
+  /// update, without disturbing the removal animation already in progress.
+  Future<void> _silentlyRefreshReceivables() async {
+    try {
+      final ReceivablesAnalytics fresh = await _paymentService.receivables();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _receivables = fresh;
+      });
+    } catch (_) {
+      // Ignore; the optimistic local update already reflects the change.
     }
   }
 
@@ -1436,39 +1517,61 @@ class _PaymentPageState extends State<PaymentPage> {
         const SizedBox(height: 12),
         _sectionHeader(l10n.unpaidLessons),
         ...data.lessons.map((ReceivableLesson lesson) {
-          return _card(
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          final bool removing = _removingReceivableLessonIds.contains(
+            lesson.id,
+          );
+          return AnimatedSize(
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeOut,
+            alignment: Alignment.topCenter,
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              opacity: removing ? 0 : 1,
+              child: AnimatedScale(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOut,
+                scale: removing ? 0.94 : 1,
+                child: _card(
+                  child: Row(
                     children: <Widget>[
-                      Text(
-                        lesson.title,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              lesson.title,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              '${lesson.date} · '
+                              '${lesson.studentName ?? lesson.groupName ?? ''}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: CupertinoColors.secondaryLabel
+                                    .resolveFrom(context),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       Text(
-                        '${lesson.date} · '
-                        '${lesson.studentName ?? lesson.groupName ?? ''}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: CupertinoColors.secondaryLabel
-                              .resolveFrom(context),
-                        ),
+                        _formatNum(lesson.amount),
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      CupertinoButton(
+                        padding: const EdgeInsets.only(left: 8),
+                        onPressed: removing
+                            ? null
+                            : () => _markLessonPaid(lesson),
+                        child: Text(l10n.markPaid),
                       ),
                     ],
                   ),
                 ),
-                Text(
-                  _formatNum(lesson.amount),
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-                CupertinoButton(
-                  padding: const EdgeInsets.only(left: 8),
-                  onPressed: () => _markLessonPaid(lesson),
-                  child: Text(l10n.markPaid),
-                ),
-              ],
+              ),
             ),
           );
         }),

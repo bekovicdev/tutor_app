@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:tutor_app/groups/group_service.dart';
 import 'package:tutor_app/l10n/l10n_ext.dart';
+import 'package:tutor_app/lessons/lesson_events.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/paywall_page.dart';
 import 'package:tutor_app/payments/payment_service.dart';
@@ -196,20 +197,32 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
   }
 
   Future<void> _loadLookups() async {
-    List<Student> students = <Student>[];
-    List<TutorGroup> groups = <TutorGroup>[];
-    final String? defaultIndividual = await AppSettings.individualLessonCost();
-    final String? defaultGroup = await AppSettings.groupLessonCost();
-    try {
-      students = await _studentService.listStudents();
-    } on StudentServiceException {
-      // Form can still open.
+    Future<List<Student>> loadStudents() async {
+      try {
+        return await _studentService.listStudents();
+      } on StudentServiceException {
+        return <Student>[];
+      }
     }
-    try {
-      groups = await _groupService.listGroups();
-    } on GroupServiceException {
-      // Form can still open.
+
+    Future<List<TutorGroup>> loadGroups() async {
+      try {
+        return await _groupService.listGroups();
+      } on GroupServiceException {
+        return <TutorGroup>[];
+      }
     }
+
+    final List<dynamic> results = await Future.wait<dynamic>(<Future<dynamic>>[
+      AppSettings.individualLessonCost(),
+      AppSettings.groupLessonCost(),
+      loadStudents(),
+      loadGroups(),
+    ]);
+    final String? defaultIndividual = results[0] as String?;
+    final String? defaultGroup = results[1] as String?;
+    final List<Student> students = results[2] as List<Student>;
+    final List<TutorGroup> groups = results[3] as List<TutorGroup>;
     if (!mounted) {
       return;
     }
@@ -1458,6 +1471,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
         }
       }
 
+      LessonEvents.notifyChanged();
       if (!mounted) {
         return;
       }

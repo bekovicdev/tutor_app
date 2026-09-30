@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:tutor_app/config/api_config.dart';
+import 'package:tutor_app/config/http_client.dart';
 
 /// Where a lesson belongs in the app UI.
 class LessonSource {
@@ -526,7 +527,7 @@ class LessonService {
     required Uri uri,
     Map<String, dynamic>? body,
   }) async {
-    final HttpClient client = HttpClient();
+    final HttpClient client = sharedApiHttpClient;
     try {
       late final HttpClientRequest request;
       if (method == 'GET') {
@@ -565,8 +566,6 @@ class LessonService {
       throw const LessonServiceException('Cannot connect to server.');
     } on FormatException {
       throw const LessonServiceException('Invalid server response format.');
-    } finally {
-      client.close(force: true);
     }
   }
 

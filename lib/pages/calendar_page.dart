@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:tutor_app/l10n/l10n_ext.dart';
+import 'package:tutor_app/lessons/lesson_events.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/program_page.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
@@ -35,7 +36,21 @@ class _CalendarPageState extends State<CalendarPage> {
   void initState() {
     super.initState();
     _lessonService = LessonService(token: widget.token);
+    LessonEvents.listenable.addListener(_onLessonsChangedElsewhere);
     _loadMonth();
+  }
+
+  void _onLessonsChangedElsewhere() {
+    if (!mounted) {
+      return;
+    }
+    _loadMonth();
+  }
+
+  @override
+  void dispose() {
+    LessonEvents.listenable.removeListener(_onLessonsChangedElsewhere);
+    super.dispose();
   }
 
   String _formatDate(DateTime date) {

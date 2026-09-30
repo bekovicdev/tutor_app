@@ -220,6 +220,42 @@ abstract class AppLocalizations {
   /// **'Today'**
   String get today;
 
+  /// No description provided for @yesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get yesterday;
+
+  /// No description provided for @tomorrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow'**
+  String get tomorrow;
+
+  /// No description provided for @tabHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get tabHome;
+
+  /// No description provided for @totalIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'Total income'**
+  String get totalIncome;
+
+  /// No description provided for @noLessonsForDay.
+  ///
+  /// In en, this message translates to:
+  /// **'No lessons for this day.'**
+  String get noLessonsForDay;
+
+  /// No description provided for @unpaidAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpaid amount'**
+  String get unpaidAmount;
+
   /// No description provided for @loading.
   ///
   /// In en, this message translates to:

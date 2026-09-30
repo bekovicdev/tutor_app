@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:tutor_app/config/api_config.dart';
+import 'package:tutor_app/config/http_client.dart';
 
 class AuthSession {
   const AuthSession({
@@ -260,7 +261,7 @@ class AuthService {
   }
 
   Future<String> oauthRedirectUrl(String provider) async {
-    final HttpClient client = HttpClient();
+    final HttpClient client = sharedApiHttpClient;
     try {
       final Uri uri = Uri.parse('$_baseUrl/auth/$provider/redirect');
       final HttpClientRequest request = await client.getUrl(uri);
@@ -298,8 +299,6 @@ class AuthService {
       rethrow;
     } catch (_) {
       throw const AuthException('OAuth redirect failed.');
-    } finally {
-      client.close(force: true);
     }
   }
 
@@ -334,7 +333,7 @@ class AuthService {
     Map<String, dynamic>? body,
     String? token,
   }) async {
-    final HttpClient client = HttpClient();
+    final HttpClient client = sharedApiHttpClient;
     try {
       final Uri uri = Uri.parse('$_baseUrl$endpoint');
       late final HttpClientRequest request;
@@ -373,8 +372,6 @@ class AuthService {
       throw const AuthException('Cannot connect to server.');
     } on FormatException {
       throw const AuthException('Invalid server response format.');
-    } finally {
-      client.close(force: true);
     }
   }
 

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:tutor_app/config/api_config.dart';
+import 'package:tutor_app/config/http_client.dart';
 import 'package:tutor_app/students/student_service.dart';
 
 class TutorGroup {
@@ -222,7 +223,7 @@ class GroupService {
     required Uri uri,
     Map<String, dynamic>? body,
   }) async {
-    final HttpClient client = HttpClient();
+    final HttpClient client = sharedApiHttpClient;
     try {
       late final HttpClientRequest request;
       if (method == 'GET') {
@@ -261,8 +262,6 @@ class GroupService {
       throw const GroupServiceException('Cannot connect to server.');
     } on FormatException {
       throw const GroupServiceException('Invalid server response format.');
-    } finally {
-      client.close(force: true);
     }
   }
 

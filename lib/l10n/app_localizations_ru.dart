@@ -69,6 +69,24 @@ class AppLocalizationsRu extends AppLocalizations {
   String get today => 'Сегодня';
 
   @override
+  String get yesterday => 'Вчера';
+
+  @override
+  String get tomorrow => 'Завтра';
+
+  @override
+  String get tabHome => 'Главная';
+
+  @override
+  String get totalIncome => 'Общий доход';
+
+  @override
+  String get noLessonsForDay => 'На этот день уроков нет.';
+
+  @override
+  String get unpaidAmount => 'Не оплачено';
+
+  @override
   String get loading => 'Загрузка…';
 
   @override
