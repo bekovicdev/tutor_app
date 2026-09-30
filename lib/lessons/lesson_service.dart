@@ -140,6 +140,34 @@ class Lesson {
     return 'Lesson';
   }
 
+  /// Name of the student, or the group when the lesson is a group lesson.
+  String get partyName {
+    if (isGroup) {
+      final String name = group?.name.trim() ?? '';
+      if (name.isNotEmpty) {
+        return name;
+      }
+    }
+    return student?.name.trim() ?? '';
+  }
+
+  /// Lesson rows show the person and the custom title together.
+  /// A title alone used to hide the student name.
+  String get indexLabel {
+    final String name = partyName;
+    final String custom = title?.trim() ?? '';
+    if (custom.isNotEmpty && name.isNotEmpty && custom != name) {
+      return '$name · $custom';
+    }
+    if (name.isNotEmpty) {
+      return name;
+    }
+    if (custom.isNotEmpty) {
+      return custom;
+    }
+    return displayTitle;
+  }
+
   String get displaySubtitle {
     if (isGroup) {
       return group?.name.isNotEmpty == true ? group!.name : 'Group lesson';

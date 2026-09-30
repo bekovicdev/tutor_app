@@ -46,6 +46,11 @@ class _JournalPageState extends State<JournalPage> {
   List<Lesson> _weekLessons = <Lesson>[];
   bool _isLoading = true;
   String? _errorMessage;
+
+  /// Set while the create-lesson page is open so its [LessonEvents]
+  /// broadcast does not reload (and reset) the timeline before we can
+  /// scroll to the new lesson.
+  bool _suppressLessonEventsReload = false;
   Lesson? _draggingLesson;
   int? _dragTargetStartMinutes;
   bool _isRescheduling = false;
@@ -77,17 +82,30 @@ class _JournalPageState extends State<JournalPage> {
   /// center of the viewport, instead of the default top-of-day (00:00)
   /// position. Only applies when today is the selected/visible day.
   void _centerOnNowLine({bool animate = false}) {
-    if (!_dayScrollController.hasClients) {
-      return;
-    }
     if (!_isSameDay(_selectedDay, _now)) {
       return;
     }
-    final int gridStartMinutes = _startHour * 60;
     final int nowMinutes = _now.hour * 60 + _now.minute;
-    final double nowTop = (nowMinutes - gridStartMinutes) / 60 * _hourHeight;
+    _centerOnMinutes(nowMinutes, animate: animate);
+  }
+
+  /// Scrolls the day timeline so [startMinutes] (optionally the middle of a
+  /// lesson [durationMinutes] long) sits in the vertical center of the
+  /// viewport.
+  void _centerOnMinutes(
+    int startMinutes, {
+    int durationMinutes = 0,
+    bool animate = false,
+  }) {
+    if (!_dayScrollController.hasClients) {
+      return;
+    }
+    final int gridStartMinutes = _startHour * 60;
+    final double top =
+        (startMinutes - gridStartMinutes) / 60 * _hourHeight +
+        (durationMinutes / 60 * _hourHeight) / 2;
     final ScrollPosition position = _dayScrollController.position;
-    final double target = (nowTop - position.viewportDimension / 2).clamp(
+    final double target = (top - position.viewportDimension / 2).clamp(
       0.0,
       position.maxScrollExtent,
     );
@@ -102,8 +120,38 @@ class _JournalPageState extends State<JournalPage> {
     }
   }
 
-  void _onLessonsChangedElsewhere() {
+  /// After a lesson is created from this page, show its day and scroll so
+  /// the new block is centered instead of resetting to 00:00.
+  Future<void> _showCreatedLesson(Lesson lesson) async {
+    final String dateKey = lesson.date.length >= 10
+        ? lesson.date.substring(0, 10)
+        : lesson.date;
+    final DateTime? parsed = DateTime.tryParse(dateKey);
+    if (parsed != null) {
+      final DateTime day = DateTime(parsed.year, parsed.month, parsed.day);
+      setState(() {
+        _selectedDay = day;
+        _weekStart = _mondayOf(day);
+      });
+    }
+    await _loadWeek();
     if (!mounted) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _centerOnMinutes(
+        lesson.startMinutes,
+        durationMinutes: lesson.durationMinutes,
+        animate: true,
+      );
+    });
+  }
+
+  void _onLessonsChangedElsewhere() {
+    if (_suppressLessonEventsReload || !mounted) {
       return;
     }
     _loadWeek();
@@ -148,8 +196,11 @@ class _JournalPageState extends State<JournalPage> {
   }
 
   Future<void> _loadWeek() async {
+    // Keep the timeline on screen when refreshing, so the scroll offset is
+    // not reset to 00:00. The full-screen spinner is only for the first load.
+    final bool blockWithSpinner = _weekLessons.isEmpty;
     setState(() {
-      _isLoading = true;
+      _isLoading = blockWithSpinner;
       _errorMessage = null;
     });
     try {
@@ -206,8 +257,9 @@ class _JournalPageState extends State<JournalPage> {
   }
 
   Future<void> _openCreateLesson() async {
-    final bool? created = await Navigator.of(context).push<bool>(
-      CupertinoPageRoute<bool>(
+    _suppressLessonEventsReload = true;
+    final Lesson? created = await Navigator.of(context).push<Lesson>(
+      CupertinoPageRoute<Lesson>(
         builder: (BuildContext context) => CreateLessonPage(
           token: widget.token,
           source: LessonSource.journal,
@@ -215,9 +267,10 @@ class _JournalPageState extends State<JournalPage> {
         ),
       ),
     );
-    if (created == true) {
-      await _loadWeek();
+    if (created != null) {
+      await _showCreatedLesson(created);
     }
+    _suppressLessonEventsReload = false;
   }
 
   String _formatStartAt(int totalMinutes) {
@@ -267,8 +320,9 @@ class _JournalPageState extends State<JournalPage> {
       return;
     }
     HapticFeedback.mediumImpact();
-    final bool? created = await Navigator.of(context).push<bool>(
-      CupertinoPageRoute<bool>(
+    _suppressLessonEventsReload = true;
+    final Lesson? created = await Navigator.of(context).push<Lesson>(
+      CupertinoPageRoute<Lesson>(
         builder: (BuildContext context) => CreateLessonPage(
           token: widget.token,
           source: LessonSource.journal,
@@ -278,9 +332,10 @@ class _JournalPageState extends State<JournalPage> {
         ),
       ),
     );
-    if (created == true) {
-      await _loadWeek();
+    if (created != null) {
+      await _showCreatedLesson(created);
     }
+    _suppressLessonEventsReload = false;
   }
 
   bool _canDragLesson(Lesson lesson) {
@@ -736,7 +791,7 @@ class _JournalPageState extends State<JournalPage> {
             border: Border.all(color: accent, width: 1.4),
           ),
           child: Text(
-            lesson.displayTitle,
+            lesson.indexLabel,
             maxLines: blockHeight < 28 ? 1 : 3,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -953,8 +1008,8 @@ class _JournalPageState extends State<JournalPage> {
                                 children: <Widget>[
                                   Expanded(
                                     child: Text(
-                                      lesson.displayTitle,
-                                      maxLines: 1,
+                                      lesson.indexLabel,
+                                      maxLines: height < 40 ? 1 : 2,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         fontSize: 13,
@@ -998,22 +1053,6 @@ class _JournalPageState extends State<JournalPage> {
                                 ),
                               ],
                               if (constraints.maxHeight >= 48 &&
-                                  lesson.displaySubtitle !=
-                                      lesson.displayTitle) ...<Widget>[
-                                const SizedBox(height: 2),
-                                Text(
-                                  lesson.displaySubtitle,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    height: 1.1,
-                                    color: CupertinoColors.secondaryLabel
-                                        .resolveFrom(context),
-                                  ),
-                                ),
-                              ],
-                              if (constraints.maxHeight >= 62 &&
                                   lesson.isGroup &&
                                   lesson.studentNotes.any(
                                     (LessonStudentNote n) =>

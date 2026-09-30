@@ -798,7 +798,33 @@ class AppLocalizationsTr extends AppLocalizations {
   String get notifications => 'Bildirimler';
 
   @override
-  String get notificationsSubtitle => 'Ders hatırlatmaları ve ödeme uyarıları';
+  String get notificationsSubtitle => 'Her dersten 15 dakika önce hatırlatma';
+
+  @override
+  String get morningReminder => 'Sabah özeti';
+
+  @override
+  String get morningReminderSubtitle =>
+      'Her sabah o gün kaç dersin olduğunu bildirir';
+
+  @override
+  String get morningReminderTime => 'Bildirim saati';
+
+  @override
+  String get morningNotificationTitle => 'Bugünün dersleri';
+
+  @override
+  String get morningNotificationNone => 'Bugün ders yok.';
+
+  @override
+  String morningNotificationCount(int count) {
+    return 'Bugün $count dersin var.';
+  }
+
+  @override
+  String lessonReminderBody(String time) {
+    return '15 dakika sonra başlıyor · $time';
+  }
 
   @override
   String get appearance => 'Görünüm';

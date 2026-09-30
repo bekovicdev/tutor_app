@@ -168,8 +168,8 @@ class _ProgramPageState extends State<ProgramPage> {
       _pressedSlotIndex = null;
     });
     final String startAt = _startAtForSlot(slotIndex);
-    final bool? created = await Navigator.of(context).push<bool>(
-      CupertinoPageRoute<bool>(
+    final Lesson? created = await Navigator.of(context).push<Lesson>(
+      CupertinoPageRoute<Lesson>(
         builder: (BuildContext context) => CreateLessonPage(
           token: widget.token,
           source: LessonSource.schedule,
@@ -179,7 +179,7 @@ class _ProgramPageState extends State<ProgramPage> {
         ),
       ),
     );
-    if (created == true) {
+    if (created != null) {
       _markChanged();
       await _loadDay();
     }
@@ -565,7 +565,7 @@ class _ProgramPageState extends State<ProgramPage> {
             border: Border.all(color: accent, width: 1.4),
           ),
           child: Text(
-            lesson.displayTitle,
+            lesson.indexLabel,
             maxLines: blockHeight < 28 ? 1 : 3,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -765,7 +765,7 @@ class _ProgramDayColumn extends StatelessWidget {
                           ),
                         ),
                         child: Text(
-                          lesson.displayTitle,
+                          lesson.indexLabel,
                           maxLines: blockHeight < 28 ? 1 : 3,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(

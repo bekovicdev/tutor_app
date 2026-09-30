@@ -6,6 +6,7 @@ import 'package:tutor_app/billing/billing_service.dart';
 import 'package:tutor_app/config/legal_config.dart';
 import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/notifications/fcm_service.dart';
+import 'package:tutor_app/notifications/lesson_reminders.dart';
 import 'package:tutor_app/pages/paywall_page.dart';
 import 'package:tutor_app/settings/app_currency.dart';
 import 'package:tutor_app/settings/app_settings.dart';
@@ -43,6 +44,8 @@ class _SettingsPageState extends State<SettingsPage> {
   final AuthService _authService = AuthService();
   final BillingService _billingService = BillingService();
   bool _notificationsEnabled = true;
+  bool _morningReminderEnabled = true;
+  int _morningReminderMinutes = 8 * 60;
   bool _loadingPrefs = true;
   bool _savingCosts = false;
   bool _deletingAccount = false;
@@ -110,6 +113,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _loadPrefs() async {
     final bool notifications = await AppSettings.notificationsEnabled();
+    final bool morningReminder = await AppSettings.morningReminderEnabled();
+    final int morningMinutes = await AppSettings.morningReminderMinutes();
     String individual = _costAsIntText(widget.user.individualLessonCost);
     String group = _costAsIntText(widget.user.groupLessonCost);
     bool notificationsFromApi = notifications;
@@ -151,6 +156,8 @@ class _SettingsPageState extends State<SettingsPage> {
     }
     setState(() {
       _notificationsEnabled = notificationsFromApi;
+      _morningReminderEnabled = morningReminder;
+      _morningReminderMinutes = morningMinutes;
       _billingStatus = billing;
       _individualCostController.text = individual;
       _groupCostController.text = group;
@@ -191,6 +198,7 @@ class _SettingsPageState extends State<SettingsPage> {
         notificationsEnabled: value,
       );
       widget.onUserUpdated?.call(updated);
+      await LessonReminders.instance.sync(widget.token);
     } catch (_) {
       if (!mounted) {
         return;
@@ -200,6 +208,77 @@ class _SettingsPageState extends State<SettingsPage> {
       });
       await AppSettings.setNotificationsEnabled(!value);
     }
+  }
+
+  Future<void> _setMorningReminder(bool value) async {
+    setState(() {
+      _morningReminderEnabled = value;
+    });
+    await AppSettings.setMorningReminderEnabled(value);
+    await LessonReminders.instance.sync(widget.token);
+  }
+
+  Future<void> _pickMorningTime() async {
+    final int rounded =
+        (_morningReminderMinutes ~/ 5) * 5;
+    DateTime temp = DateTime(2020, 1, 1, rounded ~/ 60, rounded % 60);
+    if (!mounted) {
+      return;
+    }
+    await showCupertinoModalPopup<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          height: 280,
+          color: CupertinoColors.systemBackground.resolveFrom(context),
+          child: Column(
+            children: <Widget>[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  CupertinoButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(context.l10n.cancel),
+                  ),
+                  CupertinoButton(
+                    onPressed: () async {
+                      final int minutes = temp.hour * 60 + temp.minute;
+                      Navigator.of(context).pop();
+                      if (!mounted) {
+                        return;
+                      }
+                      setState(() {
+                        _morningReminderMinutes = minutes;
+                      });
+                      await AppSettings.setMorningReminderMinutes(minutes);
+                      await LessonReminders.instance.sync(widget.token);
+                    },
+                    child: Text(context.l10n.done),
+                  ),
+                ],
+              ),
+              Expanded(
+                child: CupertinoDatePicker(
+                  mode: CupertinoDatePickerMode.time,
+                  use24hFormat: true,
+                  minuteInterval: 5,
+                  initialDateTime: temp,
+                  onDateTimeChanged: (DateTime value) {
+                    temp = value;
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  String _formatClock(int minutes) {
+    final int hour = (minutes ~/ 60) % 24;
+    final int minute = minutes % 60;
+    return '${hour.toString().padLeft(2, '0')}.${minute.toString().padLeft(2, '0')}';
   }
 
   Future<void> _saveCosts() async {
@@ -646,6 +725,28 @@ class _SettingsPageState extends State<SettingsPage> {
                         onChanged: _setNotifications,
                       ),
                       _divider(),
+                      _switchRow(
+                        icon: CupertinoIcons.sunrise_fill,
+                        iconColor: const Color(0xFFFF9F0A),
+                        title: l10n.morningReminder,
+                        subtitle: l10n.morningReminderSubtitle,
+                        value: _morningReminderEnabled,
+                        onChanged: _notificationsEnabled
+                            ? _setMorningReminder
+                            : null,
+                      ),
+                      _divider(),
+                      _navRow(
+                        icon: CupertinoIcons.clock_fill,
+                        iconColor: const Color(0xFFFF9F0A),
+                        title: l10n.morningReminderTime,
+                        value: _formatClock(_morningReminderMinutes),
+                        showChevron: true,
+                        onTap: _notificationsEnabled && _morningReminderEnabled
+                            ? _pickMorningTime
+                            : null,
+                      ),
+                      _divider(),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
                         child: Column(
@@ -1044,7 +1145,7 @@ class _SettingsPageState extends State<SettingsPage> {
     required String title,
     required String subtitle,
     required bool value,
-    required ValueChanged<bool> onChanged,
+    required ValueChanged<bool>? onChanged,
   }) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),

@@ -533,7 +533,7 @@ class _PickerDayColumn extends StatelessWidget {
                         border: Border.all(color: accent, width: 0.8),
                       ),
                       child: Text(
-                        lesson.displayTitle,
+                        lesson.indexLabel,
                         maxLines: blockHeight < 28 ? 1 : 3,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(

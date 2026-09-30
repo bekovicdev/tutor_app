@@ -447,8 +447,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                             ),
                           ),
                         ],
-                        if (!widget.isEditing &&
-                            widget.source == LessonSource.journal) ...<Widget>[
+                        if (!widget.isEditing) ...<Widget>[
                           _rowDivider(),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
@@ -1487,7 +1486,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
           return;
         }
       }
-      Navigator.of(context).pop(true);
+      Navigator.of(context).pop(saved);
     } on LessonServiceException catch (error) {
       if (error.isQuota) {
         await openPaywall(context, token: widget.token, reasonCode: error.code);
@@ -1601,7 +1600,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
       if (!mounted) {
         return;
       }
-      Navigator.of(context).pop(true);
+      Navigator.of(context).pop(existing);
     } on LessonServiceException catch (error) {
       await _showMessage(error.message);
     } on PaymentServiceException catch (error) {
@@ -1649,7 +1648,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
       if (!mounted) {
         return;
       }
-      Navigator.of(context).pop(true);
+      Navigator.of(context).pop(existing);
     } on LessonServiceException catch (error) {
       await _showMessage(error.message);
     } finally {

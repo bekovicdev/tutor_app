@@ -380,7 +380,24 @@
   "defaultIndividualCost": "Стандартная цена индивидуального",
   "defaultGroupCost": "Стандартная цена группового",
   "notifications": "Уведомления",
-  "notificationsSubtitle": "Напоминания об уроках и оплате",
+  "notificationsSubtitle": "Напоминание за 15 минут до каждого урока",
+  "morningReminder": "Утренняя сводка",
+  "morningReminderSubtitle": "Каждое утро — сколько уроков в этот день",
+  "morningReminderTime": "Время уведомления",
+  "morningNotificationTitle": "Уроки на сегодня",
+  "morningNotificationNone": "Сегодня уроков нет.",
+  "morningNotificationCount": "Сегодня уроков: {count}.",
+  "@morningNotificationCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "lessonReminderBody": "Начало через 15 минут · {time}",
+  "@lessonReminderBody": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
   "appearance": "Оформление",
   "themeSystem": "Системная",
   "themeLight": "Светлая",

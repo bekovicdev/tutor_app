@@ -798,7 +798,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifications => 'Notifications';
 
   @override
-  String get notificationsSubtitle => 'Lesson reminders and payment alerts';
+  String get notificationsSubtitle =>
+      'A reminder 15 minutes before each lesson';
+
+  @override
+  String get morningReminder => 'Morning summary';
+
+  @override
+  String get morningReminderSubtitle =>
+      'Each morning, how many lessons you have that day';
+
+  @override
+  String get morningReminderTime => 'Notification time';
+
+  @override
+  String get morningNotificationTitle => 'Today\'s lessons';
+
+  @override
+  String get morningNotificationNone => 'No lessons today.';
+
+  @override
+  String morningNotificationCount(int count) {
+    return 'You have $count lessons today.';
+  }
+
+  @override
+  String lessonReminderBody(String time) {
+    return 'Starts in 15 minutes · $time';
+  }
 
   @override
   String get appearance => 'Appearance';

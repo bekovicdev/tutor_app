@@ -16,6 +16,7 @@ import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/lessons/lesson_events.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/notifications/fcm_service.dart';
+import 'package:tutor_app/notifications/lesson_reminders.dart';
 import 'package:tutor_app/pages/journal_page.dart';
 import 'package:tutor_app/pages/payment_page.dart';
 import 'package:tutor_app/pages/calendar_page.dart';
@@ -361,6 +362,7 @@ class _AppRootState extends State<AppRoot> {
       // Even if API logout fails, local token is cleared.
     }
     await _authStorage.clearToken();
+    await LessonReminders.instance.cancelAll();
     if (!mounted) {
       return;
     }
@@ -469,7 +471,7 @@ class AppShell extends StatefulWidget {
   State<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<AppShell> {
+class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   static const int _paymentTabIndex = 4;
 
   final CupertinoTabController _tabController = CupertinoTabController();
@@ -479,7 +481,10 @@ class _AppShellState extends State<AppShell> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _tabController.addListener(_onTabChanged);
+    LessonEvents.listenable.addListener(_rescheduleReminders);
+    unawaited(LessonReminders.instance.sync(widget.session.token));
     _tabPages = <Widget>[
       StudentsPage(token: widget.session.token, onOpenSettings: _openSettings),
       CalendarPage(token: widget.session.token, onOpenSettings: _openSettings),
@@ -611,9 +616,22 @@ class _AppShellState extends State<AppShell> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    LessonEvents.listenable.removeListener(_rescheduleReminders);
     _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(LessonReminders.instance.sync(widget.session.token));
+    }
+  }
+
+  void _rescheduleReminders() {
+    unawaited(LessonReminders.instance.sync(widget.session.token));
   }
 
   void _onTabChanged() {

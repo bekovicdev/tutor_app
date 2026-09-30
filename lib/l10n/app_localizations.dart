@@ -1567,8 +1567,50 @@ abstract class AppLocalizations {
   /// No description provided for @notificationsSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Lesson reminders and payment alerts'**
+  /// **'A reminder 15 minutes before each lesson'**
   String get notificationsSubtitle;
+
+  /// No description provided for @morningReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Morning summary'**
+  String get morningReminder;
+
+  /// No description provided for @morningReminderSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Each morning, how many lessons you have that day'**
+  String get morningReminderSubtitle;
+
+  /// No description provided for @morningReminderTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification time'**
+  String get morningReminderTime;
+
+  /// No description provided for @morningNotificationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s lessons'**
+  String get morningNotificationTitle;
+
+  /// No description provided for @morningNotificationNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No lessons today.'**
+  String get morningNotificationNone;
+
+  /// No description provided for @morningNotificationCount.
+  ///
+  /// In en, this message translates to:
+  /// **'You have {count} lessons today.'**
+  String morningNotificationCount(int count);
+
+  /// No description provided for @lessonReminderBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts in 15 minutes · {time}'**
+  String lessonReminderBody(String time);
 
   /// No description provided for @appearance.
   ///

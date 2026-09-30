@@ -380,7 +380,24 @@
   "defaultIndividualCost": "Default individual fee",
   "defaultGroupCost": "Default group fee",
   "notifications": "Notifications",
-  "notificationsSubtitle": "Lesson reminders and payment alerts",
+  "notificationsSubtitle": "A reminder 15 minutes before each lesson",
+  "morningReminder": "Morning summary",
+  "morningReminderSubtitle": "Each morning, how many lessons you have that day",
+  "morningReminderTime": "Notification time",
+  "morningNotificationTitle": "Today's lessons",
+  "morningNotificationNone": "No lessons today.",
+  "morningNotificationCount": "You have {count} lessons today.",
+  "@morningNotificationCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "lessonReminderBody": "Starts in 15 minutes · {time}",
+  "@lessonReminderBody": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
   "appearance": "Appearance",
   "themeSystem": "System",
   "themeLight": "Light",

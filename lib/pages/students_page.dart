@@ -1776,7 +1776,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: <Widget>[
                                   Text(
-                                    lesson.displayTitle,
+                                    lesson.indexLabel,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -1830,8 +1830,8 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
   }
 
   Future<void> _openCreateLesson() async {
-    final bool? created = await Navigator.of(context).push<bool>(
-      CupertinoPageRoute<bool>(
+    final Lesson? created = await Navigator.of(context).push<Lesson>(
+      CupertinoPageRoute<Lesson>(
         builder: (BuildContext context) => CreateLessonPage(
           token: widget.studentService.token,
           source: LessonSource.journal,
@@ -1839,7 +1839,7 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
         ),
       ),
     );
-    if (created == true) {
+    if (created != null) {
       await _loadDetail();
     }
   }

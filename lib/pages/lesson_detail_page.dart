@@ -547,8 +547,8 @@ class _LessonDetailPageState extends State<LessonDetailPage> {
     if (lesson == null) {
       return;
     }
-    final bool? changed = await Navigator.of(context).push<bool>(
-      CupertinoPageRoute<bool>(
+    final Lesson? changed = await Navigator.of(context).push<Lesson>(
+      CupertinoPageRoute<Lesson>(
         builder: (BuildContext context) => CreateLessonPage(
           token: widget.token,
           source: _editorSource,
@@ -556,7 +556,7 @@ class _LessonDetailPageState extends State<LessonDetailPage> {
         ),
       ),
     );
-    if (changed == true) {
+    if (changed != null) {
       _changed = true;
       LessonEvents.notifyChanged();
       await _load();

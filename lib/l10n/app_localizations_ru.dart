@@ -796,7 +796,34 @@ class AppLocalizationsRu extends AppLocalizations {
   String get notifications => 'Уведомления';
 
   @override
-  String get notificationsSubtitle => 'Напоминания об уроках и оплате';
+  String get notificationsSubtitle =>
+      'Напоминание за 15 минут до каждого урока';
+
+  @override
+  String get morningReminder => 'Утренняя сводка';
+
+  @override
+  String get morningReminderSubtitle =>
+      'Каждое утро — сколько уроков в этот день';
+
+  @override
+  String get morningReminderTime => 'Время уведомления';
+
+  @override
+  String get morningNotificationTitle => 'Уроки на сегодня';
+
+  @override
+  String get morningNotificationNone => 'Сегодня уроков нет.';
+
+  @override
+  String morningNotificationCount(int count) {
+    return 'Сегодня уроков: $count.';
+  }
+
+  @override
+  String lessonReminderBody(String time) {
+    return 'Начало через 15 минут · $time';
+  }
 
   @override
   String get appearance => 'Оформление';

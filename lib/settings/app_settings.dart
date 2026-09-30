@@ -9,6 +9,9 @@ class AppSettings {
 
   static const String _themeKey = 'settings.theme';
   static const String _notificationsKey = 'settings.notifications';
+  static const String _morningReminderKey = 'settings.morning_reminder';
+  static const String _morningReminderMinutesKey =
+      'settings.morning_reminder_minutes';
   static const String _individualCostKey = 'settings.individual_lesson_cost';
   static const String _groupCostKey = 'settings.group_lesson_cost';
 
@@ -42,6 +45,33 @@ class AppSettings {
   static Future<void> setNotificationsEnabled(bool value) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_notificationsKey, value);
+  }
+
+  /// Daily morning summary of how many lessons are on that day.
+  static Future<bool> morningReminderEnabled() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_morningReminderKey) ?? true;
+  }
+
+  static Future<void> setMorningReminderEnabled(bool value) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_morningReminderKey, value);
+  }
+
+  /// Minutes from midnight when the morning summary fires. Default 08:00.
+  static Future<int> morningReminderMinutes() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final int minutes = prefs.getInt(_morningReminderMinutesKey) ?? (8 * 60);
+    if (minutes < 0 || minutes >= 24 * 60) {
+      return 8 * 60;
+    }
+    return minutes;
+  }
+
+  static Future<void> setMorningReminderMinutes(int minutes) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final int clamped = minutes.clamp(0, (24 * 60) - 1);
+    await prefs.setInt(_morningReminderMinutesKey, clamped);
   }
 
   static Future<String?> individualLessonCost() async {
