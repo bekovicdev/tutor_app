@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:tutor_app/groups/group_service.dart';
 import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
+import 'package:tutor_app/pages/create_lesson_page.dart';
 import 'package:tutor_app/pages/create_payment_page.dart';
 import 'package:tutor_app/pages/group_detail_page.dart';
 import 'package:tutor_app/pages/lesson_detail_page.dart';
@@ -986,6 +987,13 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
         child: Text(l10n.add),
       );
     }
+    if (_tab == _StudentDetailTab.lessons) {
+      return CupertinoButton(
+        padding: EdgeInsets.zero,
+        onPressed: _openCreateLesson,
+        child: const Icon(CupertinoIcons.add),
+      );
+    }
     if (_tab != _StudentDetailTab.info) {
       return null;
     }
@@ -1807,6 +1815,21 @@ class _StudentDetailPageState extends State<_StudentDetailPage> {
       preferredSource: LessonSource.journal,
     );
     if (changed == true) {
+      await _loadDetail();
+    }
+  }
+
+  Future<void> _openCreateLesson() async {
+    final bool? created = await Navigator.of(context).push<bool>(
+      CupertinoPageRoute<bool>(
+        builder: (BuildContext context) => CreateLessonPage(
+          token: widget.studentService.token,
+          source: LessonSource.journal,
+          preselectedStudentId: widget.studentId,
+        ),
+      ),
+    );
+    if (created == true) {
       await _loadDetail();
     }
   }

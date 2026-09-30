@@ -2,7 +2,13 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!--
+	aps-environment (Push Notifications) geçici olarak devre dışı bırakıldı.
+	Ücretsiz/kişisel Apple ID ile imzalama, Push Notifications entitlement'ını
+	desteklemiyor (ücretli Apple Developer Program gerektirir). Ücretli hesap
+	kurulup APNs/Firebase yapılandırması tamamlandığında bu anahtarı geri ekle:
 	<key>aps-environment</key>
 	<string>development</string>
+	-->
 </dict>
 </plist>

@@ -95,13 +95,16 @@ class _AuthPageState extends State<AuthPage> {
               SizedBox(
                 height: 50,
                 child: CupertinoButton.filled(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
                   borderRadius: BorderRadius.circular(12),
                   onPressed: _isLoading ? null : _submit,
-                  child: _isLoading
-                      ? const CupertinoActivityIndicator(
-                          color: CupertinoColors.white,
-                        )
-                      : Text(l10n.login),
+                  child: Center(
+                    child: _isLoading
+                        ? const CupertinoActivityIndicator(
+                            color: CupertinoColors.white,
+                          )
+                        : Text(l10n.login),
+                  ),
                 ),
               ),
             if (isRegister) _buildRegisterActions(),
@@ -328,6 +331,7 @@ class _AuthPageState extends State<AuthPage> {
             child: SizedBox(
               height: 50,
               child: CupertinoButton(
+                padding: const EdgeInsets.symmetric(vertical: 4),
                 borderRadius: BorderRadius.circular(12),
                 color: CupertinoColors.secondarySystemBackground,
                 onPressed: _isLoading
@@ -337,7 +341,7 @@ class _AuthPageState extends State<AuthPage> {
                           _registerStep -= 1;
                         });
                       },
-                child: Text(l10n.back),
+                child: Center(child: Text(l10n.back)),
               ),
             ),
           ),
@@ -346,6 +350,7 @@ class _AuthPageState extends State<AuthPage> {
           child: SizedBox(
             height: 50,
             child: CupertinoButton.filled(
+              padding: const EdgeInsets.symmetric(vertical: 4),
               borderRadius: BorderRadius.circular(12),
               onPressed: _isLoading
                   ? null
@@ -356,11 +361,13 @@ class _AuthPageState extends State<AuthPage> {
                       }
                       _goToNextRegisterStep();
                     },
-              child: _isLoading
-                  ? const CupertinoActivityIndicator(
-                      color: CupertinoColors.white,
-                    )
-                  : Text(isLastStep ? l10n.createAccount : l10n.next),
+              child: Center(
+                child: _isLoading
+                    ? const CupertinoActivityIndicator(
+                        color: CupertinoColors.white,
+                      )
+                    : Text(isLastStep ? l10n.createAccount : l10n.next),
+              ),
             ),
           ),
         ),

@@ -71,9 +71,28 @@ class BillingService {
     defaultValue: '',
   );
 
+  /// When true, this build treats every user as already-premium and never
+  /// talks to RevenueCat or shows the paywall. Enable only for personal /
+  /// side-loaded builds that are not distributed through the App Store or
+  /// Play Store, e.g.:
+  ///   flutter build apk --release --dart-define=FORCE_PREMIUM=true
+  ///
+  /// NOTE: This only overrides the *client-side* premium flag. If your
+  /// backend also enforces plan limits server-side (e.g. rejecting a new
+  /// student once a quota is hit with a `quota_students` error), this flag
+  /// alone will not bypass that. Mark the account as premium in the backend
+  /// too if you hit quota errors despite this flag being on.
+  static const bool forcePremiumUnlock = bool.fromEnvironment(
+    'FORCE_PREMIUM',
+    defaultValue: false,
+  );
+
   static bool _configured = false;
 
   static Future<void> configure({required String appUserId}) async {
+    if (forcePremiumUnlock) {
+      return;
+    }
     if (_configured) {
       try {
         await Purchases.logIn(appUserId);
@@ -102,6 +121,9 @@ class BillingService {
   }
 
   Future<BillingStatus> fetchStatus(String token) async {
+    if (forcePremiumUnlock) {
+      return _forcedPremiumStatus(token);
+    }
     final Map<String, dynamic> json = await _request(
       method: 'GET',
       endpoint: '/billing/status',
@@ -114,7 +136,42 @@ class BillingService {
     return BillingStatus.fromJson(data);
   }
 
+  /// Builds a locally-forced "premium, unlimited" status for
+  /// [forcePremiumUnlock] builds. Tries to keep real usage counters from the
+  /// backend for display purposes, but falls back to zeros if that request
+  /// fails so this never throws.
+  Future<BillingStatus> _forcedPremiumStatus(String token) async {
+    BillingStatus? real;
+    try {
+      final Map<String, dynamic> json = await _request(
+        method: 'GET',
+        endpoint: '/billing/status',
+        token: token,
+      );
+      final Map<String, dynamic>? data = json['data'] as Map<String, dynamic>?;
+      if (data != null) {
+        real = BillingStatus.fromJson(data);
+      }
+    } catch (_) {
+      // Ignore; fall back to zeros below.
+    }
+    return BillingStatus(
+      isPremium: true,
+      premiumStartAt: real?.premiumStartAt,
+      premiumEndAt: null,
+      studentsUsed: real?.studentsUsed ?? 0,
+      studentsLimit: null,
+      scheduleLessonsUsed: real?.scheduleLessonsUsed ?? 0,
+      scheduleLessonsLimit: null,
+      journalLessonsUsed: real?.journalLessonsUsed ?? 0,
+      journalLessonsLimit: null,
+    );
+  }
+
   Future<BillingStatus> syncFromStore(String token) async {
+    if (forcePremiumUnlock) {
+      return _forcedPremiumStatus(token);
+    }
     if (!_configured) {
       return fetchStatus(token);
     }
@@ -148,7 +205,7 @@ class BillingService {
   }
 
   Future<Offerings?> loadOfferings() async {
-    if (!_configured) {
+    if (forcePremiumUnlock || !_configured) {
       return null;
     }
     try {

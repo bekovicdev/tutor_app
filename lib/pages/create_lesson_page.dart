@@ -18,6 +18,7 @@ class CreateLessonPage extends StatefulWidget {
     this.initialStartAt,
     this.lockDateTime = false,
     this.lesson,
+    this.preselectedStudentId,
     super.key,
   });
 
@@ -31,6 +32,10 @@ class CreateLessonPage extends StatefulWidget {
 
   /// When set, the page edits this lesson instead of creating a new one.
   final Lesson? lesson;
+
+  /// When set (and [lesson] is null), the individual student is
+  /// pre-selected, e.g. when creating a lesson from a student's detail page.
+  final int? preselectedStudentId;
 
   bool get isEditing => lesson != null;
 
@@ -57,6 +62,8 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
   String _status = 'scheduled';
   bool _isGroup = false;
   bool _isFree = false;
+  bool _repeatWeekly = false;
+  int _repeatWeeks = 8;
   Student? _selectedStudent;
   TutorGroup? _selectedGroup;
   List<Student> _students = <Student>[];
@@ -148,8 +155,9 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     }
     List<Student> members = <Student>[];
     try {
-      final List<GroupStudent> rows =
-          await _groupService.listGroupStudents(group.id);
+      final List<GroupStudent> rows = await _groupService.listGroupStudents(
+        group.id,
+      );
       members = rows.map((GroupStudent row) => row.student).toList();
     } on GroupServiceException {
       members = <Student>[];
@@ -159,8 +167,8 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     final Lesson? lesson = widget.lesson;
     if (lesson != null && lesson.isGroup) {
       try {
-        final List<LessonStudentNote> notes =
-            await _lessonService.listStudentNotes(lesson.id);
+        final List<LessonStudentNote> notes = await _lessonService
+            .listStudentNotes(lesson.id);
         for (final LessonStudentNote note in notes) {
           existingNotes[note.studentId] = note.notes;
           _existingStudentNoteIds.add(note.studentId);
@@ -235,7 +243,19 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
           _selectedGroup = groups.isNotEmpty ? groups.first : null;
         }
       } else {
-        if (students.isNotEmpty) {
+        final int? preselectedId = widget.preselectedStudentId;
+        if (preselectedId != null) {
+          Student? match;
+          for (final Student student in students) {
+            if (student.id == preselectedId) {
+              match = student;
+              break;
+            }
+          }
+          _selectedStudent =
+              match ?? (students.isNotEmpty ? students.first : null);
+          _isGroup = false;
+        } else if (students.isNotEmpty) {
           _selectedStudent = students.first;
         }
         if (groups.isNotEmpty) {
@@ -339,7 +359,8 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                     padding: const EdgeInsets.fromLTRB(4, 6, 4, 6),
                     child: Column(
                       children: <Widget>[
-                        if (widget.lockDateTime && !widget.isEditing) ...<Widget>[
+                        if (widget.lockDateTime &&
+                            !widget.isEditing) ...<Widget>[
                           Padding(
                             padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
                             child: _slotBanner(l10n),
@@ -385,23 +406,61 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                                 const SizedBox(height: 8),
                                 SizedBox(
                                   width: double.infinity,
-                                  child: CupertinoSlidingSegmentedControl<String>(
-                                    groupValue: _status,
-                                    children: <String, Widget>{
-                                      'scheduled': _segmentLabel(l10n.scheduled),
-                                      'completed': _segmentLabel(l10n.completed),
-                                      'cancelled': _segmentLabel(l10n.cancelled),
-                                    },
-                                    onValueChanged: (String? value) {
-                                      if (value == null) {
-                                        return;
-                                      }
-                                      setState(() {
-                                        _status = value;
-                                      });
-                                    },
-                                  ),
+                                  child:
+                                      CupertinoSlidingSegmentedControl<String>(
+                                        groupValue: _status,
+                                        children: <String, Widget>{
+                                          'scheduled': _segmentLabel(
+                                            l10n.scheduled,
+                                          ),
+                                          'completed': _segmentLabel(
+                                            l10n.completed,
+                                          ),
+                                          'cancelled': _segmentLabel(
+                                            l10n.cancelled,
+                                          ),
+                                        },
+                                        onValueChanged: (String? value) {
+                                          if (value == null) {
+                                            return;
+                                          }
+                                          setState(() {
+                                            _status = value;
+                                          });
+                                        },
+                                      ),
                                 ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        if (!widget.isEditing &&
+                            widget.source == LessonSource.journal) ...<Widget>[
+                          _rowDivider(),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+                            child: Column(
+                              children: <Widget>[
+                                _switchRow(
+                                  label: l10n.repeatWeekly,
+                                  value: _repeatWeekly,
+                                  onChanged: (bool value) {
+                                    setState(() {
+                                      _repeatWeekly = value;
+                                    });
+                                  },
+                                ),
+                                if (_repeatWeekly) ...<Widget>[
+                                  const SizedBox(height: 8),
+                                  _settingsRow(
+                                    icon: CupertinoIcons.repeat,
+                                    iconColor: CupertinoColors.systemPurple
+                                        .resolveFrom(context),
+                                    label: l10n.repeatWeeksLabel,
+                                    value: l10n.weeksCount(_repeatWeeks),
+                                    onPressed: _pickRepeatWeeks,
+                                  ),
+                                ],
                               ],
                             ),
                           ),
@@ -438,9 +497,8 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                           const SizedBox(height: 8),
                           _textField(
                             controller: _priceController,
-                        placeholder: l10n.eg500,
-                            keyboardType:
-                                const TextInputType.numberWithOptions(
+                            placeholder: l10n.eg500,
+                            keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
                             suffix: Text(
@@ -603,15 +661,16 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
         decoration: BoxDecoration(
           color: selected
               ? selectedColor.withValues(alpha: 0.16)
-              : CupertinoColors.secondarySystemGroupedBackground
-                  .resolveFrom(context),
+              : CupertinoColors.secondarySystemGroupedBackground.resolveFrom(
+                  context,
+                ),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: selected
                 ? selectedColor.withValues(alpha: 0.45)
                 : CupertinoColors.separator
-                    .resolveFrom(context)
-                    .withValues(alpha: 0.28),
+                      .resolveFrom(context)
+                      .withValues(alpha: 0.28),
           ),
         ),
         child: Row(
@@ -648,31 +707,26 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     final Color accent = _parseHexColor(
       _isGroup ? _selectedGroup?.color : _selectedStudent?.color,
     );
-    final bool enabled =
-        _isGroup ? _groups.isNotEmpty : _students.isNotEmpty;
-    final String? pictureUrl =
-        _isGroup ? null : _selectedStudent?.profilePictureUrl;
+    final bool enabled = _isGroup ? _groups.isNotEmpty : _students.isNotEmpty;
+    final String? pictureUrl = _isGroup
+        ? null
+        : _selectedStudent?.profilePictureUrl;
 
     return CupertinoButton(
       padding: EdgeInsets.zero,
-      onPressed: enabled
-          ? (_isGroup ? _pickGroup : _pickStudent)
-          : null,
+      onPressed: enabled ? (_isGroup ? _pickGroup : _pickStudent) : null,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(10, 10, 12, 10),
         decoration: BoxDecoration(
-          color: CupertinoColors.secondarySystemGroupedBackground
-              .resolveFrom(context),
+          color: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(
+            context,
+          ),
           borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
           children: <Widget>[
-            _avatar(
-              name: name,
-              color: accent,
-              pictureUrl: pictureUrl,
-            ),
+            _avatar(name: name, color: accent, pictureUrl: pictureUrl),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -695,7 +749,9 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                     _isGroup ? l10n.group : l10n.student,
                     style: TextStyle(
                       fontSize: 13,
-                      color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                      color: CupertinoColors.secondaryLabel.resolveFrom(
+                        context,
+                      ),
                     ),
                   ),
                 ],
@@ -775,10 +831,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                 _formatDateDisplay(_date),
                 _formatTimeDisplay(_startTime),
               ),
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 15,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
             ),
           ),
         ],
@@ -847,9 +900,9 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
       padding: const EdgeInsets.only(left: 56),
       child: Container(
         height: 0.5,
-        color: CupertinoColors.separator.resolveFrom(context).withValues(
-          alpha: 0.45,
-        ),
+        color: CupertinoColors.separator
+            .resolveFrom(context)
+            .withValues(alpha: 0.45),
       ),
     );
   }
@@ -862,8 +915,9 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: CupertinoColors.secondarySystemGroupedBackground
-            .resolveFrom(context),
+        color: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(
+          context,
+        ),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -871,10 +925,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
           CupertinoSwitch(value: value, onChanged: onChanged),
@@ -908,24 +959,19 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
       ),
       suffix: suffix == null
           ? null
-          : Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: suffix,
-            ),
+          : Padding(padding: const EdgeInsets.only(right: 12), child: suffix),
       decoration: BoxDecoration(
-        color: CupertinoColors.secondarySystemGroupedBackground
-            .resolveFrom(context),
+        color: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(
+          context,
+        ),
         borderRadius: BorderRadius.circular(12),
       ),
     );
   }
 
   Widget _studentNoteField(Student member) {
-    final TextEditingController controller =
-        _studentNoteControllers.putIfAbsent(
-      member.id,
-      TextEditingController.new,
-    );
+    final TextEditingController controller = _studentNoteControllers
+        .putIfAbsent(member.id, TextEditingController.new);
     final Color accent = _parseHexColor(member.color);
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -948,8 +994,9 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
           child: _avatar(name: member.name, color: accent),
         ),
         decoration: BoxDecoration(
-          color: CupertinoColors.secondarySystemGroupedBackground
-              .resolveFrom(context),
+          color: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(
+            context,
+          ),
           borderRadius: BorderRadius.circular(12),
         ),
       ),
@@ -1149,6 +1196,50 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     );
   }
 
+  Future<void> _pickRepeatWeeks() async {
+    const int minWeeks = 2;
+    const int maxWeeks = 52;
+    final List<int> options = List<int>.generate(
+      maxWeeks - minWeeks + 1,
+      (int i) => minWeeks + i,
+    );
+    int selectedIndex = options.indexOf(_repeatWeeks);
+    if (selectedIndex < 0) {
+      selectedIndex = options.indexOf(8);
+    }
+
+    await showCupertinoModalPopup<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return _pickerSheet(
+          context: context,
+          onCancel: () => Navigator.of(context).pop(),
+          onDone: () {
+            setState(() {
+              _repeatWeeks = options[selectedIndex];
+            });
+            Navigator.of(context).pop();
+          },
+          child: CupertinoPicker(
+            scrollController: FixedExtentScrollController(
+              initialItem: selectedIndex,
+            ),
+            itemExtent: 36,
+            onSelectedItemChanged: (int index) {
+              selectedIndex = index;
+            },
+            children: options
+                .map(
+                  (int weeks) =>
+                      Center(child: Text(context.l10n.weeksCount(weeks))),
+                )
+                .toList(),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _pickDate() async {
     DateTime temp = _date;
     await showCupertinoModalPopup<void>(
@@ -1191,10 +1282,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
           onCancel: () => Navigator.of(context).pop(),
           onDone: () {
             setState(() {
-              _startTime = Duration(
-                hours: temp.hour,
-                minutes: temp.minute,
-              );
+              _startTime = Duration(hours: temp.hour, minutes: temp.minute);
             });
             Navigator.of(context).pop();
           },
@@ -1326,7 +1414,9 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
             price: price,
             notes: _notesController.text.trim(),
             source: widget.source,
-            status: widget.source == LessonSource.journal ? _status : 'scheduled',
+            status: widget.source == LessonSource.journal
+                ? _status
+                : 'scheduled',
             paymentStatus: _isFree ? null : 'unpaid',
           ),
         );
@@ -1334,17 +1424,59 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
       if (_isGroup) {
         await _persistStudentNotes(saved.id);
       }
+
+      int repeatsCreated = 0;
+      String? repeatError;
+      if (existing == null && _repeatWeekly && _repeatWeeks > 1) {
+        for (int i = 1; i < _repeatWeeks; i++) {
+          try {
+            final DateTime repeatDate = _date.add(Duration(days: 7 * i));
+            final Lesson repeatLesson = await _lessonService.createLesson(
+              LessonCreateRequest(
+                date: _formatDate(repeatDate),
+                startAt: _formatTime(_startTime),
+                durationMinutes: _durationMinutes,
+                studentId: _isGroup ? null : _selectedStudent?.id,
+                groupId: _isGroup ? _selectedGroup?.id : null,
+                title: _titleController.text.trim(),
+                isFree: _isFree,
+                price: price,
+                notes: _notesController.text.trim(),
+                source: widget.source,
+                status: 'scheduled',
+                paymentStatus: _isFree ? null : 'unpaid',
+              ),
+            );
+            if (_isGroup) {
+              await _createStudentNotesForRepeat(repeatLesson.id);
+            }
+            repeatsCreated++;
+          } on LessonServiceException catch (error) {
+            repeatError = error.message;
+            break;
+          }
+        }
+      }
+
       if (!mounted) {
         return;
+      }
+      if (repeatError != null) {
+        await _showMessage(
+          context.l10n.repeatLessonsPartial(
+            repeatsCreated + 1,
+            _repeatWeeks,
+            repeatError,
+          ),
+        );
+        if (!mounted) {
+          return;
+        }
       }
       Navigator.of(context).pop(true);
     } on LessonServiceException catch (error) {
       if (error.isQuota) {
-        await openPaywall(
-          context,
-          token: widget.token,
-          reasonCode: error.code,
-        );
+        await openPaywall(context, token: widget.token, reasonCode: error.code);
       } else {
         await _showMessage(error.message);
       }
@@ -1379,6 +1511,29 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
         alreadyExists: exists,
       );
       _existingStudentNoteIds.add(entry.key);
+    }
+  }
+
+  /// Copies the group student notes onto a lesson created by the weekly
+  /// repeat flow. Unlike [_persistStudentNotes], this always creates fresh
+  /// notes since each repeated lesson is a brand-new record.
+  Future<void> _createStudentNotesForRepeat(int lessonId) async {
+    for (final MapEntry<int, TextEditingController> entry
+        in _studentNoteControllers.entries) {
+      final String text = entry.value.text.trim();
+      if (text.isEmpty) {
+        continue;
+      }
+      try {
+        await _lessonService.createStudentNote(
+          lessonId: lessonId,
+          studentId: entry.key,
+          notes: text,
+        );
+      } on LessonServiceException {
+        // Ignore note failures for repeat instances; the lesson itself
+        // was already created successfully.
+      }
     }
   }
 

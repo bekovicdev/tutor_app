@@ -321,6 +321,22 @@
   "selectGroup": "Выбрать группу",
   "selectGroupTitle": "Выбор группы",
   "freeLesson": "Бесплатный урок",
+  "repeatWeekly": "Повторять еженедельно",
+  "repeatWeeksLabel": "Повторить на",
+  "weeksCount": "{count} недель",
+  "@weeksCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "repeatLessonsPartial": "Создано {created} из {total} еженедельных уроков. {error}",
+  "@repeatLessonsPartial": {
+    "placeholders": {
+      "created": {"type": "int"},
+      "total": {"type": "int"},
+      "error": {"type": "String"}
+    }
+  },
   "minutes": "{count} мин",
   "@minutes": {
     "placeholders": {
@@ -404,6 +420,15 @@
       "time": {"type": "String"}
     }
   },
+  "lessonCompletionCheckTitle": "Этот урок был проведён?",
+  "lessonCompletionCheckMessage": "{title} · {when}. Подтвердите статус, чтобы данные оставались точными.",
+  "@lessonCompletionCheckMessage": {
+    "placeholders": {
+      "title": {"type": "String"},
+      "when": {"type": "String"}
+    }
+  },
+  "askLater": "Спросить позже",
   "markLessonDone": "Отметить выполненным",
   "movedToJournal": "Перенесено в журнал как завершённое.",
   "settlePaymentTitle": "Оплата за этот урок",

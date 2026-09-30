@@ -321,6 +321,22 @@
   "selectGroup": "Select group",
   "selectGroupTitle": "Select Group",
   "freeLesson": "Free lesson",
+  "repeatWeekly": "Repeat weekly",
+  "repeatWeeksLabel": "Repeat for",
+  "weeksCount": "{count} weeks",
+  "@weeksCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "repeatLessonsPartial": "Created {created} of {total} weekly lessons. {error}",
+  "@repeatLessonsPartial": {
+    "placeholders": {
+      "created": {"type": "int"},
+      "total": {"type": "int"},
+      "error": {"type": "String"}
+    }
+  },
   "minutes": "{count} min",
   "@minutes": {
     "placeholders": {
@@ -404,6 +420,15 @@
       "time": {"type": "String"}
     }
   },
+  "lessonCompletionCheckTitle": "Was this lesson completed?",
+  "lessonCompletionCheckMessage": "{title} · {when}. Please confirm the status so your records stay accurate.",
+  "@lessonCompletionCheckMessage": {
+    "placeholders": {
+      "title": {"type": "String"},
+      "when": {"type": "String"}
+    }
+  },
+  "askLater": "Ask me later",
   "markLessonDone": "Mark as done",
   "movedToJournal": "Moved to journal as completed.",
   "settlePaymentTitle": "Payment for this lesson",

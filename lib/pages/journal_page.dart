@@ -1,20 +1,18 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:tutor_app/l10n/l10n_ext.dart';
 import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/pages/create_lesson_page.dart';
 import 'package:tutor_app/pages/lesson_detail_page.dart';
+import 'package:tutor_app/theme/app_dialogs.dart';
 import 'package:tutor_app/theme/ios26_theme.dart';
 import 'package:tutor_app/widgets/settings_nav_button.dart';
 
 class JournalPage extends StatefulWidget {
-  const JournalPage({
-    required this.token,
-    this.onOpenSettings,
-    super.key,
-  });
+  const JournalPage({required this.token, this.onOpenSettings, super.key});
 
   final String token;
   final void Function(BuildContext context)? onOpenSettings;
@@ -27,10 +25,16 @@ class _JournalPageState extends State<JournalPage> {
   static const double _hourHeight = 64;
   static const int _startHour = 0;
   static const int _endHour = 24;
+  static const int _snapMinutes = 15;
+  static const int _defaultNewLessonMinutes = 60;
 
   late final LessonService _lessonService;
   Timer? _nowTicker;
   DateTime _now = DateTime.now();
+
+  final GlobalKey _gridColumnKey = GlobalKey();
+  final GlobalKey _gridViewportKey = GlobalKey();
+  final ScrollController _dayScrollController = ScrollController();
 
   DateTime _weekStart = _mondayOf(DateTime.now());
   DateTime _selectedDay = DateTime(
@@ -41,6 +45,9 @@ class _JournalPageState extends State<JournalPage> {
   List<Lesson> _weekLessons = <Lesson>[];
   bool _isLoading = true;
   String? _errorMessage;
+  Lesson? _draggingLesson;
+  int? _dragTargetStartMinutes;
+  bool _isRescheduling = false;
 
   @override
   void initState() {
@@ -60,6 +67,7 @@ class _JournalPageState extends State<JournalPage> {
   @override
   void dispose() {
     _nowTicker?.cancel();
+    _dayScrollController.dispose();
     super.dispose();
   }
 
@@ -159,6 +167,192 @@ class _JournalPageState extends State<JournalPage> {
     }
   }
 
+  String _formatStartAt(int totalMinutes) {
+    final int h = (totalMinutes ~/ 60).clamp(0, 23);
+    final int m = totalMinutes % 60;
+    return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
+  }
+
+  int _snapStartMinutes(int rawMinutes, int durationMinutes) {
+    final int gridStart = _startHour * 60;
+    final int gridEnd = _endHour * 60;
+    final int snapped = ((rawMinutes / _snapMinutes).round() * _snapMinutes)
+        .clamp(gridStart, gridEnd);
+    final int maxStart = (gridEnd - durationMinutes).clamp(gridStart, gridEnd);
+    return snapped.clamp(gridStart, maxStart);
+  }
+
+  int? _startMinutesFromGlobalPosition(
+    Offset globalPosition,
+    int durationMinutes,
+  ) {
+    final RenderBox? gridBox =
+        _gridColumnKey.currentContext?.findRenderObject() as RenderBox?;
+    if (gridBox == null || !gridBox.hasSize) {
+      return null;
+    }
+    final Offset local = gridBox.globalToLocal(globalPosition);
+    if (local.dy < 0 || local.dy > gridBox.size.height) {
+      return null;
+    }
+    final int rawMinutes =
+        _startHour * 60 + (local.dy / _hourHeight * 60).round();
+    return _snapStartMinutes(rawMinutes, durationMinutes);
+  }
+
+  /// Long-press on an empty part of the day timeline: open the create-lesson
+  /// page pre-filled with the pressed hour/minute for the selected day.
+  Future<void> _handleEmptyLongPress(Offset globalPosition) async {
+    if (_draggingLesson != null) {
+      return;
+    }
+    final int? startMinutes = _startMinutesFromGlobalPosition(
+      globalPosition,
+      _defaultNewLessonMinutes,
+    );
+    if (startMinutes == null) {
+      return;
+    }
+    HapticFeedback.mediumImpact();
+    final bool? created = await Navigator.of(context).push<bool>(
+      CupertinoPageRoute<bool>(
+        builder: (BuildContext context) => CreateLessonPage(
+          token: widget.token,
+          source: LessonSource.journal,
+          initialDate: _selectedDay,
+          initialStartAt: _formatStartAt(startMinutes),
+          lockDateTime: true,
+        ),
+      ),
+    );
+    if (created == true) {
+      await _loadWeek();
+    }
+  }
+
+  bool _canDragLesson(Lesson lesson) {
+    if (_isRescheduling) {
+      return false;
+    }
+    return lesson.status == 'scheduled';
+  }
+
+  void _beginLessonDrag(Lesson lesson, LongPressStartDetails details) {
+    if (!_canDragLesson(lesson)) {
+      return;
+    }
+    HapticFeedback.mediumImpact();
+    setState(() {
+      _draggingLesson = lesson;
+      _dragTargetStartMinutes =
+          _startMinutesFromGlobalPosition(
+            details.globalPosition,
+            lesson.durationMinutes,
+          ) ??
+          lesson.startMinutes;
+    });
+  }
+
+  void _moveLessonDrag(Offset globalPosition) {
+    if (_draggingLesson == null) {
+      return;
+    }
+    final int? startMinutes = _startMinutesFromGlobalPosition(
+      globalPosition,
+      _draggingLesson!.durationMinutes,
+    );
+    if (startMinutes == null) {
+      return;
+    }
+    setState(() {
+      _dragTargetStartMinutes = startMinutes;
+    });
+    _maybeAutoScroll(globalPosition);
+  }
+
+  void _maybeAutoScroll(Offset globalPosition) {
+    final RenderBox? viewportBox =
+        _gridViewportKey.currentContext?.findRenderObject() as RenderBox?;
+    if (viewportBox == null || !_dayScrollController.hasClients) {
+      return;
+    }
+    final Offset localInViewport = viewportBox.globalToLocal(globalPosition);
+    const double edgeThreshold = 72;
+    const double scrollStep = 10;
+    final double viewportHeight = viewportBox.size.height;
+    double nextOffset = _dayScrollController.offset;
+    if (localInViewport.dy < edgeThreshold) {
+      nextOffset -= scrollStep;
+    } else if (localInViewport.dy > viewportHeight - edgeThreshold) {
+      nextOffset += scrollStep;
+    } else {
+      return;
+    }
+    _dayScrollController.jumpTo(
+      nextOffset.clamp(0.0, _dayScrollController.position.maxScrollExtent),
+    );
+  }
+
+  Future<void> _finishLessonDrag() async {
+    final Lesson? lesson = _draggingLesson;
+    final int? targetStartMinutes = _dragTargetStartMinutes;
+    setState(() {
+      _draggingLesson = null;
+      _dragTargetStartMinutes = null;
+    });
+    if (lesson == null || targetStartMinutes == null) {
+      return;
+    }
+    if (lesson.startMinutes == targetStartMinutes) {
+      return;
+    }
+    await _rescheduleLesson(lesson, targetStartMinutes);
+  }
+
+  void _cancelLessonDrag() {
+    if (_draggingLesson == null) {
+      return;
+    }
+    setState(() {
+      _draggingLesson = null;
+      _dragTargetStartMinutes = null;
+    });
+  }
+
+  Future<void> _rescheduleLesson(Lesson lesson, int targetStartMinutes) async {
+    setState(() {
+      _isRescheduling = true;
+    });
+    try {
+      await _lessonService.updateLesson(
+        id: lesson.id,
+        body: <String, dynamic>{'start_at': _formatStartAt(targetStartMinutes)},
+      );
+      if (!mounted) {
+        return;
+      }
+      await _loadWeek();
+    } on LessonServiceException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      await showAppAlert<void>(
+        context: context,
+        title: context.l10n.somethingWentWrong,
+        message: error.message,
+        actions: <AppAlertAction>[
+          AppAlertAction(label: context.l10n.ok, style: AppAlertStyle.primary),
+        ],
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRescheduling = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
@@ -192,7 +386,21 @@ class _JournalPageState extends State<JournalPage> {
           children: <Widget>[
             _buildWeekHeader(),
             _buildWeekRow(),
-            Expanded(child: _buildDayTimeline()),
+            Expanded(
+              key: _gridViewportKey,
+              child: Stack(
+                children: <Widget>[
+                  _buildDayTimeline(),
+                  if (_isRescheduling)
+                    const Positioned.fill(
+                      child: ColoredBox(
+                        color: Color(0x11000000),
+                        child: Center(child: CupertinoActivityIndicator()),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -268,10 +476,7 @@ class _JournalPageState extends State<JournalPage> {
                             .resolveFrom(context),
                   borderRadius: BorderRadius.circular(12),
                   border: isToday && !selected
-                      ? Border.all(
-                          color: AppBrand.primary,
-                          width: 1.2,
-                        )
+                      ? Border.all(color: AppBrand.primary, width: 1.2)
                       : null,
                 ),
                 child: Column(
@@ -336,7 +541,9 @@ class _JournalPageState extends State<JournalPage> {
               Text(
                 _errorMessage!,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: CupertinoColors.secondaryLabel.resolveFrom(context)),
+                style: TextStyle(
+                  color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                ),
               ),
               const SizedBox(height: 12),
               CupertinoButton(
@@ -356,6 +563,7 @@ class _JournalPageState extends State<JournalPage> {
     final Widget? nowLine = _buildNowLine(gridStartMinutes: gridStartMinutes);
 
     return SingleChildScrollView(
+      controller: _dayScrollController,
       padding: const EdgeInsets.fromLTRB(0, 0, 12, 24),
       child: SizedBox(
         height: timelineHeight,
@@ -396,25 +604,30 @@ class _JournalPageState extends State<JournalPage> {
                 ),
                 Expanded(
                   child: Stack(
+                    key: _gridColumnKey,
                     children: <Widget>[
-                      Column(
-                        children: List<Widget>.generate(totalHours, (
-                          int index,
-                        ) {
-                          return Container(
-                            height: _hourHeight,
-                            decoration: BoxDecoration(
-                              border: Border(
-                                top: BorderSide(
-                                  color: CupertinoColors.separator.resolveFrom(
-                                    context,
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onLongPressStart: (LongPressStartDetails details) =>
+                            _handleEmptyLongPress(details.globalPosition),
+                        child: Column(
+                          children: List<Widget>.generate(totalHours, (
+                            int index,
+                          ) {
+                            return Container(
+                              height: _hourHeight,
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  top: BorderSide(
+                                    color: CupertinoColors.separator
+                                        .resolveFrom(context),
+                                    width: 0.5,
                                   ),
-                                  width: 0.5,
                                 ),
                               ),
-                            ),
-                          );
-                        }),
+                            );
+                          }),
+                        ),
                       ),
                       ...lessons.map((Lesson lesson) {
                         return _buildLessonBlock(
@@ -423,6 +636,14 @@ class _JournalPageState extends State<JournalPage> {
                           timelineHeight: timelineHeight,
                         );
                       }),
+                      if (_draggingLesson != null &&
+                          _dragTargetStartMinutes != null)
+                        _buildDropPreview(
+                          lesson: _draggingLesson!,
+                          targetStartMinutes: _dragTargetStartMinutes!,
+                          gridStartMinutes: gridStartMinutes,
+                          timelineHeight: timelineHeight,
+                        ),
                     ],
                   ),
                 ),
@@ -430,6 +651,47 @@ class _JournalPageState extends State<JournalPage> {
             ),
             if (nowLine != null) nowLine,
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropPreview({
+    required Lesson lesson,
+    required int targetStartMinutes,
+    required int gridStartMinutes,
+    required double timelineHeight,
+  }) {
+    final double top =
+        (targetStartMinutes - gridStartMinutes) / 60 * _hourHeight;
+    final double blockHeight = (lesson.durationMinutes / 60 * _hourHeight)
+        .clamp(16.0, timelineHeight);
+    final Color accent = _parseHexColor(lesson.accentColor);
+
+    return Positioned(
+      top: top + 2,
+      left: 6,
+      right: 2,
+      height: blockHeight - 4,
+      child: IgnorePointer(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: 0.35),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: accent, width: 1.4),
+          ),
+          child: Text(
+            lesson.displayTitle,
+            maxLines: blockHeight < 28 ? 1 : 3,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              height: 1.1,
+              color: CupertinoColors.label.resolveFrom(context),
+            ),
+          ),
         ),
       ),
     );
@@ -549,7 +811,8 @@ class _JournalPageState extends State<JournalPage> {
     final Color accent = _parseHexColor(lesson.accentColor);
     final bool cancelled = lesson.status == 'cancelled';
     final bool completed = lesson.status == 'completed';
-    final Brightness brightness = CupertinoTheme.of(context).brightness ??
+    final Brightness brightness =
+        CupertinoTheme.of(context).brightness ??
         MediaQuery.platformBrightnessOf(context);
     final bool isDark = brightness == Brightness.dark;
 
@@ -565,148 +828,164 @@ class _JournalPageState extends State<JournalPage> {
     final Color metaColor = cancelled
         ? CupertinoColors.tertiaryLabel.resolveFrom(context)
         : accent;
+    final bool canDrag = _canDragLesson(lesson);
+    final bool isDragging = _draggingLesson?.id == lesson.id;
 
     return Positioned(
       top: top + 2,
       left: 6,
       right: 2,
       height: height - 4,
-      child: GestureDetector(
-        onTap: () => _openLessonDetail(lesson),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: surface,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: cancelled
-                ? null
-                : <BoxShadow>[
-                    BoxShadow(
-                      color: accent.withValues(alpha: isDark ? 0.18 : 0.12),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                Container(
-                  width: 4,
-                  color: cancelled
-                      ? CupertinoColors.systemGrey3.resolveFrom(context)
-                      : accent,
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      10,
-                      height < 40 ? 6 : 8,
-                      10,
-                      height < 40 ? 6 : 8,
-                    ),
-                    child: LayoutBuilder(
-                      builder:
-                          (BuildContext context, BoxConstraints constraints) {
-                        final AppLocalizations l10n = context.l10n;
-                        final String timeRange =
-                            '${_formatClock(lesson.startMinutes)}–${_formatClock(lesson.endMinutes)}';
+      child: Opacity(
+        opacity: isDragging ? 0.25 : 1,
+        child: GestureDetector(
+          onTap: isDragging ? null : () => _openLessonDetail(lesson),
+          onLongPressStart: canDrag
+              ? (LongPressStartDetails details) =>
+                    _beginLessonDrag(lesson, details)
+              : null,
+          onLongPressMoveUpdate: canDrag
+              ? (LongPressMoveUpdateDetails details) =>
+                    _moveLessonDrag(details.globalPosition)
+              : null,
+          onLongPressEnd: canDrag
+              ? (_) => unawaited(_finishLessonDrag())
+              : null,
+          onLongPressCancel: canDrag ? _cancelLessonDrag : null,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: surface,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: cancelled
+                  ? null
+                  : <BoxShadow>[
+                      BoxShadow(
+                        color: accent.withValues(alpha: isDark ? 0.18 : 0.12),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Container(
+                    width: 4,
+                    color: cancelled
+                        ? CupertinoColors.systemGrey3.resolveFrom(context)
+                        : accent,
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        10,
+                        height < 40 ? 6 : 8,
+                        10,
+                        height < 40 ? 6 : 8,
+                      ),
+                      child: LayoutBuilder(
+                        builder: (BuildContext context, BoxConstraints constraints) {
+                          final AppLocalizations l10n = context.l10n;
+                          final String timeRange =
+                              '${_formatClock(lesson.startMinutes)}–${_formatClock(lesson.endMinutes)}';
 
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: <Widget>[
-                            Row(
-                              children: <Widget>[
-                                Expanded(
-                                  child: Text(
-                                    lesson.displayTitle,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      height: 1.15,
-                                      color: titleColor,
-                                      decoration: cancelled
-                                          ? TextDecoration.lineThrough
-                                          : null,
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: <Widget>[
+                              Row(
+                                children: <Widget>[
+                                  Expanded(
+                                    child: Text(
+                                      lesson.displayTitle,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        height: 1.15,
+                                        color: titleColor,
+                                        decoration: cancelled
+                                            ? TextDecoration.lineThrough
+                                            : null,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                if (completed || cancelled) ...<Widget>[
-                                  const SizedBox(width: 6),
-                                  _statusPill(
-                                    label: cancelled
-                                        ? l10n.cancelled
-                                        : l10n.completed,
-                                    color: cancelled
-                                        ? CupertinoColors.systemGrey
-                                        : CupertinoColors.activeGreen,
-                                  ),
-                                ],
-                              ],
-                            ),
-                            if (constraints.maxHeight >= 30) ...<Widget>[
-                              const SizedBox(height: 3),
-                              Text(
-                                timeRange,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  height: 1.1,
-                                  fontWeight: FontWeight.w600,
-                                  color: metaColor,
-                                  fontFeatures: const <FontFeature>[
-                                    FontFeature.tabularFigures(),
+                                  if (completed || cancelled) ...<Widget>[
+                                    const SizedBox(width: 6),
+                                    _statusPill(
+                                      label: cancelled
+                                          ? l10n.cancelled
+                                          : l10n.completed,
+                                      color: cancelled
+                                          ? CupertinoColors.systemGrey
+                                          : CupertinoColors.activeGreen,
+                                    ),
                                   ],
-                                ),
+                                ],
                               ),
-                            ],
-                            if (constraints.maxHeight >= 48 &&
-                                lesson.displaySubtitle !=
-                                    lesson.displayTitle) ...<Widget>[
-                              const SizedBox(height: 2),
-                              Text(
-                                lesson.displaySubtitle,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  height: 1.1,
-                                  color: CupertinoColors.secondaryLabel
-                                      .resolveFrom(context),
+                              if (constraints.maxHeight >= 30) ...<Widget>[
+                                const SizedBox(height: 3),
+                                Text(
+                                  timeRange,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    height: 1.1,
+                                    fontWeight: FontWeight.w600,
+                                    color: metaColor,
+                                    fontFeatures: const <FontFeature>[
+                                      FontFeature.tabularFigures(),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
-                            if (constraints.maxHeight >= 62 &&
-                                lesson.isGroup &&
-                                lesson.studentNotes.any(
-                                  (LessonStudentNote n) =>
-                                      n.notes.trim().isNotEmpty,
-                                )) ...<Widget>[
-                              const SizedBox(height: 2),
-                              Text(
-                                '${l10n.lessonNotesSummary}: ${lesson.studentNotes.where((LessonStudentNote n) => n.notes.trim().isNotEmpty).length}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  height: 1.1,
-                                  color: CupertinoColors.tertiaryLabel
-                                      .resolveFrom(context),
+                              ],
+                              if (constraints.maxHeight >= 48 &&
+                                  lesson.displaySubtitle !=
+                                      lesson.displayTitle) ...<Widget>[
+                                const SizedBox(height: 2),
+                                Text(
+                                  lesson.displaySubtitle,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    height: 1.1,
+                                    color: CupertinoColors.secondaryLabel
+                                        .resolveFrom(context),
+                                  ),
                                 ),
-                              ),
+                              ],
+                              if (constraints.maxHeight >= 62 &&
+                                  lesson.isGroup &&
+                                  lesson.studentNotes.any(
+                                    (LessonStudentNote n) =>
+                                        n.notes.trim().isNotEmpty,
+                                  )) ...<Widget>[
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${l10n.lessonNotesSummary}: ${lesson.studentNotes.where((LessonStudentNote n) => n.notes.trim().isNotEmpty).length}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    height: 1.1,
+                                    color: CupertinoColors.tertiaryLabel
+                                        .resolveFrom(context),
+                                  ),
+                                ),
+                              ],
                             ],
-                          ],
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

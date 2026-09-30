@@ -706,6 +706,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get freeLesson => 'Бесплатный урок';
 
   @override
+  String get repeatWeekly => 'Повторять еженедельно';
+
+  @override
+  String get repeatWeeksLabel => 'Повторить на';
+
+  @override
+  String weeksCount(int count) {
+    return '$count недель';
+  }
+
+  @override
+  String repeatLessonsPartial(int created, int total, String error) {
+    return 'Создано $created из $total еженедельных уроков. $error';
+  }
+
+  @override
   String minutes(int count) {
     return '$count мин';
   }
@@ -875,6 +891,17 @@ class AppLocalizationsRu extends AppLocalizations {
   String selectedSlot(String date, String time) {
     return '$date · $time';
   }
+
+  @override
+  String get lessonCompletionCheckTitle => 'Этот урок был проведён?';
+
+  @override
+  String lessonCompletionCheckMessage(String title, String when) {
+    return '$title · $when. Подтвердите статус, чтобы данные оставались точными.';
+  }
+
+  @override
+  String get askLater => 'Спросить позже';
 
   @override
   String get markLessonDone => 'Отметить выполненным';

@@ -708,6 +708,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get freeLesson => 'Free lesson';
 
   @override
+  String get repeatWeekly => 'Repeat weekly';
+
+  @override
+  String get repeatWeeksLabel => 'Repeat for';
+
+  @override
+  String weeksCount(int count) {
+    return '$count weeks';
+  }
+
+  @override
+  String repeatLessonsPartial(int created, int total, String error) {
+    return 'Created $created of $total weekly lessons. $error';
+  }
+
+  @override
   String minutes(int count) {
     return '$count min';
   }
@@ -877,6 +893,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String selectedSlot(String date, String time) {
     return '$date · $time';
   }
+
+  @override
+  String get lessonCompletionCheckTitle => 'Was this lesson completed?';
+
+  @override
+  String lessonCompletionCheckMessage(String title, String when) {
+    return '$title · $when. Please confirm the status so your records stay accurate.';
+  }
+
+  @override
+  String get askLater => 'Ask me later';
 
   @override
   String get markLessonDone => 'Mark as done';

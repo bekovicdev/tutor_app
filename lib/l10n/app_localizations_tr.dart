@@ -708,6 +708,22 @@ class AppLocalizationsTr extends AppLocalizations {
   String get freeLesson => 'Ücretsiz ders';
 
   @override
+  String get repeatWeekly => 'Haftalık tekrarla';
+
+  @override
+  String get repeatWeeksLabel => 'Kaç hafta';
+
+  @override
+  String weeksCount(int count) {
+    return '$count hafta';
+  }
+
+  @override
+  String repeatLessonsPartial(int created, int total, String error) {
+    return '$total haftadan $created tanesi oluşturuldu. $error';
+  }
+
+  @override
   String minutes(int count) {
     return '$count dk';
   }
@@ -877,6 +893,17 @@ class AppLocalizationsTr extends AppLocalizations {
   String selectedSlot(String date, String time) {
     return '$date · $time';
   }
+
+  @override
+  String get lessonCompletionCheckTitle => 'Bu ders yapıldı mı?';
+
+  @override
+  String lessonCompletionCheckMessage(String title, String when) {
+    return '$title · $when. Kayıtların doğru olması için durumu onaylar mısın?';
+  }
+
+  @override
+  String get askLater => 'Sonra sor';
 
   @override
   String get markLessonDone => 'Dersi yaptım';

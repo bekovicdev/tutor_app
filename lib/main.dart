@@ -6,12 +6,14 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/intl.dart' as intl;
 import 'package:tutor_app/auth/auth_page.dart';
 import 'package:tutor_app/auth/auth_service.dart';
 import 'package:tutor_app/auth/auth_storage.dart';
 import 'package:tutor_app/billing/billing_service.dart';
 import 'package:tutor_app/firebase_options.dart';
 import 'package:tutor_app/l10n/l10n_ext.dart';
+import 'package:tutor_app/lessons/lesson_service.dart';
 import 'package:tutor_app/notifications/fcm_service.dart';
 import 'package:tutor_app/pages/journal_page.dart';
 import 'package:tutor_app/pages/payment_page.dart';
@@ -45,7 +47,9 @@ Future<bool> _initFirebase() async {
     if (Firebase.apps.isNotEmpty) {
       return true;
     }
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
     return Firebase.apps.isNotEmpty;
   } catch (error) {
     debugPrint('Firebase.initializeApp failed: $error');
@@ -140,20 +144,21 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       // Device language; unsupported → English.
       localeResolutionCallback:
           (Locale? locale, Iterable<Locale> supportedLocales) {
-        if (locale == null) {
-          return const Locale('en');
-        }
-        for (final Locale supported in supportedLocales) {
-          if (supported.languageCode == locale.languageCode) {
-            return supported;
-          }
-        }
-        return const Locale('en');
-      },
+            if (locale == null) {
+              return const Locale('en');
+            }
+            for (final Locale supported in supportedLocales) {
+              if (supported.languageCode == locale.languageCode) {
+                return supported;
+              }
+            }
+            return const Locale('en');
+          },
       builder: (BuildContext context, Widget? child) {
         final MediaQueryData media = MediaQuery.of(context);
-        final TextStyle rootStyle =
-            CupertinoTheme.of(context).textTheme.textStyle;
+        final TextStyle rootStyle = CupertinoTheme.of(
+          context,
+        ).textTheme.textStyle;
         return AppCurrencyScope(
           code: _currencyCode,
           child: MediaQuery(
@@ -229,19 +234,17 @@ class _AppRootState extends State<AppRoot> {
     }
 
     try {
-      _deepLinkSub = _appLinks.uriLinkStream.listen(
-        (Uri uri) {
-          _handleDeepLink(uri);
-        },
-        onError: (_) {},
-      );
+      _deepLinkSub = _appLinks.uriLinkStream.listen((Uri uri) {
+        _handleDeepLink(uri);
+      }, onError: (_) {});
     } on MissingPluginException {
       // Plugin may be unavailable on current run.
     }
   }
 
   Future<void> _handleDeepLink(Uri uri) async {
-    final bool isAuthCallback = uri.host == 'auth-callback' ||
+    final bool isAuthCallback =
+        uri.host == 'auth-callback' ||
         uri.pathSegments.contains('auth-callback') ||
         (uri.scheme == 'app' && uri.host == 'auth-callback');
     if (!isAuthCallback) {
@@ -302,7 +305,9 @@ class _AppRootState extends State<AppRoot> {
 
   Future<void> _onAuthenticated(AuthSession session) async {
     await _authStorage.saveToken(session.token);
-    await AppSettings.setIndividualLessonCost(session.user.individualLessonCost);
+    await AppSettings.setIndividualLessonCost(
+      session.user.individualLessonCost,
+    );
     await AppSettings.setGroupLessonCost(session.user.groupLessonCost);
     await BillingService.configure(appUserId: '${session.user.id}');
     try {
@@ -403,11 +408,7 @@ class _AppRootState extends State<AppRoot> {
     Widget child;
     if (_isCheckingSession) {
       child = const CupertinoPageScaffold(
-        child: SafeArea(
-          child: Center(
-            child: CupertinoActivityIndicator(),
-          ),
-        ),
+        child: SafeArea(child: Center(child: CupertinoActivityIndicator())),
       );
     } else if (_session == null) {
       child = AuthPage(
@@ -478,18 +479,9 @@ class _AppShellState extends State<AppShell> {
     super.initState();
     _tabController.addListener(_onTabChanged);
     _tabPages = <Widget>[
-      StudentsPage(
-        token: widget.session.token,
-        onOpenSettings: _openSettings,
-      ),
-      CalendarPage(
-        token: widget.session.token,
-        onOpenSettings: _openSettings,
-      ),
-      JournalPage(
-        token: widget.session.token,
-        onOpenSettings: _openSettings,
-      ),
+      StudentsPage(token: widget.session.token, onOpenSettings: _openSettings),
+      CalendarPage(token: widget.session.token, onOpenSettings: _openSettings),
+      JournalPage(token: widget.session.token, onOpenSettings: _openSettings),
       PaymentPage(
         token: widget.session.token,
         onOpenSettings: _openSettings,
@@ -497,6 +489,118 @@ class _AppShellState extends State<AppShell> {
       ),
     ];
     _refreshPaymentBadge();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_checkOverdueLessons());
+    });
+  }
+
+  String _formatDateKey(DateTime date) {
+    final String y = date.year.toString().padLeft(4, '0');
+    final String m = date.month.toString().padLeft(2, '0');
+    final String d = date.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
+  }
+
+  /// On app open, ask about any lesson that was scheduled but whose end
+  /// time has already passed, so completed/cancelled status stays accurate.
+  Future<void> _checkOverdueLessons() async {
+    final LessonService lessonService = LessonService(
+      token: widget.session.token,
+    );
+    final DateTime now = DateTime.now();
+    final DateTime rangeStart = now.subtract(const Duration(days: 30));
+
+    List<Lesson> lessons;
+    try {
+      lessons = await lessonService.listLessons(
+        status: 'scheduled',
+        startDate: _formatDateKey(rangeStart),
+        endDate: _formatDateKey(now),
+        sortBy: 'date',
+        sortDirection: 'asc',
+      );
+    } catch (_) {
+      return;
+    }
+
+    final List<Lesson> overdue =
+        lessons.where((Lesson lesson) {
+          final DateTime? lessonDate = DateTime.tryParse(lesson.date);
+          if (lessonDate == null) {
+            return false;
+          }
+          final DateTime endAt = lessonDate.add(
+            Duration(minutes: lesson.endMinutes),
+          );
+          return endAt.isBefore(now);
+        }).toList()..sort((Lesson a, Lesson b) {
+          final int byDate = a.date.compareTo(b.date);
+          if (byDate != 0) {
+            return byDate;
+          }
+          return a.startMinutes.compareTo(b.startMinutes);
+        });
+
+    bool anyResolved = false;
+    for (final Lesson lesson in overdue) {
+      if (!mounted) {
+        return;
+      }
+      final String? decision = await _askLessonCompletion(lesson);
+      if (decision == null) {
+        continue;
+      }
+      try {
+        await lessonService.updateLesson(
+          id: lesson.id,
+          body: <String, dynamic>{'status': decision},
+        );
+        anyResolved = true;
+      } catch (_) {
+        // Ignore; will be asked again next time the app opens.
+      }
+    }
+    if (anyResolved && mounted) {
+      await _refreshPaymentBadge();
+    }
+  }
+
+  Future<String?> _askLessonCompletion(Lesson lesson) {
+    final AppLocalizations l10n = context.l10n;
+    final DateTime? lessonDate = DateTime.tryParse(lesson.date);
+    final String when = lessonDate == null
+        ? lesson.date
+        : intl.DateFormat.yMMMEd(
+            Localizations.localeOf(context).toLanguageTag(),
+          ).add_Hm().format(
+            lessonDate.add(Duration(minutes: lesson.startMinutes)),
+          );
+    return showAppAlert<String>(
+      context: context,
+      title: l10n.lessonCompletionCheckTitle,
+      message: l10n.lessonCompletionCheckMessage(lesson.displayTitle, when),
+      barrierDismissible: false,
+      actions: <AppAlertAction>[
+        AppAlertAction(
+          label: l10n.markCompleted,
+          style: AppAlertStyle.primary,
+          onPressed: (BuildContext dialogContext) =>
+              Navigator.of(dialogContext).pop('completed'),
+        ),
+        AppAlertAction(
+          label: l10n.cancelled,
+          style: AppAlertStyle.destructive,
+          onPressed: (BuildContext dialogContext) =>
+              Navigator.of(dialogContext).pop('cancelled'),
+        ),
+        AppAlertAction(
+          label: l10n.askLater,
+          style: AppAlertStyle.cancel,
+          onPressed: (BuildContext dialogContext) =>
+              Navigator.of(dialogContext).pop(),
+        ),
+      ],
+    );
   }
 
   @override
@@ -514,8 +618,9 @@ class _AppShellState extends State<AppShell> {
 
   Future<void> _refreshPaymentBadge() async {
     try {
-      final PaymentsOverview overview =
-          await PaymentService(token: widget.session.token).overview();
+      final PaymentsOverview overview = await PaymentService(
+        token: widget.session.token,
+      ).overview();
       if (!mounted) {
         return;
       }

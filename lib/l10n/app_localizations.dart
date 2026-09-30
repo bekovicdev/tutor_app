@@ -1408,6 +1408,30 @@ abstract class AppLocalizations {
   /// **'Free lesson'**
   String get freeLesson;
 
+  /// No description provided for @repeatWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat weekly'**
+  String get repeatWeekly;
+
+  /// No description provided for @repeatWeeksLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat for'**
+  String get repeatWeeksLabel;
+
+  /// No description provided for @weeksCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} weeks'**
+  String weeksCount(int count);
+
+  /// No description provided for @repeatLessonsPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Created {created} of {total} weekly lessons. {error}'**
+  String repeatLessonsPartial(int created, int total, String error);
+
   /// No description provided for @minutes.
   ///
   /// In en, this message translates to:
@@ -1713,6 +1737,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{date} · {time}'**
   String selectedSlot(String date, String time);
+
+  /// No description provided for @lessonCompletionCheckTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Was this lesson completed?'**
+  String get lessonCompletionCheckTitle;
+
+  /// No description provided for @lessonCompletionCheckMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} · {when}. Please confirm the status so your records stay accurate.'**
+  String lessonCompletionCheckMessage(String title, String when);
+
+  /// No description provided for @askLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask me later'**
+  String get askLater;
 
   /// No description provided for @markLessonDone.
   ///
